@@ -10,12 +10,13 @@ import mysql.connector
 app = Flask(__name__)
 
 # ── Database config ──────────────────────────────────────────────────────
+# Connects to Linux MySQL via SSH tunnel on port 3307
 DB_CONFIG = {
-    "host": os.environ.get("DB_HOST", "localhost"),
-    "port": int(os.environ.get("DB_PORT", 3306)),
-    "user": os.environ.get("DB_USER", "root"),
-    "password": os.environ.get("DB_PASS", "Midnight1"),
-    "database": os.environ.get("DB_NAME", "pokemon_triad"),
+    "host": os.environ.get("DB_HOST", "127.0.0.1"),
+    "port": int(os.environ.get("DB_PORT", 3307)),
+    "user": os.environ.get("DB_USER", "fablewood_user"),
+    "password": os.environ.get("DB_PASS", "StrongStr0ngPass!"),
+    "database": os.environ.get("DB_NAME", "cardmmo"),
 }
 
 
@@ -24,43 +25,65 @@ def get_db():
 
 
 def init_db():
-    """Create tables if they don't exist."""
+    """Create triad-prefixed tables inside the cardmmo database."""
     db = get_db()
     cur = db.cursor()
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS users (
+        CREATE TABLE IF NOT EXISTS triad_users (
             id INT AUTO_INCREMENT PRIMARY KEY,
             username VARCHAR(64) UNIQUE NOT NULL,
             password_hash VARCHAR(128) NOT NULL,
             token VARCHAR(128) UNIQUE,
-            character_json TEXT,
+            profile_json TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS cards (
+        CREATE TABLE IF NOT EXISTS triad_cards (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
             card_id VARCHAR(64) NOT NULL,
             xp INT DEFAULT 0,
             level INT DEFAULT 1,
-            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (user_id) REFERENCES triad_users(id),
             UNIQUE KEY user_card (user_id, card_id)
         )
     """)
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS decks (
-            id INT AUTO_INCREMENT PRIMARY KEY,
+        CREATE TABLE IF NOT EXISTS triad_decks (
+            id VARCHAR(64) PRIMARY KEY,
             user_id INT NOT NULL,
             name VARCHAR(128) NOT NULL,
-            card_ids TEXT,
+            card_ids_json TEXT,
             active TINYINT DEFAULT 0,
-            FOREIGN KEY (user_id) REFERENCES users(id)
+            FOREIGN KEY (user_id) REFERENCES triad_users(id)
         )
     """)
     db.commit()
     cur.close()
     db.close()
+
+
+def _get_profile(user_id, db):
+    """Load the user's profile_json, or return an empty dict."""
+    cur = db.cursor(dictionary=True)
+    cur.execute("SELECT profile_json FROM triad_users WHERE id = %s", (user_id,))
+    row = cur.fetchone()
+    cur.close()
+    if row and row["profile_json"]:
+        try:
+            return json.loads(row["profile_json"])
+        except json.JSONDecodeError:
+            pass
+    return {}
+
+def _save_profile(user_id, profile, db):
+    """Persist the profile_json dict."""
+    cur = db.cursor()
+    cur.execute("UPDATE triad_users SET profile_json = %s WHERE id = %s",
+                (json.dumps(profile), user_id))
+    db.commit()
+    cur.close()
 
 
 # ── Auth helpers ─────────────────────────────────────────────────────────
@@ -74,7 +97,7 @@ def _require_auth():
         return None
     db = get_db()
     cur = db.cursor(dictionary=True)
-    cur.execute("SELECT id, username FROM users WHERE token = %s", (token,))
+    cur.execute("SELECT id, username FROM triad_users WHERE token = %s", (token,))
     user = cur.fetchone()
     cur.close()
     db.close()
@@ -94,7 +117,7 @@ def register():
 
     db = get_db()
     cur = db.cursor(dictionary=True)
-    cur.execute("SELECT id FROM users WHERE username = %s", (username,))
+    cur.execute("SELECT id FROM triad_users WHERE username = %s", (username,))
     if cur.fetchone():
         cur.close()
         db.close()
@@ -102,7 +125,7 @@ def register():
 
     token = secrets.token_hex(32)
     cur.execute(
-        "INSERT INTO users (username, password_hash, token) VALUES (%s, %s, %s)",
+        "INSERT INTO triad_users (username, password_hash, token) VALUES (%s, %s, %s)",
         (username, _hash(password), token),
     )
     db.commit()
@@ -120,7 +143,7 @@ def login():
     db = get_db()
     cur = db.cursor(dictionary=True)
     cur.execute(
-        "SELECT id, token FROM users WHERE username = %s AND password_hash = %s",
+        "SELECT id, token FROM triad_users WHERE username = %s AND password_hash = %s",
         (username, _hash(password)),
     )
     user = cur.fetchone()
@@ -131,7 +154,7 @@ def login():
 
     if not user["token"]:
         user["token"] = secrets.token_hex(32)
-        cur.execute("UPDATE users SET token = %s WHERE id = %s", (user["token"], user["id"]))
+        cur.execute("UPDATE triad_users SET token = %s WHERE id = %s", (user["token"], user["id"]))
         db.commit()
 
     cur.close()
@@ -147,21 +170,35 @@ def get_me():
 
     db = get_db()
     cur = db.cursor(dictionary=True)
-    cur.execute("SELECT username, character_json FROM users WHERE id = %s", (user["id"],))
+
+    # Owned card ids from triad_cards
+    cur.execute("SELECT card_id FROM triad_cards WHERE user_id = %s", (user["id"],))
+    owned_card_ids = [r["card_id"] for r in cur.fetchall()]
+
+    # Full profile
+    profile = _get_profile(user["id"], db)
+
+    # User row for username / joined_at
+    cur.execute("SELECT username, created_at FROM triad_users WHERE id = %s", (user["id"],))
     row = cur.fetchone()
     cur.close()
     db.close()
 
-    character = None
-    if row and row["character_json"]:
-        try:
-            character = json.loads(row["character_json"])
-        except json.JSONDecodeError:
-            character = None
-
     return jsonify({
-        "username": row["username"],
-        "character": character,
+        "playerName": row["username"],
+        "ownedCardIds": owned_card_ids,
+        "wins": profile.get("wins", 0),
+        "losses": profile.get("losses", 0),
+        "draws": profile.get("draws", 0),
+        "money": profile.get("money", 0),
+        "joinedAt": str(row["created_at"]) if row["created_at"] else None,
+        "trainerName": profile.get("trainerName"),
+        "gender": profile.get("gender"),
+        "skinTone": profile.get("skinTone"),
+        "hairPath": profile.get("hairPath"),
+        "topPath": profile.get("topPath"),
+        "bottomPath": profile.get("bottomPath"),
+        "hatPath": profile.get("hatPath"),
     })
 
 
@@ -173,13 +210,12 @@ def put_character():
 
     data = request.get_json()
     db = get_db()
-    cur = db.cursor()
-    cur.execute(
-        "UPDATE users SET character_json = %s WHERE id = %s",
-        (json.dumps(data), user["id"]),
-    )
-    db.commit()
-    cur.close()
+    profile = _get_profile(user["id"], db)
+    # Merge trainer appearance fields
+    for key in ("trainerName", "gender", "skinTone", "hairPath", "topPath", "bottomPath", "hatPath"):
+        if key in data:
+            profile[key] = data[key]
+    _save_profile(user["id"], profile, db)
     db.close()
     return jsonify({"ok": True})
 
@@ -192,15 +228,29 @@ def post_match():
 
     data = request.get_json()
     captures = data.get("captures") or {}
+    outcome = data.get("outcome", "")
 
     db = get_db()
     cur = db.cursor()
+
+    # Award XP for captures
     for card_id, count in captures.items():
         cur.execute(
-            "INSERT INTO cards (user_id, card_id, xp) VALUES (%s, %s, %s) "
+            "INSERT INTO triad_cards (user_id, card_id, xp) VALUES (%s, %s, %s) "
             "ON DUPLICATE KEY UPDATE xp = xp + %s",
             (user["id"], card_id, count, count),
         )
+
+    # Update win/loss/draw counters
+    profile = _get_profile(user["id"], db)
+    if outcome == "win":
+        profile["wins"] = profile.get("wins", 0) + 1
+    elif outcome == "loss":
+        profile["losses"] = profile.get("losses", 0) + 1
+    elif outcome == "draw":
+        profile["draws"] = profile.get("draws", 0) + 1
+    _save_profile(user["id"], profile, db)
+
     db.commit()
     cur.close()
     db.close()
@@ -215,7 +265,7 @@ def get_cards():
 
     db = get_db()
     cur = db.cursor(dictionary=True)
-    cur.execute("SELECT card_id, xp, level FROM cards WHERE user_id = %s", (user["id"],))
+    cur.execute("SELECT card_id, xp, level FROM triad_cards WHERE user_id = %s", (user["id"],))
     cards = cur.fetchall()
     cur.close()
     db.close()
@@ -238,10 +288,25 @@ def get_decks():
 
     db = get_db()
     cur = db.cursor(dictionary=True)
-    cur.execute("SELECT * FROM decks WHERE user_id = %s", (user["id"],))
-    decks = cur.fetchall()
+    cur.execute("SELECT id, name, card_ids_json, active FROM triad_decks WHERE user_id = %s", (user["id"],))
+    rows = cur.fetchall()
     cur.close()
     db.close()
+
+    decks = []
+    for r in rows:
+        card_ids = []
+        if r["card_ids_json"]:
+            try:
+                card_ids = json.loads(r["card_ids_json"])
+            except json.JSONDecodeError:
+                pass
+        decks.append({
+            "id": r["id"],
+            "name": r["name"],
+            "cardIds": card_ids,
+            "isDefault": bool(r["active"]),
+        })
     return jsonify(decks)
 
 
@@ -252,27 +317,29 @@ def put_deck():
         return jsonify({"error": "Unauthorized"}), 401
 
     data = request.get_json()
-    deck_id = data.get("id")
+    deck_id = str(data.get("id") or "")
     name = data.get("name", "Untitled")
-    card_ids = json.dumps(data.get("cardIds", []))
+    card_ids = data.get("cardIds", [])
+    is_default = data.get("isDefault", False)
 
     db = get_db()
     cur = db.cursor()
     if deck_id:
         cur.execute(
-            "UPDATE decks SET name = %s, card_ids = %s WHERE id = %s AND user_id = %s",
-            (name, card_ids, deck_id, user["id"]),
+            "UPDATE triad_decks SET name = %s, card_ids_json = %s, active = %s WHERE id = %s AND user_id = %s",
+            (name, json.dumps(card_ids), int(is_default), deck_id, user["id"]),
         )
     else:
+        import uuid
+        deck_id = str(uuid.uuid4())
         cur.execute(
-            "INSERT INTO decks (user_id, name, card_ids) VALUES (%s, %s, %s)",
-            (user["id"], name, card_ids),
+            "INSERT INTO triad_decks (id, user_id, name, card_ids_json, active) VALUES (%s, %s, %s, %s, %s)",
+            (deck_id, user["id"], name, json.dumps(card_ids), int(is_default)),
         )
-        deck_id = cur.lastrowid
     db.commit()
     cur.close()
     db.close()
-    return jsonify({"id": deck_id})
+    return jsonify({"id": deck_id, "name": name, "cardIds": card_ids, "isDefault": is_default})
 
 
 @app.route("/api/decks/<deck_id>/activate", methods=["POST"])
@@ -283,9 +350,9 @@ def activate_deck(deck_id):
 
     db = get_db()
     cur = db.cursor()
-    cur.execute("UPDATE decks SET active = 0 WHERE user_id = %s", (user["id"],))
+    cur.execute("UPDATE triad_decks SET active = 0 WHERE user_id = %s", (user["id"],))
     cur.execute(
-        "UPDATE decks SET active = 1 WHERE id = %s AND user_id = %s",
+        "UPDATE triad_decks SET active = 1 WHERE id = %s AND user_id = %s",
         (deck_id, user["id"]),
     )
     db.commit()
@@ -302,7 +369,7 @@ def delete_deck(deck_id):
 
     db = get_db()
     cur = db.cursor()
-    cur.execute("DELETE FROM decks WHERE id = %s AND user_id = %s", (deck_id, user["id"]))
+    cur.execute("DELETE FROM triad_decks WHERE id = %s AND user_id = %s", (deck_id, user["id"]))
     db.commit()
     cur.close()
     db.close()
