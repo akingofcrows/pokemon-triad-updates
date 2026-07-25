@@ -128,23 +128,6 @@ def register():
         "INSERT INTO triad_users (username, password_hash, token) VALUES (%s, %s, %s)",
         (username, _hash(password), token),
     )
-    user_id = cur.lastrowid
-
-    # Grant starter Pokémon cards
-    starter_cards = [
-        "card_bulbasaur_1", "card_charmander_1", "card_squirtle_1",
-        "card_pikachu_1", "card_eevee_1", "card_oddish_1",
-        "card_rattata_1", "card_pidgey_1", "card_caterpie_1",
-        "card_weedle_1", "card_spearow_1", "card_nidoranf_1",
-        "card_nidoranm_1", "card_zubat_1", "card_geodude_1",
-    ]
-    for card_id in starter_cards:
-        cur.execute(
-            "INSERT INTO triad_cards (user_id, card_id, xp) VALUES (%s, %s, 0) "
-            "ON DUPLICATE KEY UPDATE xp = xp",
-            (user_id, card_id),
-        )
-
     db.commit()
     cur.close()
     db.close()
@@ -272,6 +255,32 @@ def post_match():
     cur.close()
     db.close()
     return jsonify({"levelUps": [], "evolutions": []})
+
+
+@app.route("/api/me/claim-starter", methods=["POST"])
+def claim_starter():
+    """Grant the chosen starter deck cards to the player."""
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+    card_ids = data.get("cardIds") or []
+    if not card_ids:
+        return jsonify({"error": "No card IDs provided"}), 400
+
+    db = get_db()
+    cur = db.cursor()
+    for card_id in card_ids:
+        cur.execute(
+            "INSERT INTO triad_cards (user_id, card_id, xp) VALUES (%s, %s, 0) "
+            "ON DUPLICATE KEY UPDATE xp = xp",
+            (user["id"], card_id),
+        )
+    db.commit()
+    cur.close()
+    db.close()
+    return jsonify({"ok": True, "granted": len(card_ids)})
 
 
 @app.route("/api/me/cards", methods=["GET"])
