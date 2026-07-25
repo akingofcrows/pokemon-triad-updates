@@ -291,7 +291,7 @@ def get_cards():
 
     db = get_db()
     cur = db.cursor(dictionary=True)
-    cur.execute("SELECT card_id, xp, level FROM triad_cards WHERE user_id = %s", (user["id"],))
+    cur.execute("SELECT card_id AS cardId, xp, level FROM triad_cards WHERE user_id = %s", (user["id"],))
     cards = cur.fetchall()
     cur.close()
     db.close()
