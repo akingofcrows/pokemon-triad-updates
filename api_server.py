@@ -259,6 +259,40 @@ def check_name():
     return jsonify({"available": row["cnt"] == 0})
 
 
+@app.route("/api/me/character", methods=["DELETE"])
+def delete_character():
+    """Delete the player's character profile and all cards. Requires
+    `trainerName` in the JSON body to match the current profile name."""
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json() or {}
+    confirm_name = (data.get("trainerName") or "").strip()
+    if not confirm_name:
+        return jsonify({"error": "Trainer name required to confirm deletion."}), 400
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    # Verify the name matches
+    profile = _get_profile(user["id"], db)
+    current_name = (profile.get("trainerName") or "").strip()
+    if current_name.lower() != confirm_name.lower():
+        cur.close()
+        db.close()
+        return jsonify({"error": "Trainer name does not match."}), 403
+
+    # Delete all cards
+    cur.execute("DELETE FROM triad_cards WHERE user_id = %s", (user["id"],))
+    # Clear profile
+    cur.execute("UPDATE triad_users SET profile_json = NULL WHERE id = %s", (user["id"],))
+    db.commit()
+    cur.close()
+    db.close()
+    return jsonify({"ok": True})
+
+
 @app.route("/api/me/match-result", methods=["POST"])
 def post_match():
     user = _require_auth()
