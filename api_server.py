@@ -199,6 +199,7 @@ def get_me():
         "topPath": profile.get("topPath"),
         "bottomPath": profile.get("bottomPath"),
         "hatPath": profile.get("hatPath"),
+        "friendCode": profile.get("friendCode"),
     })
 
 
@@ -227,12 +228,37 @@ def put_character():
 
     cur.close()
     profile = _get_profile(user["id"], db)
+
+    # Generate friend code on first character save
+    if not profile.get("friendCode"):
+        profile["friendCode"] = _generate_friend_code(db)
+
     for key in ("trainerName", "gender", "skinTone", "hairPath", "topPath", "bottomPath", "hatPath"):
         if key in data:
             profile[key] = data[key]
     _save_profile(user["id"], profile, db)
     db.close()
     return jsonify({"ok": True})
+
+
+def _generate_friend_code(db):
+    """Generate a unique 12-digit friend code not already in use."""
+    import random
+    cur = db.cursor(dictionary=True)
+    for _ in range(100):
+        code = ''.join(str(random.randint(0, 9)) for _ in range(12))
+        cur.execute(
+            "SELECT COUNT(*) as cnt FROM triad_users "
+            "WHERE JSON_EXTRACT(profile_json, '$.friendCode') = %s",
+            (code,),
+        )
+        if cur.fetchone()["cnt"] == 0:
+            cur.close()
+            return code
+    cur.close()
+    # Fallback: use timestamp-based code
+    import time
+    return str(int(time.time() * 1000))[-12:].zfill(12)
 
 
 @app.route("/api/me/check-name", methods=["GET"])
