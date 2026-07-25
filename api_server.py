@@ -128,6 +128,23 @@ def register():
         "INSERT INTO triad_users (username, password_hash, token) VALUES (%s, %s, %s)",
         (username, _hash(password), token),
     )
+    user_id = cur.lastrowid
+
+    # Grant starter Pokémon cards
+    starter_cards = [
+        "card_bulbasaur_1", "card_charmander_1", "card_squirtle_1",
+        "card_pikachu_1", "card_eevee_1", "card_oddish_1",
+        "card_rattata_1", "card_pidgey_1", "card_caterpie_1",
+        "card_weedle_1", "card_spearow_1", "card_nidoranf_1",
+        "card_nidoranm_1", "card_zubat_1", "card_geodude_1",
+    ]
+    for card_id in starter_cards:
+        cur.execute(
+            "INSERT INTO triad_cards (user_id, card_id, xp) VALUES (%s, %s, 0) "
+            "ON DUPLICATE KEY UPDATE xp = xp",
+            (user_id, card_id),
+        )
+
     db.commit()
     cur.close()
     db.close()
