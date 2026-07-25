@@ -209,15 +209,54 @@ def put_character():
         return jsonify({"error": "Unauthorized"}), 401
 
     data = request.get_json()
+    trainer_name = data.get("trainerName", "").strip()
     db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    # Check trainer name uniqueness (exclude current user)
+    if trainer_name:
+        cur.execute(
+            "SELECT COUNT(*) as cnt FROM triad_users "
+            "WHERE id != %s AND JSON_EXTRACT(profile_json, '$.trainerName') = %s",
+            (user["id"], trainer_name),
+        )
+        if cur.fetchone()["cnt"] > 0:
+            cur.close()
+            db.close()
+            return jsonify({"error": "That trainer name is already taken."}), 409
+
+    cur.close()
     profile = _get_profile(user["id"], db)
-    # Merge trainer appearance fields
     for key in ("trainerName", "gender", "skinTone", "hairPath", "topPath", "bottomPath", "hatPath"):
         if key in data:
             profile[key] = data[key]
     _save_profile(user["id"], profile, db)
     db.close()
     return jsonify({"ok": True})
+
+
+@app.route("/api/me/check-name", methods=["GET"])
+def check_name():
+    """Returns {available: true} if the trainer name is not taken."""
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    name = request.args.get("name", "").strip()
+    if not name:
+        return jsonify({"available": False, "error": "Name is required."})
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+    cur.execute(
+        "SELECT COUNT(*) as cnt FROM triad_users "
+        "WHERE id != %s AND JSON_EXTRACT(profile_json, '$.trainerName') = %s",
+        (user["id"], name),
+    )
+    row = cur.fetchone()
+    cur.close()
+    db.close()
+    return jsonify({"available": row["cnt"] == 0})
 
 
 @app.route("/api/me/match-result", methods=["POST"])
