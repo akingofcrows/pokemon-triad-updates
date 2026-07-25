@@ -1,5 +1,5 @@
 {
   "version": "1.0.2",
   "apk_url": "https://github.com/akingofcrows/pokemon-triad-updates/releases/latest/download/app-release.apk",
-  "changelog": "Professor Oak update screen\nOrbiting Pokemon cards\nScreen stays on during updates\nOak-style text box"
+  "changelog": "Oak update screen with Kanto starters\nNative Android APK installer\nScreen stays on during updates\nSettings: Check for Updates"
 }
