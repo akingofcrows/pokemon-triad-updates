@@ -45,10 +45,16 @@ def init_db():
             card_id VARCHAR(64) NOT NULL,
             xp INT DEFAULT 0,
             level INT DEFAULT 1,
+            is_shiny TINYINT DEFAULT 0,
             FOREIGN KEY (user_id) REFERENCES triad_users(id),
             UNIQUE KEY user_card (user_id, card_id)
         )
     """)
+    # Migration: add is_shiny column if table existed before this feature
+    try:
+        cur.execute("ALTER TABLE triad_cards ADD COLUMN is_shiny TINYINT DEFAULT 0")
+    except:
+        pass
     cur.execute("""
         CREATE TABLE IF NOT EXISTS triad_decks (
             id VARCHAR(64) PRIMARY KEY,
@@ -181,6 +187,14 @@ def get_me():
     # User row for username / joined_at
     cur.execute("SELECT username, created_at FROM triad_users WHERE id = %s", (user["id"],))
     row = cur.fetchone()
+
+    # Retroactive friend code for profiles created before the feature existed
+    friend_code = profile.get("friendCode")
+    if not friend_code:
+        friend_code = _generate_friend_code(db)
+        profile["friendCode"] = friend_code
+        _save_profile(user["id"], profile, db)
+
     cur.close()
     db.close()
 
@@ -199,7 +213,7 @@ def get_me():
         "topPath": profile.get("topPath"),
         "bottomPath": profile.get("bottomPath"),
         "hatPath": profile.get("hatPath"),
-        "friendCode": profile.get("friendCode"),
+        "friendCode": friend_code,
     })
 
 
@@ -358,28 +372,36 @@ def post_match():
 
 @app.route("/api/me/claim-starter", methods=["POST"])
 def claim_starter():
-    """Grant the chosen starter deck cards to the player."""
+    """Grant the chosen starter deck cards to the player.
+    Accepts `cardIds` (list of strings) or `cards` (list of {cardId, shiny})."""
     user = _require_auth()
     if not user:
         return jsonify({"error": "Unauthorized"}), 401
 
     data = request.get_json()
-    card_ids = data.get("cardIds") or []
-    if not card_ids:
-        return jsonify({"error": "No card IDs provided"}), 400
+    # Support both old flat list and new {cardId, shiny} format
+    raw_cards = data.get("cards") or data.get("cardIds") or []
+    if not raw_cards:
+        return jsonify({"error": "No cards provided"}), 400
 
     db = get_db()
     cur = db.cursor()
-    for card_id in card_ids:
+    for entry in raw_cards:
+        if isinstance(entry, dict):
+            card_id = entry.get("cardId")
+            shiny = 1 if entry.get("shiny") else 0
+        else:
+            card_id = entry
+            shiny = 0
         cur.execute(
-            "INSERT INTO triad_cards (user_id, card_id, xp) VALUES (%s, %s, 0) "
+            "INSERT INTO triad_cards (user_id, card_id, xp, is_shiny) VALUES (%s, %s, 0, %s) "
             "ON DUPLICATE KEY UPDATE xp = xp",
-            (user["id"], card_id),
+            (user["id"], card_id, shiny),
         )
     db.commit()
     cur.close()
     db.close()
-    return jsonify({"ok": True, "granted": len(card_ids)})
+    return jsonify({"ok": True, "granted": len(raw_cards)})
 
 
 @app.route("/api/me/cards", methods=["GET"])
@@ -390,7 +412,7 @@ def get_cards():
 
     db = get_db()
     cur = db.cursor(dictionary=True)
-    cur.execute("SELECT card_id AS cardId, xp, level FROM triad_cards WHERE user_id = %s", (user["id"],))
+    cur.execute("SELECT card_id AS cardId, xp, level, is_shiny AS shiny FROM triad_cards WHERE user_id = %s", (user["id"],))
     cards = cur.fetchall()
     cur.close()
     db.close()
