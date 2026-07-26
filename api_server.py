@@ -109,6 +109,16 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES triad_users(id)
         )
     """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS triad_chat (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            sender_name VARCHAR(64) NOT NULL,
+            message TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES triad_users(id)
+        )
+    """)
     # Drop deprecated profile_json column if it exists
     try:
         cur.execute("ALTER TABLE triad_users DROP COLUMN profile_json")
@@ -583,6 +593,48 @@ def evolve():
     user = _require_auth()
     if not user:
         return jsonify({"error": "Unauthorized"}), 401
+    return jsonify({"ok": True})
+
+
+@app.route("/api/chat", methods=["GET"])
+def get_chat():
+    """Return the last 50 chat messages (public, no auth required to read)."""
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+    cur.execute(
+        "SELECT c.id, c.sender_name AS sender, c.message AS text, c.created_at "
+        "FROM triad_chat c ORDER BY c.id DESC LIMIT 50"
+    )
+    rows = cur.fetchall()
+    cur.close()
+    db.close()
+    rows.reverse()
+    for r in rows:
+        r["created_at"] = str(r["created_at"])
+    return jsonify(rows)
+
+
+@app.route("/api/chat", methods=["POST"])
+def post_chat():
+    """Send a chat message. Requires auth."""
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json()
+    text = (data.get("text") or "").strip()
+    sender = (data.get("sender") or user["username"]).strip()
+    if not text or len(text) > 500:
+        return jsonify({"error": "Message must be 1-500 characters"}), 400
+
+    db = get_db()
+    cur = db.cursor()
+    cur.execute(
+        "INSERT INTO triad_chat (user_id, sender_name, message) VALUES (%s, %s, %s)",
+        (user["id"], sender, text),
+    )
+    db.commit()
+    cur.close()
+    db.close()
     return jsonify({"ok": True})
 
 
