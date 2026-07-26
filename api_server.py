@@ -219,6 +219,7 @@ def get_me():
         "bottomPath": profile.get("bottomPath"),
         "hatPath": profile.get("hatPath"),
         "friendCode": friend_code,
+        "location": profile.get("location", "Pallet Town"),
     })
 
 
@@ -251,6 +252,10 @@ def put_character():
     # Generate friend code on first character save
     if not profile.get("friendCode"):
         profile["friendCode"] = _generate_friend_code(db)
+
+    # Default starting location
+    if not profile.get("location"):
+        profile["location"] = "Pallet Town"
 
     for key in ("trainerName", "gender", "skinTone", "hairPath", "topPath", "bottomPath", "hatPath"):
         if key in data:
