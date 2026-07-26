@@ -25,7 +25,7 @@ def get_db():
 
 
 def init_db():
-    """Create triad-prefixed tables inside the cardmmo database."""
+    """Create triad-prefixed tables inside the pokemon_triad database."""
     db = get_db()
     cur = db.cursor()
     cur.execute("""
@@ -34,8 +34,28 @@ def init_db():
             username VARCHAR(64) UNIQUE NOT NULL,
             password_hash VARCHAR(128) NOT NULL,
             token VARCHAR(128) UNIQUE,
-            profile_json TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS triad_characters (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL UNIQUE,
+            trainer_name VARCHAR(64) UNIQUE,
+            gender VARCHAR(16),
+            skin_tone VARCHAR(32),
+            hair_path VARCHAR(256),
+            top_path VARCHAR(256),
+            bottom_path VARCHAR(256),
+            hat_path VARCHAR(256),
+            friend_code VARCHAR(16) UNIQUE,
+            location VARCHAR(128) DEFAULT 'Pallet Town',
+            money INT DEFAULT 0,
+            wins INT DEFAULT 0,
+            losses INT DEFAULT 0,
+            draws INT DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES triad_users(id)
         )
     """)
     cur.execute("""
@@ -45,21 +65,40 @@ def init_db():
             card_id VARCHAR(64) NOT NULL,
             xp INT DEFAULT 0,
             level INT DEFAULT 1,
+            bonus_north INT DEFAULT 0,
+            bonus_south INT DEFAULT 0,
+            bonus_east INT DEFAULT 0,
+            bonus_west INT DEFAULT 0,
             is_shiny TINYINT DEFAULT 0,
+            source VARCHAR(64) DEFAULT NULL,
             FOREIGN KEY (user_id) REFERENCES triad_users(id),
             UNIQUE KEY user_card (user_id, card_id)
         )
     """)
-    # Migration: add is_shiny column if table existed before this feature
-    try:
-        cur.execute("ALTER TABLE triad_cards ADD COLUMN is_shiny TINYINT DEFAULT 0")
-    except:
-        pass
-    # Migration: add source column
-    try:
-        cur.execute("ALTER TABLE triad_cards ADD COLUMN source VARCHAR(64) DEFAULT NULL")
-    except:
-        pass
+    # Migration: add columns if table existed before
+    for col, coldef in [
+        ("is_shiny", "TINYINT DEFAULT 0"),
+        ("source", "VARCHAR(64) DEFAULT NULL"),
+        ("bonus_north", "INT DEFAULT 0"),
+        ("bonus_south", "INT DEFAULT 0"),
+        ("bonus_east", "INT DEFAULT 0"),
+        ("bonus_west", "INT DEFAULT 0"),
+    ]:
+        try:
+            cur.execute(f"ALTER TABLE triad_cards ADD COLUMN {col} {coldef}")
+        except:
+            pass
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS triad_favorites (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            card_id VARCHAR(64) NOT NULL,
+            sort_order INT DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES triad_users(id),
+            UNIQUE KEY user_fav (user_id, card_id)
+        )
+    """)
     cur.execute("""
         CREATE TABLE IF NOT EXISTS triad_decks (
             id VARCHAR(64) PRIMARY KEY,
@@ -70,31 +109,63 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES triad_users(id)
         )
     """)
+    # Drop deprecated profile_json column if it exists
+    try:
+        cur.execute("ALTER TABLE triad_users DROP COLUMN profile_json")
+    except:
+        pass
     db.commit()
     cur.close()
     db.close()
 
 
-def _get_profile(user_id, db):
-    """Load the user's profile_json, or return an empty dict."""
+def _get_character(user_id, db):
+    """Load the character row, or return an empty dict."""
     cur = db.cursor(dictionary=True)
-    cur.execute("SELECT profile_json FROM triad_users WHERE id = %s", (user_id,))
+    cur.execute("SELECT * FROM triad_characters WHERE user_id = %s", (user_id,))
     row = cur.fetchone()
     cur.close()
-    if row and row["profile_json"]:
-        try:
-            return json.loads(row["profile_json"])
-        except json.JSONDecodeError:
-            pass
+    if row:
+        return {k: row[k] for k in row if row[k] is not None}
     return {}
 
-def _save_profile(user_id, profile, db):
-    """Persist the profile_json dict."""
+def _ensure_character(user_id, db):
+    """Create a default character row if one doesn't exist, return the dict."""
+    c = _get_character(user_id, db)
+    if not c:
+        cur = db.cursor()
+        cur.execute("INSERT INTO triad_characters (user_id, location) VALUES (%s, 'Pallet Town')", (user_id,))
+        db.commit()
+        cur.close()
+        return {"location": "Pallet Town"}
+    return c
+
+def _save_character(user_id, fields, db):
+    """Persist character fields dict."""
+    if not fields:
+        return
     cur = db.cursor()
-    cur.execute("UPDATE triad_users SET profile_json = %s WHERE id = %s",
-                (json.dumps(profile), user_id))
-    db.commit()
+    cols = []
+    vals = []
+    for k, v in fields.items():
+        col = _char_col(k)
+        if col:
+            cols.append(f"{col} = %s")
+            vals.append(v)
+    if cols:
+        vals.append(user_id)
+        cur.execute(f"UPDATE triad_characters SET {', '.join(cols)} WHERE user_id = %s", vals)
+        db.commit()
     cur.close()
+
+def _char_col(key):
+    """Map JSON camelCase keys to database snake_case columns."""
+    return {
+        "trainerName": "trainer_name", "gender": "gender", "skinTone": "skin_tone",
+        "hairPath": "hair_path", "topPath": "top_path", "bottomPath": "bottom_path",
+        "hatPath": "hat_path", "friendCode": "friend_code", "location": "location",
+        "money": "money", "wins": "wins", "losses": "losses", "draws": "draws",
+    }.get(key)
 
 
 # ── Auth helpers ─────────────────────────────────────────────────────────
@@ -182,23 +253,20 @@ def get_me():
     db = get_db()
     cur = db.cursor(dictionary=True)
 
-    # Owned card ids from triad_cards
+    # Owned card ids
     cur.execute("SELECT card_id FROM triad_cards WHERE user_id = %s", (user["id"],))
     owned_card_ids = [r["card_id"] for r in cur.fetchall()]
 
-    # Full profile
-    profile = _get_profile(user["id"], db)
+    # Character data
+    char = _ensure_character(user["id"], db)
+    friend_code = char.get("friendCode")
+    if not friend_code:
+        friend_code = _generate_friend_code(db)
+        _save_character(user["id"], {"friendCode": friend_code}, db)
 
     # User row for username / joined_at
     cur.execute("SELECT username, created_at FROM triad_users WHERE id = %s", (user["id"],))
     row = cur.fetchone()
-
-    # Retroactive friend code for profiles created before the feature existed
-    friend_code = profile.get("friendCode")
-    if not friend_code:
-        friend_code = _generate_friend_code(db)
-        profile["friendCode"] = friend_code
-        _save_profile(user["id"], profile, db)
 
     cur.close()
     db.close()
@@ -206,20 +274,21 @@ def get_me():
     return jsonify({
         "playerName": row["username"],
         "ownedCardIds": owned_card_ids,
-        "wins": profile.get("wins", 0),
-        "losses": profile.get("losses", 0),
-        "draws": profile.get("draws", 0),
-        "money": profile.get("money", 0),
+        "wins": char.get("wins", 0),
+        "losses": char.get("losses", 0),
+        "draws": char.get("draws", 0),
+        "money": char.get("money", 0),
         "joinedAt": str(row["created_at"]) if row["created_at"] else None,
-        "trainerName": profile.get("trainerName"),
-        "gender": profile.get("gender"),
-        "skinTone": profile.get("skinTone"),
-        "hairPath": profile.get("hairPath"),
-        "topPath": profile.get("topPath"),
-        "bottomPath": profile.get("bottomPath"),
-        "hatPath": profile.get("hatPath"),
+        "trainerName": char.get("trainerName"),
+        "gender": char.get("gender"),
+        "skinTone": char.get("skinTone"),
+        "hairPath": char.get("hairPath"),
+        "topPath": char.get("topPath"),
+        "bottomPath": char.get("bottomPath"),
+        "hatPath": char.get("hatPath"),
         "friendCode": friend_code,
-        "location": profile.get("location", "Pallet Town"),
+        "location": char.get("location", "Pallet Town"),
+        "favoriteCardIds": _get_favorites(user["id"], db),
     })
 
 
@@ -237,8 +306,7 @@ def put_character():
     # Check trainer name uniqueness (exclude current user)
     if trainer_name:
         cur.execute(
-            "SELECT COUNT(*) as cnt FROM triad_users "
-            "WHERE id != %s AND JSON_EXTRACT(profile_json, '$.trainerName') = %s",
+            "SELECT COUNT(*) as cnt FROM triad_characters WHERE user_id != %s AND trainer_name = %s",
             (user["id"], trainer_name),
         )
         if cur.fetchone()["cnt"] > 0:
@@ -247,20 +315,18 @@ def put_character():
             return jsonify({"error": "That trainer name is already taken."}), 409
 
     cur.close()
-    profile = _get_profile(user["id"], db)
 
-    # Generate friend code on first character save
-    if not profile.get("friendCode"):
-        profile["friendCode"] = _generate_friend_code(db)
-
-    # Default starting location
-    if not profile.get("location"):
-        profile["location"] = "Your Bedroom"
-
+    # Ensure character row exists
+    char = _ensure_character(user["id"], db)
+    updates = {}
+    if not char.get("friendCode"):
+        updates["friendCode"] = _generate_friend_code(db)
+    if not char.get("location"):
+        updates["location"] = "Your Bedroom"
     for key in ("trainerName", "gender", "skinTone", "hairPath", "topPath", "bottomPath", "hatPath"):
         if key in data:
-            profile[key] = data[key]
-    _save_profile(user["id"], profile, db)
+            updates[key] = data[key]
+    _save_character(user["id"], updates, db)
     db.close()
     return jsonify({"ok": True})
 
@@ -278,9 +344,8 @@ def put_location():
         return jsonify({"error": "location is required."}), 400
 
     db = get_db()
-    profile = _get_profile(user["id"], db)
-    profile["location"] = loc
-    _save_profile(user["id"], profile, db)
+    _ensure_character(user["id"], db)
+    _save_character(user["id"], {"location": loc}, db)
     db.close()
     return jsonify({"ok": True, "location": loc})
 
@@ -291,16 +356,11 @@ def _generate_friend_code(db):
     cur = db.cursor(dictionary=True)
     for _ in range(100):
         code = ''.join(str(random.randint(0, 9)) for _ in range(12))
-        cur.execute(
-            "SELECT COUNT(*) as cnt FROM triad_users "
-            "WHERE JSON_EXTRACT(profile_json, '$.friendCode') = %s",
-            (code,),
-        )
+        cur.execute("SELECT COUNT(*) as cnt FROM triad_characters WHERE friend_code = %s", (code,))
         if cur.fetchone()["cnt"] == 0:
             cur.close()
             return code
     cur.close()
-    # Fallback: use timestamp-based code
     import time
     return str(int(time.time() * 1000))[-12:].zfill(12)
 
@@ -319,8 +379,7 @@ def check_name():
     db = get_db()
     cur = db.cursor(dictionary=True)
     cur.execute(
-        "SELECT COUNT(*) as cnt FROM triad_users "
-        "WHERE id != %s AND JSON_EXTRACT(profile_json, '$.trainerName') = %s",
+        "SELECT COUNT(*) as cnt FROM triad_characters WHERE user_id != %s AND trainer_name = %s",
         (user["id"], name),
     )
     row = cur.fetchone()
@@ -331,8 +390,7 @@ def check_name():
 
 @app.route("/api/me/character", methods=["DELETE"])
 def delete_character():
-    """Delete the player's character profile and all cards. Requires
-    `trainerName` in the JSON body to match the current profile name."""
+    """Delete the player's character profile and all cards."""
     user = _require_auth()
     if not user:
         return jsonify({"error": "Unauthorized"}), 401
@@ -344,19 +402,15 @@ def delete_character():
 
     db = get_db()
     cur = db.cursor(dictionary=True)
-
-    # Verify the name matches
-    profile = _get_profile(user["id"], db)
-    current_name = (profile.get("trainerName") or "").strip()
+    char = _get_character(user["id"], db)
+    current_name = (char.get("trainerName") or "").strip()
     if current_name.lower() != confirm_name.lower():
         cur.close()
         db.close()
         return jsonify({"error": "Trainer name does not match."}), 403
 
-    # Delete all cards
     cur.execute("DELETE FROM triad_cards WHERE user_id = %s", (user["id"],))
-    # Clear profile
-    cur.execute("UPDATE triad_users SET profile_json = NULL WHERE id = %s", (user["id"],))
+    cur.execute("DELETE FROM triad_characters WHERE user_id = %s", (user["id"],))
     db.commit()
     cur.close()
     db.close()
@@ -384,15 +438,11 @@ def post_match():
             (user["id"], card_id, count, count),
         )
 
-    # Update win/loss/draw counters
-    profile = _get_profile(user["id"], db)
-    if outcome == "win":
-        profile["wins"] = profile.get("wins", 0) + 1
-    elif outcome == "loss":
-        profile["losses"] = profile.get("losses", 0) + 1
-    elif outcome == "draw":
-        profile["draws"] = profile.get("draws", 0) + 1
-    _save_profile(user["id"], profile, db)
+    # Update win/loss/draw counters on character
+    _ensure_character(user["id"], db)
+    field = {"win": "wins", "loss": "losses", "draw": "draws"}.get(outcome)
+    if field:
+        cur.execute(f"UPDATE triad_characters SET {field} = {field} + 1 WHERE user_id = %s", (user["id"],))
 
     db.commit()
     cur.close()
@@ -434,6 +484,37 @@ def claim_starter():
     return jsonify({"ok": True, "granted": len(raw_cards)})
 
 
+@app.route("/api/me/cards", methods=["PUT"])
+def put_cards():
+    """Save card growth data (XP, level, bonuses) from the client."""
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json()
+    cards = data.get("cards") or []
+    db = get_db()
+    cur = db.cursor()
+    for c in cards:
+        cur.execute(
+            """INSERT INTO triad_cards (user_id, card_id, xp, level,
+               bonus_north, bonus_south, bonus_east, bonus_west, is_shiny, source)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+               ON DUPLICATE KEY UPDATE
+               xp = VALUES(xp), level = VALUES(level),
+               bonus_north = VALUES(bonus_north), bonus_south = VALUES(bonus_south),
+               bonus_east = VALUES(bonus_east), bonus_west = VALUES(bonus_west),
+               is_shiny = VALUES(is_shiny), source = VALUES(source)""",
+            (user["id"], c.get("cardId"), c.get("xp", 0), c.get("level", 1),
+             c.get("bonusNorth", 0), c.get("bonusSouth", 0),
+             c.get("bonusEast", 0), c.get("bonusWest", 0),
+             1 if c.get("shiny") else 0, c.get("source")),
+        )
+    db.commit()
+    cur.close()
+    db.close()
+    return jsonify({"ok": True})
+
+
 @app.route("/api/me/cards", methods=["GET"])
 def get_cards():
     user = _require_auth()
@@ -442,11 +523,59 @@ def get_cards():
 
     db = get_db()
     cur = db.cursor(dictionary=True)
-    cur.execute("SELECT card_id AS cardId, xp, level, is_shiny AS shiny, source FROM triad_cards WHERE user_id = %s", (user["id"],))
+    cur.execute("""
+        SELECT card_id AS cardId, xp, level,
+               bonus_north AS bonusNorth, bonus_south AS bonusSouth,
+               bonus_east AS bonusEast, bonus_west AS bonusWest,
+               is_shiny AS shiny, source
+        FROM triad_cards WHERE user_id = %s
+    """, (user["id"],))
     cards = cur.fetchall()
     cur.close()
     db.close()
     return jsonify(cards)
+
+
+def _get_favorites(user_id, db):
+    cur = db.cursor(dictionary=True)
+    cur.execute("SELECT card_id FROM triad_favorites WHERE user_id = %s ORDER BY sort_order", (user_id,))
+    favs = [r["card_id"] for r in cur.fetchall()]
+    cur.close()
+    return favs
+
+
+@app.route("/api/me/favorites", methods=["GET"])
+def get_favorites():
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    db = get_db()
+    favs = _get_favorites(user["id"], db)
+    db.close()
+    return jsonify(favs)
+
+
+@app.route("/api/me/favorites", methods=["PUT"])
+def put_favorites():
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json()
+    card_ids = data.get("cardIds") or []
+    if len(card_ids) > 3:
+        return jsonify({"error": "Max 3 favorites"}), 400
+    db = get_db()
+    cur = db.cursor()
+    cur.execute("DELETE FROM triad_favorites WHERE user_id = %s", (user["id"],))
+    for i, card_id in enumerate(card_ids):
+        cur.execute(
+            "INSERT INTO triad_favorites (user_id, card_id, sort_order) VALUES (%s, %s, %s)",
+            (user["id"], card_id, i),
+        )
+    db.commit()
+    cur.close()
+    db.close()
+    return jsonify({"ok": True, "favoriteCardIds": card_ids})
 
 
 @app.route("/api/me/evolve", methods=["POST"])
