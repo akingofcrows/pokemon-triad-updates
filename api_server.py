@@ -16,7 +16,7 @@ DB_CONFIG = {
     "port": int(os.environ.get("DB_PORT", 3307)),
     "user": os.environ.get("DB_USER", "fablewood_user"),
     "password": os.environ.get("DB_PASS", "StrongStr0ngPass!"),
-    "database": os.environ.get("DB_NAME", "cardmmo"),
+    "database": os.environ.get("DB_NAME", "pokemon_triad"),
 }
 
 
