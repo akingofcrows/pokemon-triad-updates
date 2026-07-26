@@ -55,6 +55,11 @@ def init_db():
         cur.execute("ALTER TABLE triad_cards ADD COLUMN is_shiny TINYINT DEFAULT 0")
     except:
         pass
+    # Migration: add source column
+    try:
+        cur.execute("ALTER TABLE triad_cards ADD COLUMN source VARCHAR(64) DEFAULT NULL")
+    except:
+        pass
     cur.execute("""
         CREATE TABLE IF NOT EXISTS triad_decks (
             id VARCHAR(64) PRIMARY KEY,
@@ -394,7 +399,7 @@ def claim_starter():
             card_id = entry
             shiny = 0
         cur.execute(
-            "INSERT INTO triad_cards (user_id, card_id, xp, is_shiny) VALUES (%s, %s, 0, %s) "
+            "INSERT INTO triad_cards (user_id, card_id, xp, is_shiny, source) VALUES (%s, %s, 0, %s, 'starter_deck') "
             "ON DUPLICATE KEY UPDATE xp = xp",
             (user["id"], card_id, shiny),
         )
@@ -412,7 +417,7 @@ def get_cards():
 
     db = get_db()
     cur = db.cursor(dictionary=True)
-    cur.execute("SELECT card_id AS cardId, xp, level, is_shiny AS shiny FROM triad_cards WHERE user_id = %s", (user["id"],))
+    cur.execute("SELECT card_id AS cardId, xp, level, is_shiny AS shiny, source FROM triad_cards WHERE user_id = %s", (user["id"],))
     cards = cur.fetchall()
     cur.close()
     db.close()
