@@ -1,0 +1,424 @@
+{
+  "chains": [
+    {
+      "from": "card_bulbasaur_1",
+      "to": "card_ivysaur_1",
+      "level": 16
+    },
+    {
+      "from": "card_ivysaur_1",
+      "to": "card_venusaur_1",
+      "level": 32
+    },
+    {
+      "from": "card_charmander_1",
+      "to": "card_charmeleon_1",
+      "level": 16
+    },
+    {
+      "from": "card_charmeleon_1",
+      "to": "card_charizard_1",
+      "level": 36
+    },
+    {
+      "from": "card_squirtle_1",
+      "to": "card_wartortle_1",
+      "level": 16
+    },
+    {
+      "from": "card_wartortle_1",
+      "to": "card_blastoise_1",
+      "level": 36
+    },
+    {
+      "from": "card_caterpie_1",
+      "to": "card_metapod_1",
+      "level": 7
+    },
+    {
+      "from": "card_metapod_1",
+      "to": "card_butterfree_1",
+      "level": 10
+    },
+    {
+      "from": "card_weedle_1",
+      "to": "card_kakuna_1",
+      "level": 7
+    },
+    {
+      "from": "card_kakuna_1",
+      "to": "card_beedrill_1",
+      "level": 10
+    },
+    {
+      "from": "card_pidgey_1",
+      "to": "card_pidgeotto_1",
+      "level": 16
+    },
+    {
+      "from": "card_pidgeotto_1",
+      "to": "card_pidgeot_1",
+      "level": 32
+    },
+    {
+      "from": "card_rattata_1",
+      "to": "card_raticate_1",
+      "level": 20
+    },
+    {
+      "from": "card_spearow_1",
+      "to": "card_fearow_1",
+      "level": 16
+    },
+    {
+      "from": "card_eevee_1",
+      "to": "card_vaporeon_1",
+      "level": 16
+    },
+    {
+      "from": "card_eevee_1",
+      "to": "card_jolteon_1",
+      "level": 16
+    },
+    {
+      "from": "card_eevee_1",
+      "to": "card_flareon_1",
+      "level": 16
+    },
+    {
+      "from": "card_ekans_1",
+      "to": "card_arbok_1",
+      "level": 16
+    },
+    {
+      "from": "card_pikachu_1",
+      "to": "card_raichu_1",
+      "level": 16
+    },
+    {
+      "from": "card_sandshrew_1",
+      "to": "card_sandslash_1",
+      "level": 16
+    },
+    {
+      "from": "card_clefairy_1",
+      "to": "card_clefable_1",
+      "level": 16
+    },
+    {
+      "from": "card_vulpix_1",
+      "to": "card_ninetales_1",
+      "level": 16
+    },
+    {
+      "from": "card_jigglypuff_1",
+      "to": "card_wigglytuff_1",
+      "level": 16
+    },
+    {
+      "from": "card_zubat_1",
+      "to": "card_golbat_1",
+      "level": 16
+    },
+    {
+      "from": "card_nidoranf_1",
+      "to": "card_nidorina_1",
+      "level": 16
+    },
+    {
+      "from": "card_nidorina_1",
+      "to": "card_nidoqueen_1",
+      "level": 16
+    },
+    {
+      "from": "card_nidoranm_1",
+      "to": "card_nidorino_1",
+      "level": 16
+    },
+    {
+      "from": "card_nidorino_1",
+      "to": "card_nidoking_1",
+      "level": 16
+    },
+    {
+      "from": "card_oddish_1",
+      "to": "card_gloom_1",
+      "level": 16
+    },
+    {
+      "from": "card_gloom_1",
+      "to": "card_vileplume_1",
+      "level": 32
+    },
+    {
+      "from": "card_gloom_1",
+      "to": "card_bellossom_1",
+      "level": 32
+    },
+    {
+      "from": "card_paras_1",
+      "to": "card_parasect_1",
+      "level": 16
+    },
+    {
+      "from": "card_venonat_1",
+      "to": "card_venomoth_1",
+      "level": 16
+    },
+    {
+      "from": "card_diglett_1",
+      "to": "card_dugtrio_1",
+      "level": 26
+    },
+    {
+      "from": "card_meowth_1",
+      "to": "card_persian_1",
+      "level": 16
+    },
+    {
+      "from": "card_porygon_1",
+      "to": "card_porygon2_1",
+      "level": 16
+    },
+    {
+      "from": "card_psyduck_1",
+      "to": "card_golduck_1",
+      "level": 16
+    },
+    {
+      "from": "card_mankey_1",
+      "to": "card_primeape_1",
+      "level": 16
+    },
+    {
+      "from": "card_growlithe_1",
+      "to": "card_arcanine_1",
+      "level": 16
+    },
+    {
+      "from": "card_poliwag_1",
+      "to": "card_poliwhirl_1",
+      "level": 16
+    },
+    {
+      "from": "card_poliwhirl_1",
+      "to": "card_poliwrath_1",
+      "level": 32
+    },
+    {
+      "from": "card_abra_1",
+      "to": "card_kadabra_1",
+      "level": 16
+    },
+    {
+      "from": "card_kadabra_1",
+      "to": "card_alakazam_1",
+      "level": 32
+    },
+    {
+      "from": "card_machop_1",
+      "to": "card_machoke_1",
+      "level": 16
+    },
+    {
+      "from": "card_machoke_1",
+      "to": "card_machamp_1",
+      "level": 32
+    },
+    {
+      "from": "card_bellsprout_1",
+      "to": "card_weepinbell_1",
+      "level": 16
+    },
+    {
+      "from": "card_weepinbell_1",
+      "to": "card_victreebel_1",
+      "level": 32
+    },
+    {
+      "from": "card_tentacool_1",
+      "to": "card_tentacruel_1",
+      "level": 16
+    },
+    {
+      "from": "card_geodude_1",
+      "to": "card_graveler_1",
+      "level": 16
+    },
+    {
+      "from": "card_graveler_1",
+      "to": "card_golem_1",
+      "level": 32
+    },
+    {
+      "from": "card_ponyta_1",
+      "to": "card_rapidash_1",
+      "level": 16
+    },
+    {
+      "from": "card_slowpoke_1",
+      "to": "card_slowbro_1",
+      "level": 16
+    },
+    {
+      "from": "card_magnemite_1",
+      "to": "card_magneton_1",
+      "level": 16
+    },
+    {
+      "from": "card_doduo_1",
+      "to": "card_dodrio_1",
+      "level": 16
+    },
+    {
+      "from": "card_seel_1",
+      "to": "card_dewgong_1",
+      "level": 16
+    },
+    {
+      "from": "card_grimer_1",
+      "to": "card_muk_1",
+      "level": 16
+    },
+    {
+      "from": "card_shellder_1",
+      "to": "card_cloyster_1",
+      "level": 16
+    },
+    {
+      "from": "card_gastly_1",
+      "to": "card_haunter_1",
+      "level": 16
+    },
+    {
+      "from": "card_haunter_1",
+      "to": "card_gengar_1",
+      "level": 32
+    },
+    {
+      "from": "card_onix_1",
+      "to": "card_steelix_1",
+      "level": 16
+    },
+    {
+      "from": "card_drowzee_1",
+      "to": "card_hypno_1",
+      "level": 16
+    },
+    {
+      "from": "card_krabby_1",
+      "to": "card_kingler_1",
+      "level": 16
+    },
+    {
+      "from": "card_voltorb_1",
+      "to": "card_electrode_1",
+      "level": 16
+    },
+    {
+      "from": "card_exeggcute_1",
+      "to": "card_exeggutor_1",
+      "level": 16
+    },
+    {
+      "from": "card_cubone_1",
+      "to": "card_marowak_1",
+      "level": 16
+    },
+    {
+      "from": "card_koffing_1",
+      "to": "card_weezing_1",
+      "level": 16
+    },
+    {
+      "from": "card_rhyhorn_1",
+      "to": "card_rhydon_1",
+      "level": 16
+    },
+    {
+      "from": "card_horsea_1",
+      "to": "card_seadra_1",
+      "level": 16
+    },
+    {
+      "from": "card_goldeen_1",
+      "to": "card_seaking_1",
+      "level": 16
+    },
+    {
+      "from": "card_staryu_1",
+      "to": "card_starmie_1",
+      "level": 16
+    },
+    {
+      "from": "card_magikarp_1",
+      "to": "card_gyarados_1",
+      "level": 16
+    },
+    {
+      "from": "card_eevee_1",
+      "to": "card_vaporeon_1",
+      "level": 16
+    },
+    {
+      "from": "card_eevee_1",
+      "to": "card_jolteon_1",
+      "level": 16
+    },
+    {
+      "from": "card_eevee_1",
+      "to": "card_flareon_1",
+      "level": 16
+    },
+    {
+      "from": "card_omanyte_1",
+      "to": "card_omastar_1",
+      "level": 16
+    },
+    {
+      "from": "card_kabuto_1",
+      "to": "card_kabutops_1",
+      "level": 16
+    },
+    {
+      "from": "card_dratini_1",
+      "to": "card_dragonair_1",
+      "level": 16
+    },
+    {
+      "from": "card_dragonair_1",
+      "to": "card_dragonite_1",
+      "level": 32
+    },
+    {
+      "from": "card_ivysaur_1_v1",
+      "to": "card_venusaur_1_v1",
+      "level": 32
+    },
+    {
+      "from": "card_bulbasaur_1_v4",
+      "to": "card_ivysaur_1_v1",
+      "level": 16
+    },
+    {
+      "from": "card_rattata_1_v1",
+      "to": "card_raticate_1_v1",
+      "level": 16
+    },
+    {
+      "from": "card_sandshrew_1_v1",
+      "to": "card_sandslash_1_v1",
+      "level": 16
+    },
+    {
+      "from": "card_pikachu_1_v1",
+      "to": "card_raichu_1_v1",
+      "level": 16
+    },
+    {
+      "from": "card_nidoran_f_1",
+      "to": "card_nidorina_1",
+      "level": 16
+    }
+  ]
+}

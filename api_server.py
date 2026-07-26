@@ -4,7 +4,7 @@ import json
 import os
 import secrets
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 import mysql.connector
 
 app = Flask(__name__)
@@ -532,6 +532,33 @@ def delete_deck(deck_id):
     db.close()
     return jsonify({"ok": True})
 
+
+# ── Asset delivery (delta updates) ──────────────────────────────────────
+ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+
+@app.route("/api/assets/manifest", methods=["GET"])
+def asset_manifest():
+    """Returns {version, files: {path: md5}} for all cached assets."""
+    manifest_path = os.path.join(ASSETS_DIR, "manifest.json")
+    if os.path.exists(manifest_path):
+        with open(manifest_path, "r") as f:
+            return jsonify(json.load(f))
+    # Generate on-the-fly if no manifest file exists
+    files = {}
+    for root, _, filenames in os.walk(ASSETS_DIR):
+        for fn in filenames:
+            if fn == "manifest.json":
+                continue
+            full = os.path.join(root, fn)
+            rel = os.path.relpath(full, ASSETS_DIR).replace("\\", "/")
+            with open(full, "rb") as f:
+                files[rel] = hashlib.md5(f.read()).hexdigest()
+    return jsonify({"version": 1, "files": files})
+
+@app.route("/api/assets/<path:filepath>", methods=["GET"])
+def serve_asset(filepath):
+    """Serve individual asset files from the assets directory."""
+    return send_from_directory(ASSETS_DIR, filepath)
 
 # ── Main ─────────────────────────────────────────────────────────────────
 if __name__ == "__main__":

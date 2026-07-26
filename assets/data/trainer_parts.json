@@ -1,0 +1,2876 @@
+{
+  "male": {
+    "skinTones": [
+      {
+        "id": "pale",
+        "label": "Pale",
+        "file": "trainers/male/base/pale.png"
+      },
+      {
+        "id": "light",
+        "label": "Light",
+        "file": "trainers/male/base/light.png"
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "file": "trainers/male/base/medium.png"
+      },
+      {
+        "id": "dark",
+        "label": "Dark",
+        "file": "trainers/male/base/dark.png"
+      }
+    ],
+    "hair": [
+      {
+        "id": "hair_1",
+        "label": "Hair 1",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/hair/hair_1__black.png"
+          },
+          {
+            "id": "blonde",
+            "label": "Blonde",
+            "file": "trainers/male/hair/hair_1__blonde.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/male/hair/hair_1__blue.png"
+          },
+          {
+            "id": "brown",
+            "label": "Brown",
+            "file": "trainers/male/hair/hair_1__brown.png"
+          },
+          {
+            "id": "cyan",
+            "label": "Cyan",
+            "file": "trainers/male/hair/hair_1__cyan.png"
+          },
+          {
+            "id": "ginger",
+            "label": "Ginger",
+            "file": "trainers/male/hair/hair_1__ginger.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/male/hair/hair_1__green.png"
+          },
+          {
+            "id": "pink",
+            "label": "Pink",
+            "file": "trainers/male/hair/hair_1__pink.png"
+          },
+          {
+            "id": "purple",
+            "label": "Purple",
+            "file": "trainers/male/hair/hair_1__purple.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/hair/hair_1__red.png"
+          },
+          {
+            "id": "white",
+            "label": "White",
+            "file": "trainers/male/hair/hair_1__white.png"
+          }
+        ]
+      },
+      {
+        "id": "hair_2",
+        "label": "Hair 2",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/hair/hair_2__black.png"
+          },
+          {
+            "id": "blonde",
+            "label": "Blonde",
+            "file": "trainers/male/hair/hair_2__blonde.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/male/hair/hair_2__blue.png"
+          },
+          {
+            "id": "brown",
+            "label": "Brown",
+            "file": "trainers/male/hair/hair_2__brown.png"
+          },
+          {
+            "id": "cyan",
+            "label": "Cyan",
+            "file": "trainers/male/hair/hair_2__cyan.png"
+          },
+          {
+            "id": "ginger",
+            "label": "Ginger",
+            "file": "trainers/male/hair/hair_2__ginger.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/male/hair/hair_2__green.png"
+          },
+          {
+            "id": "pink",
+            "label": "Pink",
+            "file": "trainers/male/hair/hair_2__pink.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/hair/hair_2__red.png"
+          },
+          {
+            "id": "violet",
+            "label": "Violet",
+            "file": "trainers/male/hair/hair_2__violet.png"
+          },
+          {
+            "id": "white",
+            "label": "White",
+            "file": "trainers/male/hair/hair_2__white.png"
+          }
+        ]
+      },
+      {
+        "id": "hair_3",
+        "label": "Hair 3",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/hair/hair_3__black.png"
+          },
+          {
+            "id": "blond",
+            "label": "Blond",
+            "file": "trainers/male/hair/hair_3__blond.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/male/hair/hair_3__blue.png"
+          },
+          {
+            "id": "brown",
+            "label": "Brown",
+            "file": "trainers/male/hair/hair_3__brown.png"
+          },
+          {
+            "id": "cyan",
+            "label": "Cyan",
+            "file": "trainers/male/hair/hair_3__cyan.png"
+          },
+          {
+            "id": "ginger",
+            "label": "Ginger",
+            "file": "trainers/male/hair/hair_3__ginger.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/male/hair/hair_3__green.png"
+          },
+          {
+            "id": "pink",
+            "label": "Pink",
+            "file": "trainers/male/hair/hair_3__pink.png"
+          },
+          {
+            "id": "purple",
+            "label": "Purple",
+            "file": "trainers/male/hair/hair_3__purple.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/hair/hair_3__red.png"
+          },
+          {
+            "id": "white",
+            "label": "White",
+            "file": "trainers/male/hair/hair_3__white.png"
+          }
+        ]
+      },
+      {
+        "id": "hair_4",
+        "label": "Hair 4",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/hair/hair_4__black.png"
+          },
+          {
+            "id": "blond",
+            "label": "Blond",
+            "file": "trainers/male/hair/hair_4__blond.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/male/hair/hair_4__blue.png"
+          },
+          {
+            "id": "brown",
+            "label": "Brown",
+            "file": "trainers/male/hair/hair_4__brown.png"
+          },
+          {
+            "id": "cyan",
+            "label": "Cyan",
+            "file": "trainers/male/hair/hair_4__cyan.png"
+          },
+          {
+            "id": "ginger",
+            "label": "Ginger",
+            "file": "trainers/male/hair/hair_4__ginger.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/male/hair/hair_4__green.png"
+          },
+          {
+            "id": "pink",
+            "label": "Pink",
+            "file": "trainers/male/hair/hair_4__pink.png"
+          },
+          {
+            "id": "purple",
+            "label": "Purple",
+            "file": "trainers/male/hair/hair_4__purple.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/hair/hair_4__red.png"
+          },
+          {
+            "id": "white",
+            "label": "White",
+            "file": "trainers/male/hair/hair_4__white.png"
+          }
+        ]
+      }
+    ],
+    "tops": [
+      {
+        "id": "beach_top",
+        "label": "Beach Top",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/tops/beach_top__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/male/tops/beach_top__blue.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/male/tops/beach_top__green.png"
+          },
+          {
+            "id": "pink",
+            "label": "Pink",
+            "file": "trainers/male/tops/beach_top__pink.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/tops/beach_top__red.png"
+          }
+        ]
+      },
+      {
+        "id": "classy_top",
+        "label": "Classy Top",
+        "colors": [
+          {
+            "id": "beige",
+            "label": "Beige",
+            "file": "trainers/male/tops/classy_top__beige.png"
+          },
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/tops/classy_top__black.png"
+          },
+          {
+            "id": "grey",
+            "label": "Grey",
+            "file": "trainers/male/tops/classy_top__grey.png"
+          },
+          {
+            "id": "navy",
+            "label": "Navy",
+            "file": "trainers/male/tops/classy_top__navy.png"
+          },
+          {
+            "id": "wine",
+            "label": "Wine",
+            "file": "trainers/male/tops/classy_top__wine.png"
+          }
+        ]
+      },
+      {
+        "id": "collared_shirt",
+        "label": "Collared Shirt",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/tops/collared_shirt__black.png"
+          },
+          {
+            "id": "light_blue",
+            "label": "Light Blue",
+            "file": "trainers/male/tops/collared_shirt__light_blue.png"
+          },
+          {
+            "id": "navy",
+            "label": "Navy",
+            "file": "trainers/male/tops/collared_shirt__navy.png"
+          },
+          {
+            "id": "white",
+            "label": "White",
+            "file": "trainers/male/tops/collared_shirt__white.png"
+          },
+          {
+            "id": "wine",
+            "label": "Wine",
+            "file": "trainers/male/tops/collared_shirt__wine.png"
+          }
+        ]
+      },
+      {
+        "id": "formal_top",
+        "label": "Formal Top",
+        "colors": [
+          {
+            "id": "formal_black",
+            "label": "Formal Black",
+            "file": "trainers/male/tops/formal_top__formal_black.png"
+          },
+          {
+            "id": "formal_beige",
+            "label": "Formal Beige",
+            "file": "trainers/male/tops/formal_top__formal_beige.png"
+          },
+          {
+            "id": "formal_blue",
+            "label": "Formal Blue",
+            "file": "trainers/male/tops/formal_top__formal_blue.png"
+          },
+          {
+            "id": "formal_pink",
+            "label": "Formal Pink",
+            "file": "trainers/male/tops/formal_top__formal_pink.png"
+          },
+          {
+            "id": "formal_red",
+            "label": "Formal Red",
+            "file": "trainers/male/tops/formal_top__formal_red.png"
+          }
+        ]
+      },
+      {
+        "id": "hoodie",
+        "label": "Hoodie",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/tops/hoodie__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/male/tops/hoodie__blue.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/male/tops/hoodie__green.png"
+          },
+          {
+            "id": "purple",
+            "label": "Purple",
+            "file": "trainers/male/tops/hoodie__purple.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/tops/hoodie__red.png"
+          }
+        ]
+      },
+      {
+        "id": "jumpsuit_alt_top",
+        "label": "Jumpsuit Alt Top",
+        "colors": [
+          {
+            "id": "jumpsuit_alt_black",
+            "label": "Jumpsuit Alt Black",
+            "file": "trainers/male/tops/jumpsuit_alt_top__jumpsuit_alt_black.png"
+          },
+          {
+            "id": "jumpsuit_alt_blue",
+            "label": "Jumpsuit Alt Blue",
+            "file": "trainers/male/tops/jumpsuit_alt_top__jumpsuit_alt_blue.png"
+          },
+          {
+            "id": "jumpsuit_alt_green",
+            "label": "Jumpsuit Alt Green",
+            "file": "trainers/male/tops/jumpsuit_alt_top__jumpsuit_alt_green.png"
+          },
+          {
+            "id": "jumpsuit_alt_red",
+            "label": "Jumpsuit Alt Red",
+            "file": "trainers/male/tops/jumpsuit_alt_top__jumpsuit_alt_red.png"
+          },
+          {
+            "id": "jumpsuit_alt_yellow",
+            "label": "Jumpsuit Alt Yellow",
+            "file": "trainers/male/tops/jumpsuit_alt_top__jumpsuit_alt_yellow.png"
+          }
+        ]
+      },
+      {
+        "id": "jumpsuit_top",
+        "label": "Jumpsuit Top",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/tops/jumpsuit_top__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/male/tops/jumpsuit_top__blue.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/male/tops/jumpsuit_top__green.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/tops/jumpsuit_top__red.png"
+          },
+          {
+            "id": "yellow",
+            "label": "Yellow",
+            "file": "trainers/male/tops/jumpsuit_top__yellow.png"
+          }
+        ]
+      },
+      {
+        "id": "lord_suit_top",
+        "label": "Lord Suit Top",
+        "colors": [
+          {
+            "id": "purple",
+            "label": "Purple",
+            "file": "trainers/male/tops/lord_suit_top__purple.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/tops/lord_suit_top__red.png"
+          }
+        ]
+      },
+      {
+        "id": "open_jacket",
+        "label": "Open Jacket",
+        "colors": [
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/male/tops/open_jacket__blue.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/male/tops/open_jacket__green.png"
+          },
+          {
+            "id": "pink",
+            "label": "Pink",
+            "file": "trainers/male/tops/open_jacket__pink.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/tops/open_jacket__red.png"
+          },
+          {
+            "id": "orange",
+            "label": "Orange",
+            "file": "trainers/male/tops/open_jacket__orange.png"
+          }
+        ]
+      },
+      {
+        "id": "scarf_top",
+        "label": "Scarf Top",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/tops/scarf_top__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/male/tops/scarf_top__blue.png"
+          },
+          {
+            "id": "brown",
+            "label": "Brown",
+            "file": "trainers/male/tops/scarf_top__brown.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/tops/scarf_top__red.png"
+          },
+          {
+            "id": "yellow",
+            "label": "Yellow",
+            "file": "trainers/male/tops/scarf_top__yellow.png"
+          }
+        ]
+      },
+      {
+        "id": "school_uniform",
+        "label": "School Uniform",
+        "colors": [
+          {
+            "id": "dark",
+            "label": "Dark",
+            "file": "trainers/male/tops/school_uniform__dark.png"
+          },
+          {
+            "id": "light",
+            "label": "Light",
+            "file": "trainers/male/tops/school_uniform__light.png"
+          }
+        ]
+      },
+      {
+        "id": "shirt_combo",
+        "label": "Shirt Combo",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/tops/shirt_combo__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/male/tops/shirt_combo__blue.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/tops/shirt_combo__red.png"
+          },
+          {
+            "id": "white",
+            "label": "White",
+            "file": "trainers/male/tops/shirt_combo__white.png"
+          },
+          {
+            "id": "wine",
+            "label": "Wine",
+            "file": "trainers/male/tops/shirt_combo__wine.png"
+          }
+        ]
+      },
+      {
+        "id": "t_shirt",
+        "label": "T-Shirt",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/tops/t_shirt__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/male/tops/t_shirt__blue.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/male/tops/t_shirt__green.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/tops/t_shirt__red.png"
+          },
+          {
+            "id": "white",
+            "label": "White",
+            "file": "trainers/male/tops/t_shirt__white.png"
+          }
+        ]
+      },
+      {
+        "id": "tank_top",
+        "label": "Tank Top",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/tops/tank_top__black.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/male/tops/tank_top__green.png"
+          },
+          {
+            "id": "navy",
+            "label": "Navy",
+            "file": "trainers/male/tops/tank_top__navy.png"
+          },
+          {
+            "id": "pink",
+            "label": "Pink",
+            "file": "trainers/male/tops/tank_top__pink.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/tops/tank_top__red.png"
+          }
+        ]
+      },
+      {
+        "id": "trench_coat",
+        "label": "Trench Coat",
+        "colors": [
+          {
+            "id": "beige",
+            "label": "Beige",
+            "file": "trainers/male/tops/trench_coat__beige.png"
+          },
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/tops/trench_coat__black.png"
+          },
+          {
+            "id": "navy",
+            "label": "Navy",
+            "file": "trainers/male/tops/trench_coat__navy.png"
+          },
+          {
+            "id": "purple",
+            "label": "Purple",
+            "file": "trainers/male/tops/trench_coat__purple.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/tops/trench_coat__red.png"
+          }
+        ]
+      },
+      {
+        "id": "turtleneck",
+        "label": "Turtleneck",
+        "colors": [
+          {
+            "id": "beige",
+            "label": "Beige",
+            "file": "trainers/male/tops/turtleneck__beige.png"
+          },
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/tops/turtleneck__black.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/male/tops/turtleneck__green.png"
+          },
+          {
+            "id": "white",
+            "label": "White",
+            "file": "trainers/male/tops/turtleneck__white.png"
+          },
+          {
+            "id": "wine",
+            "label": "Wine",
+            "file": "trainers/male/tops/turtleneck__wine.png"
+          }
+        ]
+      },
+      {
+        "id": "v_neck",
+        "label": "V-Neck",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/tops/v_neck__black.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/male/tops/v_neck__green.png"
+          },
+          {
+            "id": "orange",
+            "label": "Orange",
+            "file": "trainers/male/tops/v_neck__orange.png"
+          },
+          {
+            "id": "purple",
+            "label": "Purple",
+            "file": "trainers/male/tops/v_neck__purple.png"
+          },
+          {
+            "id": "yellow",
+            "label": "Yellow",
+            "file": "trainers/male/tops/v_neck__yellow.png"
+          }
+        ]
+      },
+      {
+        "id": "vest",
+        "label": "Vest",
+        "colors": [
+          {
+            "id": "beige",
+            "label": "Beige",
+            "file": "trainers/male/tops/vest__beige.png"
+          },
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/tops/vest__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/male/tops/vest__blue.png"
+          },
+          {
+            "id": "grey",
+            "label": "Grey",
+            "file": "trainers/male/tops/vest__grey.png"
+          },
+          {
+            "id": "wine",
+            "label": "Wine",
+            "file": "trainers/male/tops/vest__wine.png"
+          }
+        ]
+      }
+    ],
+    "bottoms": [
+      {
+        "id": "beach_bottom",
+        "label": "Beach Bottom",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/bottoms/beach_bottom__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/male/bottoms/beach_bottom__blue.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/male/bottoms/beach_bottom__green.png"
+          },
+          {
+            "id": "pink",
+            "label": "Pink",
+            "file": "trainers/male/bottoms/beach_bottom__pink.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/bottoms/beach_bottom__red.png"
+          }
+        ]
+      },
+      {
+        "id": "capri",
+        "label": "Capri",
+        "colors": [
+          {
+            "id": "aqua",
+            "label": "Aqua",
+            "file": "trainers/male/bottoms/capri__aqua.png"
+          },
+          {
+            "id": "beige",
+            "label": "Beige",
+            "file": "trainers/male/bottoms/capri__beige.png"
+          },
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/bottoms/capri__black.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/male/bottoms/capri__green.png"
+          },
+          {
+            "id": "navy",
+            "label": "Navy",
+            "file": "trainers/male/bottoms/capri__navy.png"
+          }
+        ]
+      },
+      {
+        "id": "classy_pants",
+        "label": "Classy Pants",
+        "colors": [
+          {
+            "id": "beige",
+            "label": "Beige",
+            "file": "trainers/male/bottoms/classy_pants__beige.png"
+          },
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/bottoms/classy_pants__black.png"
+          },
+          {
+            "id": "grey",
+            "label": "Grey",
+            "file": "trainers/male/bottoms/classy_pants__grey.png"
+          },
+          {
+            "id": "navy",
+            "label": "Navy",
+            "file": "trainers/male/bottoms/classy_pants__navy.png"
+          },
+          {
+            "id": "wine",
+            "label": "Wine",
+            "file": "trainers/male/bottoms/classy_pants__wine.png"
+          }
+        ]
+      },
+      {
+        "id": "formal_pants",
+        "label": "Formal Pants",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/bottoms/formal_pants__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/male/bottoms/formal_pants__blue.png"
+          },
+          {
+            "id": "brown",
+            "label": "Brown",
+            "file": "trainers/male/bottoms/formal_pants__brown.png"
+          },
+          {
+            "id": "grey",
+            "label": "Grey",
+            "file": "trainers/male/bottoms/formal_pants__grey.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/bottoms/formal_pants__red.png"
+          }
+        ]
+      },
+      {
+        "id": "jeans",
+        "label": "Jeans",
+        "colors": [
+          {
+            "id": "aqua",
+            "label": "Aqua",
+            "file": "trainers/male/bottoms/jeans__aqua.png"
+          },
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/bottoms/jeans__black.png"
+          },
+          {
+            "id": "grey",
+            "label": "Grey",
+            "file": "trainers/male/bottoms/jeans__grey.png"
+          },
+          {
+            "id": "light_blue",
+            "label": "Light Blue",
+            "file": "trainers/male/bottoms/jeans__light_blue.png"
+          },
+          {
+            "id": "navy",
+            "label": "Navy",
+            "file": "trainers/male/bottoms/jeans__navy.png"
+          }
+        ]
+      },
+      {
+        "id": "jumpsuit_pants",
+        "label": "Jumpsuit Pants",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/bottoms/jumpsuit_pants__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/male/bottoms/jumpsuit_pants__blue.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/male/bottoms/jumpsuit_pants__green.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/bottoms/jumpsuit_pants__red.png"
+          },
+          {
+            "id": "yellow",
+            "label": "Yellow",
+            "file": "trainers/male/bottoms/jumpsuit_pants__yellow.png"
+          }
+        ]
+      },
+      {
+        "id": "jumpsuit_pants_alt",
+        "label": "Jumpsuit Pants Alt",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/bottoms/jumpsuit_pants_alt__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/male/bottoms/jumpsuit_pants_alt__blue.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/male/bottoms/jumpsuit_pants_alt__green.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/bottoms/jumpsuit_pants_alt__red.png"
+          },
+          {
+            "id": "yellow",
+            "label": "Yellow",
+            "file": "trainers/male/bottoms/jumpsuit_pants_alt__yellow.png"
+          }
+        ]
+      },
+      {
+        "id": "long_skirt",
+        "label": "Long Skirt",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/bottoms/long_skirt__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/male/bottoms/long_skirt__blue.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/male/bottoms/long_skirt__green.png"
+          },
+          {
+            "id": "pink",
+            "label": "Pink",
+            "file": "trainers/male/bottoms/long_skirt__pink.png"
+          },
+          {
+            "id": "purple",
+            "label": "Purple",
+            "file": "trainers/male/bottoms/long_skirt__purple.png"
+          }
+        ]
+      },
+      {
+        "id": "lord_suit_pants",
+        "label": "Lord Suit Pants",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/male/bottoms/lord_suit_pants__default.png"
+          }
+        ]
+      },
+      {
+        "id": "pants_and_boots",
+        "label": "Pants And Boots",
+        "colors": [
+          {
+            "id": "beige",
+            "label": "Beige",
+            "file": "trainers/male/bottoms/pants_and_boots__beige.png"
+          },
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/bottoms/pants_and_boots__black.png"
+          },
+          {
+            "id": "grey",
+            "label": "Grey",
+            "file": "trainers/male/bottoms/pants_and_boots__grey.png"
+          },
+          {
+            "id": "light_blue",
+            "label": "Light Blue",
+            "file": "trainers/male/bottoms/pants_and_boots__light_blue.png"
+          },
+          {
+            "id": "navy",
+            "label": "Navy",
+            "file": "trainers/male/bottoms/pants_and_boots__navy.png"
+          }
+        ]
+      },
+      {
+        "id": "pencil_skirt",
+        "label": "Pencil Skirt",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/bottoms/pencil_skirt__black.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/male/bottoms/pencil_skirt__green.png"
+          },
+          {
+            "id": "grey",
+            "label": "Grey",
+            "file": "trainers/male/bottoms/pencil_skirt__grey.png"
+          },
+          {
+            "id": "navy",
+            "label": "Navy",
+            "file": "trainers/male/bottoms/pencil_skirt__navy.png"
+          },
+          {
+            "id": "wine",
+            "label": "Wine",
+            "file": "trainers/male/bottoms/pencil_skirt__wine.png"
+          }
+        ]
+      },
+      {
+        "id": "ribbon_skirt",
+        "label": "Ribbon Skirt",
+        "colors": [
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/male/bottoms/ribbon_skirt__blue.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/male/bottoms/ribbon_skirt__green.png"
+          },
+          {
+            "id": "pink",
+            "label": "Pink",
+            "file": "trainers/male/bottoms/ribbon_skirt__pink.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/bottoms/ribbon_skirt__red.png"
+          },
+          {
+            "id": "wine",
+            "label": "Wine",
+            "file": "trainers/male/bottoms/ribbon_skirt__wine.png"
+          }
+        ]
+      },
+      {
+        "id": "school_uniform_bottom",
+        "label": "School Uniform Bottom",
+        "colors": [
+          {
+            "id": "dark",
+            "label": "Dark",
+            "file": "trainers/male/bottoms/school_uniform_bottom__dark.png"
+          },
+          {
+            "id": "light",
+            "label": "Light",
+            "file": "trainers/male/bottoms/school_uniform_bottom__light.png"
+          }
+        ]
+      },
+      {
+        "id": "shorts",
+        "label": "Shorts",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/bottoms/shorts__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/male/bottoms/shorts__blue.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/male/bottoms/shorts__green.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/bottoms/shorts__red.png"
+          },
+          {
+            "id": "white",
+            "label": "White",
+            "file": "trainers/male/bottoms/shorts__white.png"
+          }
+        ]
+      }
+    ],
+    "hats": [
+      {
+        "id": "none",
+        "label": "None",
+        "colors": [
+          {
+            "id": "none",
+            "label": "None",
+            "file": null
+          }
+        ]
+      },
+      {
+        "id": "beanie",
+        "label": "Beanie",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/hats/beanie__black.png"
+          },
+          {
+            "id": "purple",
+            "label": "Purple",
+            "file": "trainers/male/hats/beanie__purple.png"
+          }
+        ]
+      },
+      {
+        "id": "beret",
+        "label": "Beret",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/male/hats/beret__default.png"
+          }
+        ]
+      },
+      {
+        "id": "bonnet",
+        "label": "Bonnet",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/male/hats/bonnet__default.png"
+          }
+        ]
+      },
+      {
+        "id": "cat_ears",
+        "label": "Cat Ears",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/male/hats/cat_ears__default.png"
+          }
+        ]
+      },
+      {
+        "id": "crown",
+        "label": "Crown",
+        "colors": [
+          {
+            "id": "gold",
+            "label": "Gold",
+            "file": "trainers/male/hats/crown__gold.png"
+          },
+          {
+            "id": "silver",
+            "label": "Silver",
+            "file": "trainers/male/hats/crown__silver.png"
+          }
+        ]
+      },
+      {
+        "id": "devil",
+        "label": "Devil",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/male/hats/devil__default.png"
+          }
+        ]
+      },
+      {
+        "id": "feather_hat",
+        "label": "Feather Hat",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/male/hats/feather_hat__default.png"
+          }
+        ]
+      },
+      {
+        "id": "fedora",
+        "label": "Fedora",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/male/hats/fedora__default.png"
+          }
+        ]
+      },
+      {
+        "id": "flower",
+        "label": "Flower",
+        "colors": [
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/male/hats/flower__blue.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/hats/flower__red.png"
+          }
+        ]
+      },
+      {
+        "id": "glasses",
+        "label": "Glasses",
+        "colors": [
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/male/hats/glasses__blue.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/male/hats/glasses__red.png"
+          }
+        ]
+      },
+      {
+        "id": "hair_band",
+        "label": "Hair Band",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/male/hats/hair_band__default.png"
+          }
+        ]
+      },
+      {
+        "id": "headband",
+        "label": "Headband",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/male/hats/headband__default.png"
+          }
+        ]
+      },
+      {
+        "id": "mining",
+        "label": "Mining",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/male/hats/mining__default.png"
+          }
+        ]
+      },
+      {
+        "id": "poop",
+        "label": "Poop",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/male/hats/poop__default.png"
+          }
+        ]
+      },
+      {
+        "id": "ribbon",
+        "label": "Ribbon",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/male/hats/ribbon__default.png"
+          }
+        ]
+      },
+      {
+        "id": "straw_hat",
+        "label": "Straw Hat",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/male/hats/straw_hat__default.png"
+          }
+        ]
+      },
+      {
+        "id": "sun_hat",
+        "label": "Sun Hat",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/male/hats/sun_hat__default.png"
+          }
+        ]
+      },
+      {
+        "id": "youngster_hat",
+        "label": "Youngster Hat",
+        "colors": [
+          {
+            "id": "youngster_cap_blue",
+            "label": "Youngster Cap Blue",
+            "file": "trainers/male/hats/youngster_hat__youngster_cap_blue.png"
+          },
+          {
+            "id": "youngster_cap_yellow",
+            "label": "Youngster Cap Yellow",
+            "file": "trainers/male/hats/youngster_hat__youngster_cap_yellow.png"
+          }
+        ]
+      }
+    ]
+  },
+  "female": {
+    "skinTones": [
+      {
+        "id": "pale",
+        "label": "Pale",
+        "file": "trainers/female/base/pale.png"
+      },
+      {
+        "id": "light",
+        "label": "Light",
+        "file": "trainers/female/base/light.png"
+      },
+      {
+        "id": "medium",
+        "label": "Medium",
+        "file": "trainers/female/base/medium.png"
+      },
+      {
+        "id": "dark",
+        "label": "Dark",
+        "file": "trainers/female/base/dark.png"
+      }
+    ],
+    "hair": [
+      {
+        "id": "hair_1",
+        "label": "Hair 1",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/hair/hair_1__black.png"
+          },
+          {
+            "id": "blonde",
+            "label": "Blonde",
+            "file": "trainers/female/hair/hair_1__blonde.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/female/hair/hair_1__blue.png"
+          },
+          {
+            "id": "brown",
+            "label": "Brown",
+            "file": "trainers/female/hair/hair_1__brown.png"
+          },
+          {
+            "id": "cyan",
+            "label": "Cyan",
+            "file": "trainers/female/hair/hair_1__cyan.png"
+          },
+          {
+            "id": "ginger",
+            "label": "Ginger",
+            "file": "trainers/female/hair/hair_1__ginger.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/female/hair/hair_1__green.png"
+          },
+          {
+            "id": "pink",
+            "label": "Pink",
+            "file": "trainers/female/hair/hair_1__pink.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/female/hair/hair_1__red.png"
+          },
+          {
+            "id": "violet",
+            "label": "Violet",
+            "file": "trainers/female/hair/hair_1__violet.png"
+          },
+          {
+            "id": "white",
+            "label": "White",
+            "file": "trainers/female/hair/hair_1__white.png"
+          }
+        ]
+      },
+      {
+        "id": "hair_2",
+        "label": "Hair 2",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/hair/hair_2__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/female/hair/hair_2__blue.png"
+          },
+          {
+            "id": "cyan",
+            "label": "Cyan",
+            "file": "trainers/female/hair/hair_2__cyan.png"
+          },
+          {
+            "id": "ginger",
+            "label": "Ginger",
+            "file": "trainers/female/hair/hair_2__ginger.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/female/hair/hair_2__green.png"
+          },
+          {
+            "id": "pink",
+            "label": "Pink",
+            "file": "trainers/female/hair/hair_2__pink.png"
+          },
+          {
+            "id": "purple",
+            "label": "Purple",
+            "file": "trainers/female/hair/hair_2__purple.png"
+          },
+          {
+            "id": "blonde",
+            "label": "Blonde",
+            "file": "trainers/female/hair/hair_2__blonde.png"
+          },
+          {
+            "id": "brown",
+            "label": "Brown",
+            "file": "trainers/female/hair/hair_2__brown.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/female/hair/hair_2__red.png"
+          },
+          {
+            "id": "white",
+            "label": "White",
+            "file": "trainers/female/hair/hair_2__white.png"
+          }
+        ]
+      },
+      {
+        "id": "hair_3",
+        "label": "Hair 3",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/hair/hair_3__black.png"
+          },
+          {
+            "id": "blonde",
+            "label": "Blonde",
+            "file": "trainers/female/hair/hair_3__blonde.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/female/hair/hair_3__blue.png"
+          },
+          {
+            "id": "brown",
+            "label": "Brown",
+            "file": "trainers/female/hair/hair_3__brown.png"
+          },
+          {
+            "id": "cyan",
+            "label": "Cyan",
+            "file": "trainers/female/hair/hair_3__cyan.png"
+          },
+          {
+            "id": "ginger",
+            "label": "Ginger",
+            "file": "trainers/female/hair/hair_3__ginger.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/female/hair/hair_3__green.png"
+          },
+          {
+            "id": "pink",
+            "label": "Pink",
+            "file": "trainers/female/hair/hair_3__pink.png"
+          },
+          {
+            "id": "purple",
+            "label": "Purple",
+            "file": "trainers/female/hair/hair_3__purple.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/female/hair/hair_3__red.png"
+          },
+          {
+            "id": "white",
+            "label": "White",
+            "file": "trainers/female/hair/hair_3__white.png"
+          }
+        ]
+      },
+      {
+        "id": "hair_4",
+        "label": "Hair 4",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/hair/hair_4__black.png"
+          },
+          {
+            "id": "blonde",
+            "label": "Blonde",
+            "file": "trainers/female/hair/hair_4__blonde.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/female/hair/hair_4__blue.png"
+          },
+          {
+            "id": "brown",
+            "label": "Brown",
+            "file": "trainers/female/hair/hair_4__brown.png"
+          },
+          {
+            "id": "cyan",
+            "label": "Cyan",
+            "file": "trainers/female/hair/hair_4__cyan.png"
+          },
+          {
+            "id": "ginger",
+            "label": "Ginger",
+            "file": "trainers/female/hair/hair_4__ginger.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/female/hair/hair_4__green.png"
+          },
+          {
+            "id": "pink",
+            "label": "Pink",
+            "file": "trainers/female/hair/hair_4__pink.png"
+          },
+          {
+            "id": "purple",
+            "label": "Purple",
+            "file": "trainers/female/hair/hair_4__purple.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/female/hair/hair_4__red.png"
+          },
+          {
+            "id": "white",
+            "label": "White",
+            "file": "trainers/female/hair/hair_4__white.png"
+          }
+        ]
+      }
+    ],
+    "tops": [
+      {
+        "id": "beach_top",
+        "label": "Beach Top",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/tops/beach_top__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/female/tops/beach_top__blue.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/female/tops/beach_top__green.png"
+          },
+          {
+            "id": "pink",
+            "label": "Pink",
+            "file": "trainers/female/tops/beach_top__pink.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/female/tops/beach_top__red.png"
+          }
+        ]
+      },
+      {
+        "id": "classy_top",
+        "label": "Classy Top",
+        "colors": [
+          {
+            "id": "beige",
+            "label": "Beige",
+            "file": "trainers/female/tops/classy_top__beige.png"
+          },
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/tops/classy_top__black.png"
+          },
+          {
+            "id": "grey",
+            "label": "Grey",
+            "file": "trainers/female/tops/classy_top__grey.png"
+          },
+          {
+            "id": "navy",
+            "label": "Navy",
+            "file": "trainers/female/tops/classy_top__navy.png"
+          },
+          {
+            "id": "wine",
+            "label": "Wine",
+            "file": "trainers/female/tops/classy_top__wine.png"
+          }
+        ]
+      },
+      {
+        "id": "collared_shirt",
+        "label": "Collared Shirt",
+        "colors": [
+          {
+            "id": "collard_shirt_navy",
+            "label": "Collard Shirt Navy",
+            "file": "trainers/female/tops/collared_shirt__collard_shirt_navy.png"
+          },
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/tops/collared_shirt__black.png"
+          },
+          {
+            "id": "light_blue",
+            "label": "Light Blue",
+            "file": "trainers/female/tops/collared_shirt__light_blue.png"
+          },
+          {
+            "id": "white",
+            "label": "White",
+            "file": "trainers/female/tops/collared_shirt__white.png"
+          },
+          {
+            "id": "wine",
+            "label": "Wine",
+            "file": "trainers/female/tops/collared_shirt__wine.png"
+          }
+        ]
+      },
+      {
+        "id": "formal_top",
+        "label": "Formal Top",
+        "colors": [
+          {
+            "id": "beige",
+            "label": "Beige",
+            "file": "trainers/female/tops/formal_top__beige.png"
+          },
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/tops/formal_top__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/female/tops/formal_top__blue.png"
+          },
+          {
+            "id": "pink",
+            "label": "Pink",
+            "file": "trainers/female/tops/formal_top__pink.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/female/tops/formal_top__red.png"
+          }
+        ]
+      },
+      {
+        "id": "hoodie",
+        "label": "Hoodie",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/tops/hoodie__black.png"
+          },
+          {
+            "id": "purple",
+            "label": "Purple",
+            "file": "trainers/female/tops/hoodie__purple.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/female/tops/hoodie__blue.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/female/tops/hoodie__green.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/female/tops/hoodie__red.png"
+          }
+        ]
+      },
+      {
+        "id": "jumpsuit_alt_top",
+        "label": "Jumpsuit Alt Top",
+        "colors": [
+          {
+            "id": "jumpsuit_alt_black",
+            "label": "Jumpsuit Alt Black",
+            "file": "trainers/female/tops/jumpsuit_alt_top__jumpsuit_alt_black.png"
+          },
+          {
+            "id": "jumpsuit_alt_blue",
+            "label": "Jumpsuit Alt Blue",
+            "file": "trainers/female/tops/jumpsuit_alt_top__jumpsuit_alt_blue.png"
+          },
+          {
+            "id": "jumpsuit_alt_green",
+            "label": "Jumpsuit Alt Green",
+            "file": "trainers/female/tops/jumpsuit_alt_top__jumpsuit_alt_green.png"
+          },
+          {
+            "id": "jumpsuit_alt_red",
+            "label": "Jumpsuit Alt Red",
+            "file": "trainers/female/tops/jumpsuit_alt_top__jumpsuit_alt_red.png"
+          },
+          {
+            "id": "jumpsuit_alt_yellow",
+            "label": "Jumpsuit Alt Yellow",
+            "file": "trainers/female/tops/jumpsuit_alt_top__jumpsuit_alt_yellow.png"
+          }
+        ]
+      },
+      {
+        "id": "jumpsuit_top",
+        "label": "Jumpsuit Top",
+        "colors": [
+          {
+            "id": "jumpsuit_black",
+            "label": "Jumpsuit Black",
+            "file": "trainers/female/tops/jumpsuit_top__jumpsuit_black.png"
+          },
+          {
+            "id": "jumpsuit_blue",
+            "label": "Jumpsuit Blue",
+            "file": "trainers/female/tops/jumpsuit_top__jumpsuit_blue.png"
+          },
+          {
+            "id": "jumpsuit_green",
+            "label": "Jumpsuit Green",
+            "file": "trainers/female/tops/jumpsuit_top__jumpsuit_green.png"
+          },
+          {
+            "id": "jumpsuit_red",
+            "label": "Jumpsuit Red",
+            "file": "trainers/female/tops/jumpsuit_top__jumpsuit_red.png"
+          },
+          {
+            "id": "jumpsuit_yellow",
+            "label": "Jumpsuit Yellow",
+            "file": "trainers/female/tops/jumpsuit_top__jumpsuit_yellow.png"
+          }
+        ]
+      },
+      {
+        "id": "lord_shirt",
+        "label": "Lord Shirt",
+        "colors": [
+          {
+            "id": "lords_shirt_purple",
+            "label": "Lords Shirt Purple",
+            "file": "trainers/female/tops/lord_shirt__lords_shirt_purple.png"
+          },
+          {
+            "id": "lords_shirt_red",
+            "label": "Lords Shirt Red",
+            "file": "trainers/female/tops/lord_shirt__lords_shirt_red.png"
+          }
+        ]
+      },
+      {
+        "id": "open_jacket",
+        "label": "Open Jacket",
+        "colors": [
+          {
+            "id": "open_orange",
+            "label": "Open Orange",
+            "file": "trainers/female/tops/open_jacket__open_orange.png"
+          },
+          {
+            "id": "open_blue",
+            "label": "Open Blue",
+            "file": "trainers/female/tops/open_jacket__open_blue.png"
+          },
+          {
+            "id": "open_green",
+            "label": "Open Green",
+            "file": "trainers/female/tops/open_jacket__open_green.png"
+          },
+          {
+            "id": "open_pink",
+            "label": "Open Pink",
+            "file": "trainers/female/tops/open_jacket__open_pink.png"
+          },
+          {
+            "id": "open_red",
+            "label": "Open Red",
+            "file": "trainers/female/tops/open_jacket__open_red.png"
+          }
+        ]
+      },
+      {
+        "id": "scarf_shirt",
+        "label": "Scarf Shirt",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/tops/scarf_shirt__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/female/tops/scarf_shirt__blue.png"
+          },
+          {
+            "id": "brown",
+            "label": "Brown",
+            "file": "trainers/female/tops/scarf_shirt__brown.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/female/tops/scarf_shirt__red.png"
+          },
+          {
+            "id": "yellow",
+            "label": "Yellow",
+            "file": "trainers/female/tops/scarf_shirt__yellow.png"
+          }
+        ]
+      },
+      {
+        "id": "school_uniform_top",
+        "label": "School Uniform Top",
+        "colors": [
+          {
+            "id": "dark",
+            "label": "Dark",
+            "file": "trainers/female/tops/school_uniform_top__dark.png"
+          },
+          {
+            "id": "light",
+            "label": "Light",
+            "file": "trainers/female/tops/school_uniform_top__light.png"
+          }
+        ]
+      },
+      {
+        "id": "shirt_combo",
+        "label": "Shirt Combo",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/tops/shirt_combo__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/female/tops/shirt_combo__blue.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/female/tops/shirt_combo__red.png"
+          },
+          {
+            "id": "white",
+            "label": "White",
+            "file": "trainers/female/tops/shirt_combo__white.png"
+          },
+          {
+            "id": "wine",
+            "label": "Wine",
+            "file": "trainers/female/tops/shirt_combo__wine.png"
+          }
+        ]
+      },
+      {
+        "id": "t_shirt",
+        "label": "T-Shirt",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/tops/t_shirt__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/female/tops/t_shirt__blue.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/female/tops/t_shirt__green.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/female/tops/t_shirt__red.png"
+          },
+          {
+            "id": "white",
+            "label": "White",
+            "file": "trainers/female/tops/t_shirt__white.png"
+          }
+        ]
+      },
+      {
+        "id": "tank_top",
+        "label": "Tank Top",
+        "colors": [
+          {
+            "id": "pink",
+            "label": "Pink",
+            "file": "trainers/female/tops/tank_top__pink.png"
+          },
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/tops/tank_top__black.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/female/tops/tank_top__green.png"
+          },
+          {
+            "id": "navy",
+            "label": "Navy",
+            "file": "trainers/female/tops/tank_top__navy.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/female/tops/tank_top__red.png"
+          }
+        ]
+      },
+      {
+        "id": "trench_coat",
+        "label": "Trench Coat",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/tops/trench_coat__black.png"
+          },
+          {
+            "id": "brown",
+            "label": "Brown",
+            "file": "trainers/female/tops/trench_coat__brown.png"
+          },
+          {
+            "id": "navy",
+            "label": "Navy",
+            "file": "trainers/female/tops/trench_coat__navy.png"
+          },
+          {
+            "id": "purple",
+            "label": "Purple",
+            "file": "trainers/female/tops/trench_coat__purple.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/female/tops/trench_coat__red.png"
+          }
+        ]
+      },
+      {
+        "id": "turtleneck",
+        "label": "Turtleneck",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/tops/turtleneck__black.png"
+          },
+          {
+            "id": "brownish",
+            "label": "Brownish",
+            "file": "trainers/female/tops/turtleneck__brownish.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/female/tops/turtleneck__green.png"
+          },
+          {
+            "id": "magenta",
+            "label": "Magenta",
+            "file": "trainers/female/tops/turtleneck__magenta.png"
+          },
+          {
+            "id": "white",
+            "label": "White",
+            "file": "trainers/female/tops/turtleneck__white.png"
+          }
+        ]
+      },
+      {
+        "id": "v_neck",
+        "label": "V-Neck",
+        "colors": [
+          {
+            "id": "v_neck_green",
+            "label": "V Neck Green",
+            "file": "trainers/female/tops/v_neck__v_neck_green.png"
+          },
+          {
+            "id": "v_neck_orange",
+            "label": "V Neck Orange",
+            "file": "trainers/female/tops/v_neck__v_neck_orange.png"
+          },
+          {
+            "id": "v_neck_purple",
+            "label": "V Neck Purple",
+            "file": "trainers/female/tops/v_neck__v_neck_purple.png"
+          },
+          {
+            "id": "v_neck_yellow",
+            "label": "V Neck Yellow",
+            "file": "trainers/female/tops/v_neck__v_neck_yellow.png"
+          },
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/tops/v_neck__black.png"
+          }
+        ]
+      },
+      {
+        "id": "vest",
+        "label": "Vest",
+        "colors": [
+          {
+            "id": "grey",
+            "label": "Grey",
+            "file": "trainers/female/tops/vest__grey.png"
+          },
+          {
+            "id": "wine",
+            "label": "Wine",
+            "file": "trainers/female/tops/vest__wine.png"
+          },
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/tops/vest__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/female/tops/vest__blue.png"
+          },
+          {
+            "id": "brown",
+            "label": "Brown",
+            "file": "trainers/female/tops/vest__brown.png"
+          }
+        ]
+      }
+    ],
+    "bottoms": [
+      {
+        "id": "jeans",
+        "label": "Jeans",
+        "colors": [
+          {
+            "id": "grey",
+            "label": "Grey",
+            "file": "trainers/female/bottoms/jeans__grey.png"
+          },
+          {
+            "id": "light_blue",
+            "label": "Light Blue",
+            "file": "trainers/female/bottoms/jeans__light_blue.png"
+          },
+          {
+            "id": "aqua",
+            "label": "Aqua",
+            "file": "trainers/female/bottoms/jeans__aqua.png"
+          },
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/bottoms/jeans__black.png"
+          },
+          {
+            "id": "navy",
+            "label": "Navy",
+            "file": "trainers/female/bottoms/jeans__navy.png"
+          }
+        ]
+      },
+      {
+        "id": "beach_bottom",
+        "label": "Beach Bottom",
+        "colors": [
+          {
+            "id": "beach_bottoms_black",
+            "label": "Beach Bottoms Black",
+            "file": "trainers/female/bottoms/beach_bottom__beach_bottoms_black.png"
+          },
+          {
+            "id": "beach_bottoms_blue",
+            "label": "Beach Bottoms Blue",
+            "file": "trainers/female/bottoms/beach_bottom__beach_bottoms_blue.png"
+          },
+          {
+            "id": "beach_bottoms_green",
+            "label": "Beach Bottoms Green",
+            "file": "trainers/female/bottoms/beach_bottom__beach_bottoms_green.png"
+          },
+          {
+            "id": "beach_bottoms_pink",
+            "label": "Beach Bottoms Pink",
+            "file": "trainers/female/bottoms/beach_bottom__beach_bottoms_pink.png"
+          },
+          {
+            "id": "beach_bottoms_red",
+            "label": "Beach Bottoms Red",
+            "file": "trainers/female/bottoms/beach_bottom__beach_bottoms_red.png"
+          }
+        ]
+      },
+      {
+        "id": "capri",
+        "label": "Capri",
+        "colors": [
+          {
+            "id": "aqua",
+            "label": "Aqua",
+            "file": "trainers/female/bottoms/capri__aqua.png"
+          },
+          {
+            "id": "beige",
+            "label": "Beige",
+            "file": "trainers/female/bottoms/capri__beige.png"
+          },
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/bottoms/capri__black.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/female/bottoms/capri__green.png"
+          },
+          {
+            "id": "navy",
+            "label": "Navy",
+            "file": "trainers/female/bottoms/capri__navy.png"
+          }
+        ]
+      },
+      {
+        "id": "classy_bottom",
+        "label": "Classy Bottom",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/bottoms/classy_bottom__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/female/bottoms/classy_bottom__blue.png"
+          },
+          {
+            "id": "brown",
+            "label": "Brown",
+            "file": "trainers/female/bottoms/classy_bottom__brown.png"
+          },
+          {
+            "id": "grey",
+            "label": "Grey",
+            "file": "trainers/female/bottoms/classy_bottom__grey.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/female/bottoms/classy_bottom__red.png"
+          }
+        ]
+      },
+      {
+        "id": "evening_bottom",
+        "label": "Evening Bottom",
+        "colors": [
+          {
+            "id": "beige",
+            "label": "Beige",
+            "file": "trainers/female/bottoms/evening_bottom__beige.png"
+          },
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/bottoms/evening_bottom__black.png"
+          },
+          {
+            "id": "grey",
+            "label": "Grey",
+            "file": "trainers/female/bottoms/evening_bottom__grey.png"
+          },
+          {
+            "id": "navy",
+            "label": "Navy",
+            "file": "trainers/female/bottoms/evening_bottom__navy.png"
+          },
+          {
+            "id": "wine",
+            "label": "Wine",
+            "file": "trainers/female/bottoms/evening_bottom__wine.png"
+          }
+        ]
+      },
+      {
+        "id": "jumpsuit_pants",
+        "label": "Jumpsuit Pants",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/bottoms/jumpsuit_pants__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/female/bottoms/jumpsuit_pants__blue.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/female/bottoms/jumpsuit_pants__green.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/female/bottoms/jumpsuit_pants__red.png"
+          },
+          {
+            "id": "yellow",
+            "label": "Yellow",
+            "file": "trainers/female/bottoms/jumpsuit_pants__yellow.png"
+          }
+        ]
+      },
+      {
+        "id": "jumpsuit_pants_alt",
+        "label": "Jumpsuit Pants Alt",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/bottoms/jumpsuit_pants_alt__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/female/bottoms/jumpsuit_pants_alt__blue.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/female/bottoms/jumpsuit_pants_alt__green.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/female/bottoms/jumpsuit_pants_alt__red.png"
+          },
+          {
+            "id": "yellow",
+            "label": "Yellow",
+            "file": "trainers/female/bottoms/jumpsuit_pants_alt__yellow.png"
+          }
+        ]
+      },
+      {
+        "id": "long_skirt",
+        "label": "Long Skirt",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/bottoms/long_skirt__black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/female/bottoms/long_skirt__blue.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/female/bottoms/long_skirt__green.png"
+          },
+          {
+            "id": "pink",
+            "label": "Pink",
+            "file": "trainers/female/bottoms/long_skirt__pink.png"
+          },
+          {
+            "id": "purple",
+            "label": "Purple",
+            "file": "trainers/female/bottoms/long_skirt__purple.png"
+          }
+        ]
+      },
+      {
+        "id": "lords_pants",
+        "label": "Lords Pants",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/female/bottoms/lords_pants__default.png"
+          }
+        ]
+      },
+      {
+        "id": "pants_and_boots",
+        "label": "Pants And Boots",
+        "colors": [
+          {
+            "id": "beige",
+            "label": "Beige",
+            "file": "trainers/female/bottoms/pants_and_boots__beige.png"
+          },
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/bottoms/pants_and_boots__black.png"
+          },
+          {
+            "id": "grey",
+            "label": "Grey",
+            "file": "trainers/female/bottoms/pants_and_boots__grey.png"
+          },
+          {
+            "id": "light_blue",
+            "label": "Light Blue",
+            "file": "trainers/female/bottoms/pants_and_boots__light_blue.png"
+          },
+          {
+            "id": "navy",
+            "label": "Navy",
+            "file": "trainers/female/bottoms/pants_and_boots__navy.png"
+          }
+        ]
+      },
+      {
+        "id": "pencil_skirt",
+        "label": "Pencil Skirt",
+        "colors": [
+          {
+            "id": "skirt_pencil_black",
+            "label": "Skirt Pencil Black",
+            "file": "trainers/female/bottoms/pencil_skirt__skirt_pencil_black.png"
+          },
+          {
+            "id": "skirt_pencil_green",
+            "label": "Skirt Pencil Green",
+            "file": "trainers/female/bottoms/pencil_skirt__skirt_pencil_green.png"
+          },
+          {
+            "id": "skirt_pencil_grey",
+            "label": "Skirt Pencil Grey",
+            "file": "trainers/female/bottoms/pencil_skirt__skirt_pencil_grey.png"
+          },
+          {
+            "id": "skirt_pencil_navy",
+            "label": "Skirt Pencil Navy",
+            "file": "trainers/female/bottoms/pencil_skirt__skirt_pencil_navy.png"
+          },
+          {
+            "id": "skirt_pencil_wine",
+            "label": "Skirt Pencil Wine",
+            "file": "trainers/female/bottoms/pencil_skirt__skirt_pencil_wine.png"
+          }
+        ]
+      },
+      {
+        "id": "ribbon_skirt",
+        "label": "Ribbon Skirt",
+        "colors": [
+          {
+            "id": "skirt_ribbon_blue",
+            "label": "Skirt Ribbon Blue",
+            "file": "trainers/female/bottoms/ribbon_skirt__skirt_ribbon_blue.png"
+          },
+          {
+            "id": "skirt_ribbon_green",
+            "label": "Skirt Ribbon Green",
+            "file": "trainers/female/bottoms/ribbon_skirt__skirt_ribbon_green.png"
+          },
+          {
+            "id": "skirt_ribbon_pink",
+            "label": "Skirt Ribbon Pink",
+            "file": "trainers/female/bottoms/ribbon_skirt__skirt_ribbon_pink.png"
+          },
+          {
+            "id": "skirt_ribbon_red",
+            "label": "Skirt Ribbon Red",
+            "file": "trainers/female/bottoms/ribbon_skirt__skirt_ribbon_red.png"
+          },
+          {
+            "id": "skirt_ribbon_wine",
+            "label": "Skirt Ribbon Wine",
+            "file": "trainers/female/bottoms/ribbon_skirt__skirt_ribbon_wine.png"
+          }
+        ]
+      },
+      {
+        "id": "school_girl",
+        "label": "School Girl",
+        "colors": [
+          {
+            "id": "skirt_black",
+            "label": "Skirt Black",
+            "file": "trainers/female/bottoms/school_girl__skirt_black.png"
+          },
+          {
+            "id": "skirt_light",
+            "label": "Skirt Light",
+            "file": "trainers/female/bottoms/school_girl__skirt_light.png"
+          }
+        ]
+      },
+      {
+        "id": "shorts",
+        "label": "Shorts",
+        "colors": [
+          {
+            "id": "short_black",
+            "label": "Short Black",
+            "file": "trainers/female/bottoms/shorts__short_black.png"
+          },
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/female/bottoms/shorts__blue.png"
+          },
+          {
+            "id": "green",
+            "label": "Green",
+            "file": "trainers/female/bottoms/shorts__green.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/female/bottoms/shorts__red.png"
+          },
+          {
+            "id": "white",
+            "label": "White",
+            "file": "trainers/female/bottoms/shorts__white.png"
+          }
+        ]
+      }
+    ],
+    "hats": [
+      {
+        "id": "none",
+        "label": "None",
+        "colors": [
+          {
+            "id": "none",
+            "label": "None",
+            "file": null
+          }
+        ]
+      },
+      {
+        "id": "baguette",
+        "label": "Baguette",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/female/hats/baguette__default.png"
+          }
+        ]
+      },
+      {
+        "id": "beanie",
+        "label": "Beanie",
+        "colors": [
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/hats/beanie__black.png"
+          },
+          {
+            "id": "purple",
+            "label": "Purple",
+            "file": "trainers/female/hats/beanie__purple.png"
+          }
+        ]
+      },
+      {
+        "id": "bonnet",
+        "label": "Bonnet",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/female/hats/bonnet__default.png"
+          }
+        ]
+      },
+      {
+        "id": "cate",
+        "label": "Cate",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/female/hats/cate__default.png"
+          }
+        ]
+      },
+      {
+        "id": "crown",
+        "label": "Crown",
+        "colors": [
+          {
+            "id": "gold",
+            "label": "Gold",
+            "file": "trainers/female/hats/crown__gold.png"
+          },
+          {
+            "id": "silver",
+            "label": "Silver",
+            "file": "trainers/female/hats/crown__silver.png"
+          }
+        ]
+      },
+      {
+        "id": "devil",
+        "label": "Devil",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/female/hats/devil__default.png"
+          }
+        ]
+      },
+      {
+        "id": "feather_hat",
+        "label": "Feather Hat",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/female/hats/feather_hat__default.png"
+          }
+        ]
+      },
+      {
+        "id": "fedora",
+        "label": "Fedora",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/female/hats/fedora__default.png"
+          }
+        ]
+      },
+      {
+        "id": "flower",
+        "label": "Flower",
+        "colors": [
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/female/hats/flower__blue.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/female/hats/flower__red.png"
+          }
+        ]
+      },
+      {
+        "id": "glasses",
+        "label": "Glasses",
+        "colors": [
+          {
+            "id": "blue",
+            "label": "Blue",
+            "file": "trainers/female/hats/glasses__blue.png"
+          },
+          {
+            "id": "red",
+            "label": "Red",
+            "file": "trainers/female/hats/glasses__red.png"
+          }
+        ]
+      },
+      {
+        "id": "hair_band",
+        "label": "Hair Band",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/female/hats/hair_band__default.png"
+          }
+        ]
+      },
+      {
+        "id": "headband",
+        "label": "Headband",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/female/hats/headband__default.png"
+          }
+        ]
+      },
+      {
+        "id": "mining",
+        "label": "Mining",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/female/hats/mining__default.png"
+          }
+        ]
+      },
+      {
+        "id": "poop",
+        "label": "Poop",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/female/hats/poop__default.png"
+          }
+        ]
+      },
+      {
+        "id": "ribbon",
+        "label": "Ribbon",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/female/hats/ribbon__default.png"
+          }
+        ]
+      },
+      {
+        "id": "straw_hat",
+        "label": "Straw Hat",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/female/hats/straw_hat__default.png"
+          }
+        ]
+      },
+      {
+        "id": "sun_hat",
+        "label": "Sun Hat",
+        "colors": [
+          {
+            "id": "default",
+            "label": "Default",
+            "file": "trainers/female/hats/sun_hat__default.png"
+          }
+        ]
+      },
+      {
+        "id": "youngster_hat",
+        "label": "Youngster Hat",
+        "colors": [
+          {
+            "id": "youngster_cap_bee",
+            "label": "Youngster Cap Bee",
+            "file": "trainers/female/hats/youngster_hat__youngster_cap_bee.png"
+          },
+          {
+            "id": "youngster_cap_blue",
+            "label": "Youngster Cap Blue",
+            "file": "trainers/female/hats/youngster_hat__youngster_cap_blue.png"
+          }
+        ]
+      }
+    ]
+  }
+}
