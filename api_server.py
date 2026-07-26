@@ -255,7 +255,7 @@ def put_character():
 
     # Default starting location
     if not profile.get("location"):
-        profile["location"] = "Pallet Town"
+        profile["location"] = "Your Bedroom"
 
     for key in ("trainerName", "gender", "skinTone", "hairPath", "topPath", "bottomPath", "hatPath"):
         if key in data:
@@ -263,6 +263,26 @@ def put_character():
     _save_profile(user["id"], profile, db)
     db.close()
     return jsonify({"ok": True})
+
+
+@app.route("/api/me/location", methods=["PUT"])
+def put_location():
+    """Update the player's current location."""
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+    loc = data.get("location", "").strip() if data else ""
+    if not loc:
+        return jsonify({"error": "location is required."}), 400
+
+    db = get_db()
+    profile = _get_profile(user["id"], db)
+    profile["location"] = loc
+    _save_profile(user["id"], profile, db)
+    db.close()
+    return jsonify({"ok": True, "location": loc})
 
 
 def _generate_friend_code(db):
