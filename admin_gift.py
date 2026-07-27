@@ -2,7 +2,7 @@
 """Admin CLI tool: grant gifts to players."""
 import sys, os, argparse, json, requests
 
-API = os.environ.get("API_URL", "http://127.0.0.1:3001/api")
+API = os.environ.get("API_URL", "https://unaggravated-dispersively-grayce.ngrok-free.dev/api")
 KEY = os.environ.get("ADMIN_KEY", "triad-admin-2024")
 
 def grant(username, gift_type="item", item_id="", quantity=1, message="",
