@@ -5,9 +5,11 @@ import os
 import secrets
 
 from flask import Flask, jsonify, request, send_from_directory
+from flask_socketio import SocketIO, emit, join_room
 import mysql.connector
 
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 # ── Database config ──────────────────────────────────────────────────────
 # Connects to Linux MySQL via SSH tunnel on port 3307
@@ -571,6 +573,42 @@ def put_cards():
     db.close()
     return jsonify({"ok": True})
 
+# ── WebSocket chat ───────────────────────────────────────────────────────
+@socketio.on("connect")
+def handle_connect():
+    join_room("chat")
+
+
+@socketio.on("chat_message")
+def handle_chat_message(data):
+    """Receive a chat message via WebSocket, save to DB, broadcast."""
+    text = (data.get("text") or "").strip()
+    sender = (data.get("sender") or "Anonymous").strip()
+    token = data.get("token") or ""
+
+    if not text or len(text) > 500:
+        return
+
+    # Validate token
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+    cur.execute("SELECT id FROM triad_users WHERE token = %s", (token,))
+    user = cur.fetchone()
+    if not user:
+        cur.close()
+        db.close()
+        return
+
+    cur.execute(
+        "INSERT INTO triad_chat (user_id, sender_name, message) VALUES (%s, %s, %s)",
+        (user["id"], sender, text),
+    )
+    db.commit()
+    cur.close()
+    db.close()
+
+    # Broadcast to all chat room members
+    emit("chat_message", {"sender": sender, "text": text}, room="chat", broadcast=True)
 
 @app.route("/api/me/cards", methods=["GET"])
 def get_cards():
@@ -935,4 +973,4 @@ def serve_asset(filepath):
 # ── Main ─────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     init_db()
-    app.run(host="0.0.0.0", port=3001, debug=False)
+    socketio.run(app, host="0.0.0.0", port=3001, debug=False, allow_unsafe_werkzeug=True)
