@@ -521,23 +521,25 @@ def post_match():
         return 99, xp
 
     growth = []
-    # Combine capture XP + bonus XP per card
+    # Combine capture XP + bonus XP per instance
     all_xp = {}
-    for card_id, xp in capture_xp.items():
-        all_xp[card_id] = all_xp.get(card_id, 0) + xp
-    for card_id, xp in bonus_xp.items():
-        all_xp[card_id] = all_xp.get(card_id, 0) + xp
+    for inst_id_str, xp in capture_xp.items():
+        inst_id = int(inst_id_str)
+        all_xp[inst_id] = all_xp.get(inst_id, 0) + xp
+    for inst_id_str, xp in bonus_xp.items():
+        inst_id = int(inst_id_str)
+        all_xp[inst_id] = all_xp.get(inst_id, 0) + xp
 
-    for card_id, added_xp in all_xp.items():
-        # Find the best existing instance for this card (highest level)
+    for instance_id, added_xp in all_xp.items():
+        # Update the specific instance by ID
         cur.execute(
-            "SELECT id, xp, level, bonus_north, bonus_south, bonus_east, bonus_west "
-            "FROM triad_cards WHERE user_id = %s AND card_id = %s "
-            "ORDER BY level DESC, xp DESC LIMIT 1",
-            (user["id"], card_id),
+            "SELECT id, card_id, xp, level, bonus_north, bonus_south, bonus_east, bonus_west "
+            "FROM triad_cards WHERE user_id = %s AND id = %s",
+            (user["id"], instance_id),
         )
         row = cur.fetchone()
         if row:
+            card_id = row["card_id"]
             old_level = row["level"]
             new_xp = row["xp"] + added_xp
             new_level, leftover = _level_for_xp(new_xp)
@@ -559,24 +561,10 @@ def post_match():
                 )
             growth.append({
                 "cardId": card_id,
+                "instanceId": instance_id,
                 "leveledUp": new_level > old_level,
                 "newLevel": new_level,
                 "statBumped": stat_bumped,
-                "xpGained": added_xp,
-            })
-        else:
-            # No existing card — create one
-            new_level, leftover = _level_for_xp(added_xp)
-            cur.execute(
-                "INSERT INTO triad_cards (user_id, card_id, xp, level, source) "
-                "VALUES (%s, %s, %s, %s, 'wild_battle')",
-                (user["id"], card_id, added_xp, new_level),
-            )
-            growth.append({
-                "cardId": card_id,
-                "leveledUp": True,
-                "newLevel": new_level,
-                "statBumped": None,
                 "xpGained": added_xp,
             })
 
@@ -972,9 +960,17 @@ def get_decks():
     decks = []
     for r in rows:
         card_ids = []
+        instance_ids = None
         if r["card_ids_json"]:
             try:
-                card_ids = json.loads(r["card_ids_json"])
+                parsed = json.loads(r["card_ids_json"])
+                if isinstance(parsed, list):
+                    # Old format: just a list of card IDs
+                    card_ids = parsed
+                elif isinstance(parsed, dict):
+                    # New format: {"cardIds": [...], "instanceIds": [...]}
+                    card_ids = parsed.get("cardIds", [])
+                    instance_ids = parsed.get("instanceIds")
             except json.JSONDecodeError:
                 pass
         decks.append({
@@ -982,6 +978,7 @@ def get_decks():
             "name": r["name"],
             "cardIds": card_ids,
             "isDefault": bool(r["active"]),
+            "instanceIds": instance_ids,
         })
     return jsonify(decks)
 
@@ -996,11 +993,18 @@ def put_deck():
     deck_id = str(data.get("id") or "")
     name = data.get("name", "Untitled")
     card_ids = data.get("cardIds", [])
+    instance_ids = data.get("instanceIds")
     is_default = data.get("isDefault", False)
 
     if not deck_id:
         import uuid
         deck_id = str(uuid.uuid4())
+
+    # Store as JSON object if instance IDs are present, otherwise just the list
+    if instance_ids is not None:
+        stored = {"cardIds": card_ids, "instanceIds": instance_ids}
+    else:
+        stored = card_ids
 
     db = get_db()
     cur = db.cursor()
@@ -1008,12 +1012,15 @@ def put_deck():
         "INSERT INTO triad_decks (id, user_id, name, card_ids_json, active) "
         "VALUES (%s, %s, %s, %s, %s) "
         "ON DUPLICATE KEY UPDATE name = VALUES(name), card_ids_json = VALUES(card_ids_json), active = VALUES(active)",
-        (deck_id, user["id"], name, json.dumps(card_ids), int(is_default)),
+        (deck_id, user["id"], name, json.dumps(stored), int(is_default)),
     )
     db.commit()
     cur.close()
     db.close()
-    return jsonify({"id": deck_id, "name": name, "cardIds": card_ids, "isDefault": is_default})
+    result = {"id": deck_id, "name": name, "cardIds": card_ids, "isDefault": is_default}
+    if instance_ids is not None:
+        result["instanceIds"] = instance_ids
+    return jsonify(result)
 
 
 @app.route("/api/decks/<deck_id>/activate", methods=["POST"])
