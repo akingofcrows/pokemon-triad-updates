@@ -99,12 +99,27 @@ def init_db():
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
             card_id VARCHAR(64) NOT NULL,
+            instance_id INT DEFAULT NULL,
             sort_order INT DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES triad_users(id),
             UNIQUE KEY user_fav (user_id, card_id)
         )
     """)
+    # Migration: add instance_id column for instance-level favorites
+    try:
+        cur.execute("ALTER TABLE triad_favorites ADD COLUMN instance_id INT DEFAULT NULL")
+    except:
+        pass
+    # Migration: drop old unique key to allow multiple instances of same card
+    try:
+        cur.execute("ALTER TABLE triad_favorites DROP INDEX user_fav")
+    except:
+        pass
+    try:
+        cur.execute("ALTER TABLE triad_favorites ADD UNIQUE KEY user_inst (user_id, instance_id)")
+    except:
+        pass
     cur.execute("""
         CREATE TABLE IF NOT EXISTS triad_decks (
             id VARCHAR(64) PRIMARY KEY,
@@ -352,7 +367,7 @@ def get_me():
         "hatPath": char.get("hatPath"),
         "friendCode": friend_code,
         "location": char.get("location", "Pallet Town"),
-        "favoriteCardIds": fav_ids,
+        "favorites": fav_ids,
         "giftCount": gift_count,
     })
 
@@ -633,8 +648,13 @@ def get_cards():
 
 def _get_favorites(user_id, db):
     cur = db.cursor(dictionary=True)
-    cur.execute("SELECT card_id FROM triad_favorites WHERE user_id = %s ORDER BY sort_order", (user_id,))
-    favs = [r["card_id"] for r in cur.fetchall()]
+    cur.execute("SELECT instance_id, card_id FROM triad_favorites WHERE user_id = %s ORDER BY sort_order", (user_id,))
+    favs = []
+    for r in cur.fetchall():
+        favs.append({
+            "instanceId": r.get("instance_id"),
+            "cardId": r["card_id"],
+        })
     cur.close()
     return favs
 
@@ -664,21 +684,39 @@ def put_favorites():
     if not user:
         return jsonify({"error": "Unauthorized"}), 401
     data = request.get_json()
-    card_ids = data.get("cardIds") or []
-    if len(card_ids) > 3:
+    instance_ids = data.get("instanceIds") or []
+    if len(instance_ids) > 3:
         return jsonify({"error": "Max 3 favorites"}), 400
     db = get_db()
+    cur = db.cursor(dictionary=True)
+    # Validate all instances belong to this user
+    if instance_ids:
+        placeholders = ",".join(["%s"] * len(instance_ids))
+        cur.execute(
+            f"SELECT id, card_id FROM triad_cards WHERE user_id = %s AND id IN ({placeholders})",
+            (user["id"], *instance_ids),
+        )
+        owned = {r["id"]: r["card_id"] for r in cur.fetchall()}
+        invalid = [iid for iid in instance_ids if iid not in owned]
+        if invalid:
+            cur.close()
+            db.close()
+            return jsonify({"error": f"You don't own instance(s): {invalid}"}), 400
+    else:
+        owned = {}
+    cur.close()
     cur = db.cursor()
     cur.execute("DELETE FROM triad_favorites WHERE user_id = %s", (user["id"],))
-    for i, card_id in enumerate(card_ids):
+    for i, instance_id in enumerate(instance_ids):
+        card_id = owned.get(instance_id, "")
         cur.execute(
-            "INSERT INTO triad_favorites (user_id, card_id, sort_order) VALUES (%s, %s, %s)",
-            (user["id"], card_id, i),
+            "INSERT INTO triad_favorites (user_id, card_id, instance_id, sort_order) VALUES (%s, %s, %s, %s)",
+            (user["id"], card_id, instance_id, i),
         )
     db.commit()
     cur.close()
     db.close()
-    return jsonify({"ok": True, "favoriteCardIds": card_ids})
+    return jsonify({"ok": True, "favorites": instance_ids})
 
 
 @app.route("/api/me/evolve", methods=["POST"])
