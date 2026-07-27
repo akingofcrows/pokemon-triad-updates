@@ -331,6 +331,7 @@ def get_me():
         "friendCode": friend_code,
         "location": char.get("location", "Pallet Town"),
         "favoriteCardIds": fav_ids,
+        "giftCount": _gift_count(user["id"], db),
     })
 
 
@@ -586,6 +587,14 @@ def _get_favorites(user_id, db):
     return favs
 
 
+def _gift_count(user_id, db):
+    cur = db.cursor(dictionary=True)
+    cur.execute("SELECT COUNT(*) as cnt FROM triad_gifts WHERE user_id = %s AND claimed = 0", (user_id,))
+    row = cur.fetchone()
+    cur.close()
+    return row["cnt"] if row else 0
+
+
 @app.route("/api/me/favorites", methods=["GET"])
 def get_favorites():
     user = _require_auth()
@@ -668,6 +677,96 @@ def post_chat():
     cur.close()
     db.close()
     return jsonify({"ok": True})
+
+
+@app.route("/api/me/gifts", methods=["GET"])
+def get_gifts():
+    """Return unclaimed gifts for the authenticated user."""
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+    cur.execute(
+        "SELECT id, gift_type, item_id, quantity, message, from_user_id, claimed, created_at "
+        "FROM triad_gifts WHERE user_id = %s AND claimed = 0 ORDER BY created_at DESC",
+        (user["id"],),
+    )
+    gifts = cur.fetchall()
+    # Also get count of all unclaimed for badge
+    cur.execute("SELECT COUNT(*) as cnt FROM triad_gifts WHERE user_id = %s AND claimed = 0", (user["id"],))
+    count = cur.fetchone()["cnt"]
+    cur.close()
+    db.close()
+    for g in gifts:
+        g["created_at"] = str(g["created_at"])
+    return jsonify({"gifts": gifts, "count": count})
+
+
+@app.route("/api/me/gifts/<int:gift_id>/claim", methods=["POST"])
+def claim_gift(gift_id):
+    """Mark a gift as claimed."""
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+    cur.execute("SELECT * FROM triad_gifts WHERE id = %s AND user_id = %s AND claimed = 0", (gift_id, user["id"]))
+    gift = cur.fetchone()
+    if not gift:
+        cur.close()
+        db.close()
+        return jsonify({"error": "Gift not found or already claimed"}), 404
+    cur.execute("UPDATE triad_gifts SET claimed = 1 WHERE id = %s", (gift_id,))
+    db.commit()
+    cur.close()
+    db.close()
+    return jsonify({"ok": True, "gift": {
+        "type": gift["gift_type"], "itemId": gift["item_id"],
+        "quantity": gift["quantity"], "message": gift["message"],
+    }})
+
+
+# Admin: grant gift (protected by simple admin key)
+ADMIN_KEY = os.environ.get("ADMIN_KEY", "triad-admin-2024")
+
+def _require_admin():
+    key = request.headers.get("X-Admin-Key", "")
+    return key == ADMIN_KEY
+
+
+@app.route("/api/admin/gift", methods=["POST"])
+def admin_grant_gift():
+    """Grant a gift to a user. Requires X-Admin-Key header."""
+    if not _require_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json()
+    username = (data.get("username") or "").strip()
+    gift_type = data.get("giftType", "item")
+    item_id = data.get("itemId", "")
+    quantity = int(data.get("quantity", 1))
+    message = (data.get("message") or "A gift from the admin!").strip()
+
+    if not username:
+        return jsonify({"error": "username required"}), 400
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+    cur.execute("SELECT id FROM triad_users WHERE username = %s", (username,))
+    row = cur.fetchone()
+    if not row:
+        cur.close()
+        db.close()
+        return jsonify({"error": "User not found"}), 404
+
+    cur.execute(
+        "INSERT INTO triad_gifts (user_id, gift_type, item_id, quantity, message) VALUES (%s,%s,%s,%s,%s)",
+        (row["id"], gift_type, item_id, quantity, message),
+    )
+    db.commit()
+    cur.close()
+    db.close()
+    return jsonify({"ok": True, "username": username})
 
 
 @app.route("/api/decks", methods=["GET"])
