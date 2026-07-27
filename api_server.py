@@ -15,7 +15,7 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 # Connects to Linux MySQL via SSH tunnel on port 3307
 DB_CONFIG = {
     "host": os.environ.get("DB_HOST", "127.0.0.1"),
-    "port": int(os.environ.get("DB_PORT", 3307)),
+    "port": int(os.environ.get("DB_PORT", 3306)),
     "user": os.environ.get("DB_USER", "fablewood_user"),
     "password": os.environ.get("DB_PASS", "StrongStr0ngPass!"),
     "database": os.environ.get("DB_NAME", "pokemon_triad"),
