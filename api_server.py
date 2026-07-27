@@ -119,6 +119,20 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES triad_users(id)
         )
     """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS triad_gifts (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            gift_type VARCHAR(32) NOT NULL DEFAULT 'item',
+            item_id VARCHAR(64),
+            quantity INT DEFAULT 1,
+            message VARCHAR(256),
+            from_user_id INT,
+            claimed TINYINT DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES triad_users(id)
+        )
+    """)
     # Drop deprecated profile_json column if it exists
     try:
         cur.execute("ALTER TABLE triad_users DROP COLUMN profile_json")
