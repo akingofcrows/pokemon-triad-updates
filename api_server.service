@@ -1,0 +1,14 @@
+[Unit]
+Description=Pokemon Triple Triad API Server
+After=network.target
+
+[Service]
+Type=simple
+User=akingofcrows
+WorkingDirectory=/home/akingofcrows
+ExecStart=/usr/bin/python3 /home/akingofcrows/api_server.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
