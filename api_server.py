@@ -719,6 +719,15 @@ def claim_gift(gift_id):
         db.close()
         return jsonify({"error": "Gift not found or already claimed"}), 404
     cur.execute("UPDATE triad_gifts SET claimed = 1 WHERE id = %s", (gift_id,))
+    # Add the gifted item to player's collection
+    if gift["gift_type"] == "item" and gift["item_id"]:
+        for _ in range(gift.get("quantity", 1)):
+            cur.execute(
+                "INSERT INTO triad_cards (user_id, card_id, xp, level, source) "
+                "VALUES (%s, %s, 0, 1, 'gift') "
+                "ON DUPLICATE KEY UPDATE xp = xp",
+                (user["id"], gift["item_id"]),
+            )
     db.commit()
     cur.close()
     db.close()
