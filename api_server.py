@@ -307,8 +307,9 @@ def get_me():
     cur.execute("SELECT username, created_at FROM triad_users WHERE id = %s", (user["id"],))
     row = cur.fetchone()
 
-    # Get favorites before closing DB connection
+    # Get favorites and gift count before closing DB connection
     fav_ids = _get_favorites(user["id"], db)
+    gift_count = _gift_count(user["id"], db)
 
     cur.close()
     db.close()
@@ -331,7 +332,7 @@ def get_me():
         "friendCode": friend_code,
         "location": char.get("location", "Pallet Town"),
         "favoriteCardIds": fav_ids,
-        "giftCount": _gift_count(user["id"], db),
+        "giftCount": gift_count,
     })
 
 
@@ -893,4 +894,4 @@ def serve_asset(filepath):
 # ── Main ─────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     init_db()
-    app.run(host="0.0.0.0", port=3001, debug=True)
+    app.run(host="0.0.0.0", port=3001, debug=False)
