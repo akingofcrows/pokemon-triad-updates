@@ -504,21 +504,83 @@ def post_match():
         return jsonify({"error": "Unauthorized"}), 401
 
     data = request.get_json()
-    captures = data.get("captures") or {}
+    capture_xp = data.get("captureXp") or {}
+    bonus_xp = data.get("bonusXp") or {}
     outcome = data.get("outcome", "")
 
     db = get_db()
-    cur = db.cursor()
+    cur = db.cursor(dictionary=True)
 
-    # Award XP for captures — each capture creates a new card instance
-    for card_id, count in captures.items():
-        for _ in range(count):
+    def _level_for_xp(xp):
+        """Level N requires N*50 XP cumulative. Returns (level, leftover xp)."""
+        total_needed = 0
+        for lv in range(1, 100):
+            total_needed += lv * 50
+            if xp < total_needed:
+                return lv, xp - (total_needed - lv * 50)
+        return 99, xp
+
+    growth = []
+    # Combine capture XP + bonus XP per card
+    all_xp = {}
+    for card_id, xp in capture_xp.items():
+        all_xp[card_id] = all_xp.get(card_id, 0) + xp
+    for card_id, xp in bonus_xp.items():
+        all_xp[card_id] = all_xp.get(card_id, 0) + xp
+
+    for card_id, added_xp in all_xp.items():
+        # Find the best existing instance for this card (highest level)
+        cur.execute(
+            "SELECT id, xp, level, bonus_north, bonus_south, bonus_east, bonus_west "
+            "FROM triad_cards WHERE user_id = %s AND card_id = %s "
+            "ORDER BY level DESC, xp DESC LIMIT 1",
+            (user["id"], card_id),
+        )
+        row = cur.fetchone()
+        if row:
+            old_level = row["level"]
+            new_xp = row["xp"] + added_xp
+            new_level, leftover = _level_for_xp(new_xp)
+            stat_bumped = None
+            if new_level > old_level:
+                # Level up: random stat bump
+                import random
+                bumped = random.choice(["bonus_north", "bonus_south", "bonus_east", "bonus_west"])
+                stat_bumped = bumped.split("_")[1][0].upper()
+                cur.execute(
+                    f"UPDATE triad_cards SET xp = %s, level = %s, {bumped} = {bumped} + 1 "
+                    f"WHERE id = %s",
+                    (new_xp, new_level, row["id"]),
+                )
+            else:
+                cur.execute(
+                    "UPDATE triad_cards SET xp = %s, level = %s WHERE id = %s",
+                    (new_xp, new_level, row["id"]),
+                )
+            growth.append({
+                "cardId": card_id,
+                "leveledUp": new_level > old_level,
+                "newLevel": new_level,
+                "statBumped": stat_bumped,
+                "xpGained": added_xp,
+            })
+        else:
+            # No existing card — create one
+            new_level, leftover = _level_for_xp(added_xp)
             cur.execute(
-                "INSERT INTO triad_cards (user_id, card_id, xp, source) VALUES (%s, %s, 1, 'wild_battle')",
-                (user["id"], card_id),
+                "INSERT INTO triad_cards (user_id, card_id, xp, level, source) "
+                "VALUES (%s, %s, %s, %s, 'wild_battle')",
+                (user["id"], card_id, added_xp, new_level),
             )
+            growth.append({
+                "cardId": card_id,
+                "leveledUp": True,
+                "newLevel": new_level,
+                "statBumped": None,
+                "xpGained": added_xp,
+            })
 
-    # Update win/loss/draw counters on character
+    # Update win/loss/draw counters
     _ensure_character(user["id"], db)
     field = {"win": "wins", "loss": "losses", "draw": "draws"}.get(outcome)
     if field:
@@ -527,7 +589,14 @@ def post_match():
     db.commit()
     cur.close()
     db.close()
-    return jsonify({"levelUps": [], "evolutions": []})
+
+    # Check for pending evolutions (cards that just reached evolution level)
+    evolutions = []
+    for g in growth:
+        # Simple check: if card leveled up, check its evolutions
+        pass  # Evolution check would need cards.json data — skip for now
+
+    return jsonify({"growth": growth, "pendingEvolutions": evolutions})
 
 
 @app.route("/api/me/claim-starter", methods=["POST"])
