@@ -138,6 +138,16 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES triad_users(id)
         )
     """)
+    # Migration: add new gift columns for tables created before this feature
+    for col, coldef in [
+        ("from_username", "VARCHAR(64)"), ("bonus_north", "INT DEFAULT 0"),
+        ("bonus_south", "INT DEFAULT 0"), ("bonus_east", "INT DEFAULT 0"),
+        ("bonus_west", "INT DEFAULT 0"), ("is_shiny", "TINYINT DEFAULT 0"),
+    ]:
+        try:
+            cur.execute(f"ALTER TABLE triad_gifts ADD COLUMN {col} {coldef}")
+        except:
+            pass
     # Drop deprecated profile_json column if it exists
     try:
         cur.execute("ALTER TABLE triad_users DROP COLUMN profile_json")
