@@ -71,10 +71,14 @@ def init_db():
             bonus_west INT DEFAULT 0,
             is_shiny TINYINT DEFAULT 0,
             source VARCHAR(64) DEFAULT NULL,
-            FOREIGN KEY (user_id) REFERENCES triad_users(id),
-            UNIQUE KEY user_card (user_id, card_id)
+            FOREIGN KEY (user_id) REFERENCES triad_users(id)
         )
     """)
+    # Migration: drop old unique constraint so we can have multiples
+    try:
+        cur.execute("ALTER TABLE triad_cards DROP INDEX user_card")
+    except:
+        pass
     # Migration: add columns if table existed before
     for col, coldef in [
         ("is_shiny", "TINYINT DEFAULT 0"),
@@ -489,13 +493,13 @@ def post_match():
     db = get_db()
     cur = db.cursor()
 
-    # Award XP for captures
+    # Award XP for captures — each capture creates a new card instance
     for card_id, count in captures.items():
-        cur.execute(
-            "INSERT INTO triad_cards (user_id, card_id, xp) VALUES (%s, %s, %s) "
-            "ON DUPLICATE KEY UPDATE xp = xp + %s",
-            (user["id"], card_id, count, count),
-        )
+        for _ in range(count):
+            cur.execute(
+                "INSERT INTO triad_cards (user_id, card_id, xp, source) VALUES (%s, %s, 1, 'wild_battle')",
+                (user["id"], card_id),
+            )
 
     # Update win/loss/draw counters on character
     _ensure_character(user["id"], db)
@@ -533,8 +537,7 @@ def claim_starter():
             card_id = entry
             shiny = 0
         cur.execute(
-            "INSERT INTO triad_cards (user_id, card_id, xp, is_shiny, source) VALUES (%s, %s, 0, %s, 'starter_deck') "
-            "ON DUPLICATE KEY UPDATE xp = xp",
+            "INSERT INTO triad_cards (user_id, card_id, xp, is_shiny, source) VALUES (%s, %s, 0, %s, 'starter_deck')",
             (user["id"], card_id, shiny),
         )
     db.commit()
@@ -557,12 +560,7 @@ def put_cards():
         cur.execute(
             """INSERT INTO triad_cards (user_id, card_id, xp, level,
                bonus_north, bonus_south, bonus_east, bonus_west, is_shiny, source)
-               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-               ON DUPLICATE KEY UPDATE
-               xp = VALUES(xp), level = VALUES(level),
-               bonus_north = VALUES(bonus_north), bonus_south = VALUES(bonus_south),
-               bonus_east = VALUES(bonus_east), bonus_west = VALUES(bonus_west),
-               is_shiny = VALUES(is_shiny), source = VALUES(source)""",
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
             (user["id"], c.get("cardId"), c.get("xp", 0), c.get("level", 1),
              c.get("bonusNorth", 0), c.get("bonusSouth", 0),
              c.get("bonusEast", 0), c.get("bonusWest", 0),
@@ -583,7 +581,7 @@ def get_cards():
     db = get_db()
     cur = db.cursor(dictionary=True)
     cur.execute("""
-        SELECT card_id AS cardId, xp, level,
+        SELECT id AS instanceId, card_id AS cardId, xp, level,
                bonus_north AS bonusNorth, bonus_south AS bonusSouth,
                bonus_east AS bonusEast, bonus_west AS bonusWest,
                is_shiny AS shiny, source
@@ -737,15 +735,19 @@ def claim_gift(gift_id):
     # Add the gifted item to player's collection with bonus stats
     if gift["gift_type"] == "item" and gift["item_id"]:
         from_user = gift.get("from_username") or "Admin"
-        source = f"Gift from {from_user} {gift['created_at'].strftime('%m/%d/%Y')}"
+        created = gift.get("created_at")
+        if hasattr(created, 'strftime'):
+            date_str = created.strftime('%m/%d/%Y')
+        else:
+            date_str = str(created or '')
+        source = f"Gift from {from_user} {date_str}"
         is_shiny = gift.get("is_shiny", 0)
         for _ in range(gift.get("quantity", 1)):
             cur.execute(
                 "INSERT INTO triad_cards (user_id, card_id, xp, level, "
                 "bonus_north, bonus_south, bonus_east, bonus_west, "
                 "is_shiny, source) "
-                "VALUES (%s, %s, 0, 1, %s, %s, %s, %s, %s, %s) "
-                "ON DUPLICATE KEY UPDATE xp = xp",
+                "VALUES (%s, %s, 0, 1, %s, %s, %s, %s, %s, %s)",
                 (user["id"], gift["item_id"],
                  gift.get("bonus_north", 0), gift.get("bonus_south", 0),
                  gift.get("bonus_east", 0), gift.get("bonus_west", 0),
