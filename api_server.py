@@ -123,11 +123,16 @@ def init_db():
         CREATE TABLE IF NOT EXISTS triad_gifts (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
+            from_username VARCHAR(64),
             gift_type VARCHAR(32) NOT NULL DEFAULT 'item',
             item_id VARCHAR(64),
             quantity INT DEFAULT 1,
-            message VARCHAR(256),
-            from_user_id INT,
+            message VARCHAR(512),
+            bonus_north INT DEFAULT 0,
+            bonus_south INT DEFAULT 0,
+            bonus_east INT DEFAULT 0,
+            bonus_west INT DEFAULT 0,
+            is_shiny TINYINT DEFAULT 0,
             claimed TINYINT DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES triad_users(id)
@@ -719,14 +724,22 @@ def claim_gift(gift_id):
         db.close()
         return jsonify({"error": "Gift not found or already claimed"}), 404
     cur.execute("UPDATE triad_gifts SET claimed = 1 WHERE id = %s", (gift_id,))
-    # Add the gifted item to player's collection
+    # Add the gifted item to player's collection with bonus stats
     if gift["gift_type"] == "item" and gift["item_id"]:
+        from_user = gift.get("from_username") or "Admin"
+        source = f"Gift from {from_user} {gift['created_at'].strftime('%m/%d/%Y')}"
+        is_shiny = gift.get("is_shiny", 0)
         for _ in range(gift.get("quantity", 1)):
             cur.execute(
-                "INSERT INTO triad_cards (user_id, card_id, xp, level, source) "
-                "VALUES (%s, %s, 0, 1, 'gift') "
+                "INSERT INTO triad_cards (user_id, card_id, xp, level, "
+                "bonus_north, bonus_south, bonus_east, bonus_west, "
+                "is_shiny, source) "
+                "VALUES (%s, %s, 0, 1, %s, %s, %s, %s, %s, %s) "
                 "ON DUPLICATE KEY UPDATE xp = xp",
-                (user["id"], gift["item_id"]),
+                (user["id"], gift["item_id"],
+                 gift.get("bonus_north", 0), gift.get("bonus_south", 0),
+                 gift.get("bonus_east", 0), gift.get("bonus_west", 0),
+                 is_shiny, source),
             )
     db.commit()
     cur.close()
@@ -756,6 +769,11 @@ def admin_grant_gift():
     item_id = data.get("itemId", "")
     quantity = int(data.get("quantity", 1))
     message = (data.get("message") or "A gift from the admin!").strip()
+    bn = int(data.get("bonusNorth", 0))
+    bs = int(data.get("bonusSouth", 0))
+    be = int(data.get("bonusEast", 0))
+    bw = int(data.get("bonusWest", 0))
+    shiny = 1 if data.get("shiny") else 0
 
     if not username:
         return jsonify({"error": "username required"}), 400
@@ -770,8 +788,10 @@ def admin_grant_gift():
         return jsonify({"error": "User not found"}), 404
 
     cur.execute(
-        "INSERT INTO triad_gifts (user_id, gift_type, item_id, quantity, message) VALUES (%s,%s,%s,%s,%s)",
-        (row["id"], gift_type, item_id, quantity, message),
+        "INSERT INTO triad_gifts (user_id, from_username, gift_type, item_id, quantity, message, "
+        "bonus_north, bonus_south, bonus_east, bonus_west, is_shiny) "
+        "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+        (row["id"], "Admin", gift_type, item_id, quantity, message, bn, bs, be, bw, shiny),
     )
     db.commit()
     cur.close()
