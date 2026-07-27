@@ -135,9 +135,24 @@ def _get_character(user_id, db):
     cur.execute("SELECT * FROM triad_characters WHERE user_id = %s", (user_id,))
     row = cur.fetchone()
     cur.close()
-    if row:
-        return {k: row[k] for k in row if row[k] is not None}
-    return {}
+    if not row:
+        return {}
+    # Map snake_case DB columns → camelCase for the rest of the code
+    return {
+        "trainerName": row.get("trainer_name"),
+        "gender": row.get("gender"),
+        "skinTone": row.get("skin_tone"),
+        "hairPath": row.get("hair_path"),
+        "topPath": row.get("top_path"),
+        "bottomPath": row.get("bottom_path"),
+        "hatPath": row.get("hat_path"),
+        "friendCode": row.get("friend_code"),
+        "location": row.get("location"),
+        "money": row.get("money"),
+        "wins": row.get("wins"),
+        "losses": row.get("losses"),
+        "draws": row.get("draws"),
+    }
 
 def _ensure_character(user_id, db):
     """Create a default character row if one doesn't exist, return the dict."""
@@ -278,6 +293,9 @@ def get_me():
     cur.execute("SELECT username, created_at FROM triad_users WHERE id = %s", (user["id"],))
     row = cur.fetchone()
 
+    # Get favorites before closing DB connection
+    fav_ids = _get_favorites(user["id"], db)
+
     cur.close()
     db.close()
 
@@ -298,7 +316,7 @@ def get_me():
         "hatPath": char.get("hatPath"),
         "friendCode": friend_code,
         "location": char.get("location", "Pallet Town"),
-        "favoriteCardIds": _get_favorites(user["id"], db),
+        "favoriteCardIds": fav_ids,
     })
 
 
@@ -680,20 +698,18 @@ def put_deck():
     card_ids = data.get("cardIds", [])
     is_default = data.get("isDefault", False)
 
-    db = get_db()
-    cur = db.cursor()
-    if deck_id:
-        cur.execute(
-            "UPDATE triad_decks SET name = %s, card_ids_json = %s, active = %s WHERE id = %s AND user_id = %s",
-            (name, json.dumps(card_ids), int(is_default), deck_id, user["id"]),
-        )
-    else:
+    if not deck_id:
         import uuid
         deck_id = str(uuid.uuid4())
-        cur.execute(
-            "INSERT INTO triad_decks (id, user_id, name, card_ids_json, active) VALUES (%s, %s, %s, %s, %s)",
-            (deck_id, user["id"], name, json.dumps(card_ids), int(is_default)),
-        )
+
+    db = get_db()
+    cur = db.cursor()
+    cur.execute(
+        "INSERT INTO triad_decks (id, user_id, name, card_ids_json, active) "
+        "VALUES (%s, %s, %s, %s, %s) "
+        "ON DUPLICATE KEY UPDATE name = VALUES(name), card_ids_json = VALUES(card_ids_json), active = VALUES(active)",
+        (deck_id, user["id"], name, json.dumps(card_ids), int(is_default)),
+    )
     db.commit()
     cur.close()
     db.close()

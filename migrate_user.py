@@ -63,6 +63,7 @@ if user.get('profile_json'):
             (new_user_id, *char_fields.values())
         )
         print(f"Migrated character data: {list(char_fields.keys())}")
+
         # Migrate favorites from old profile_json
         fav_ids = profile.get("favoriteCardIds") or []
         if fav_ids:
@@ -72,6 +73,24 @@ if user.get('profile_json'):
                     (new_user_id, fid, i)
                 )
             print(f"Migrated {len(fav_ids[:3])} favorites")
+
+        # Migrate decks from old profile_json
+        old_decks = profile.get("decks") or []
+        if old_decks:
+            for d in old_decks:
+                did = d.get("id", "")
+                dname = d.get("name", "Deck")
+                card_ids = d.get("cardIds", [])
+                is_default = d.get("isDefault", False)
+                if not did:
+                    continue
+                nc.execute(
+                    "INSERT INTO triad_decks (id, user_id, name, card_ids_json, active) "
+                    "VALUES (%s, %s, %s, %s, %s) "
+                    "ON DUPLICATE KEY UPDATE name=VALUES(name), card_ids_json=VALUES(card_ids_json), active=VALUES(active)",
+                    (did, new_user_id, dname, json.dumps(card_ids), int(is_default))
+                )
+            print(f"Migrated {len(old_decks)} decks from profile_json")
     except json.JSONDecodeError:
         print("Skipped profile_json — invalid JSON")
 else:
