@@ -575,6 +575,16 @@ def post_match():
         cur.execute(f"UPDATE triad_characters SET {field} = {field} + 1 WHERE user_id = %s", (user["id"],))
 
     db.commit()
+    # Verify XP was persisted
+    for g in growth:
+        cur2 = db.cursor(dictionary=True)
+        cur2.execute("SELECT xp, level FROM triad_cards WHERE id = %s", (g["instanceId"],))
+        verify = cur2.fetchone()
+        cur2.close()
+        if verify:
+            print(f"[XP-SERVER] instance {g['instanceId']} ({g['cardId']}): added {g['xpGained']}xp → now {verify['xp']}xp (level {verify['level']})", flush=True)
+        else:
+            print(f"[XP-SERVER] instance {g['instanceId']} NOT FOUND after commit!", flush=True)
     cur.close()
     db.close()
 
@@ -698,6 +708,10 @@ def get_cards():
         FROM triad_cards WHERE user_id = %s
     """, (user["id"],))
     cards = cur.fetchall()
+    # Log XP values for debugging
+    for c in cards:
+        if c.get("xp", 0) > 0:
+            print(f"[XP-SERVER] GET cards: instance {c['instanceId']} ({c['cardId']}) xp={c['xp']} level={c['level']}", flush=True)
     cur.close()
     db.close()
     return jsonify(cards)
