@@ -506,22 +506,29 @@ def post_match():
     data = request.get_json()
     capture_xp = data.get("captureXp") or {}
     bonus_xp = data.get("bonusXp") or {}
+    card_xp = data.get("cardXp") or {}
     outcome = data.get("outcome", "")
 
     db = get_db()
     cur = db.cursor(dictionary=True)
 
+    # New XP curve: level N requires cumulative XP as defined by xp_to_next_level
+    XP_CURVE = [0, 40, 95, 170, 270, 405, 580, 805, 1090, 1445, 1880, 2405, 3030, 3770, 4640, 5655]
+
     def _level_for_xp(xp):
-        """Level N requires N*50 XP cumulative. Returns (level, leftover xp)."""
-        total_needed = 0
-        for lv in range(1, 100):
-            total_needed += lv * 50
-            if xp < total_needed:
-                return lv, xp - (total_needed - lv * 50)
-        return 99, xp
+        """Returns (level, leftover xp) using the new XP curve."""
+        for lv, threshold in enumerate(XP_CURVE):
+            if xp < threshold:
+                prev = XP_CURVE[lv - 1] if lv > 0 else 0
+                return lv, xp - prev
+        # Extrapolate beyond defined curve
+        last = XP_CURVE[-1]
+        extra = xp - last
+        levels_beyond = extra // 1200 + 1
+        return len(XP_CURVE) + levels_beyond, extra % 1200
 
     growth = []
-    # Combine capture XP + bonus XP per instance
+    # Combine legacy capture XP + bonus XP, plus new cardXp total
     all_xp = {}
     for inst_id_str, xp in capture_xp.items():
         inst_id = int(inst_id_str)
@@ -529,6 +536,11 @@ def post_match():
     for inst_id_str, xp in bonus_xp.items():
         inst_id = int(inst_id_str)
         all_xp[inst_id] = all_xp.get(inst_id, 0) + xp
+    # New cardXp: use totalXp from the breakdown
+    for inst_id_str, breakdown in card_xp.items():
+        inst_id = int(inst_id_str)
+        total = breakdown.get("totalXp", 0) if isinstance(breakdown, dict) else 0
+        all_xp[inst_id] = all_xp.get(inst_id, 0) + total
 
     for instance_id, added_xp in all_xp.items():
         # Update the specific instance by ID
