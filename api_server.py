@@ -512,23 +512,28 @@ def post_match():
     db = get_db()
     cur = db.cursor(dictionary=True)
 
-    # XP curve using Pokémon cubic formula: n³ / divisor
-    # Divisor=4 for Medium-Fast (default), scaling so:
-    # Lv.2=2xp, Lv.5=31xp, Lv.10=250xp, Lv.16=1024xp
-    # A ~20 XP match gets you ~5 levels early, slowing down later.
-    XP_DIVISOR = 4
+    # XP curve from the Triad GDD (Medium-Fast base):
+    # Lv.1→2: 40, 2→3: 55, 3→4: 75, 4→5: 100, 5→6: 135, 6→7: 175,
+    # 7→8: 225, 8→9: 285, 9→10: 355, 10→11: 435, 11→12: 525,
+    # 12→13: 625, 13→14: 740, 14→15: 870, 15→16: 1015
+    XP_CURVE = [0, 40, 95, 170, 270, 405, 580, 805, 1090, 1445, 1880, 2405, 3030, 3770, 4640, 5655]
 
     def _level_for_xp(xp):
-        """Returns (level, leftover xp) using cubic formula n³ / divisor."""
-        lo, hi = 1, 100
-        while lo < hi:
-            mid = (lo + hi + 1) // 2
-            if (mid * mid * mid) // XP_DIVISOR <= xp:
-                lo = mid
-            else:
-                hi = mid - 1
-        needed = (lo * lo * lo) // XP_DIVISOR
-        return lo, xp - needed
+        """Returns (level, leftover xp) using the GDD curve."""
+        for lv, threshold in enumerate(XP_CURVE):
+            if xp < threshold:
+                prev = XP_CURVE[lv - 1] if lv > 0 else 0
+                return lv, xp - prev
+        # Extrapolate beyond level 16: last step + 120 per level
+        last = XP_CURVE[-1]
+        extra = xp - last
+        levels_beyond = 0
+        step = 1015
+        while extra >= step:
+            extra -= step
+            levels_beyond += 1
+            step += 120
+        return len(XP_CURVE) + levels_beyond - 1, extra
 
     growth = []
     # Combine legacy capture XP + bonus XP, plus new cardXp total
@@ -713,6 +718,24 @@ def get_cards():
     if not user:
         return jsonify({"error": "Unauthorized"}), 401
 
+    # Same curve as GDD / pokemon_leveling.dart
+    XP_CURVE = [0, 40, 95, 170, 270, 405, 580, 805, 1090, 1445, 1880, 2405, 3030, 3770, 4640, 5655]
+
+    def _calc_level(xp):
+        for lv, threshold in enumerate(XP_CURVE):
+            if xp < threshold:
+                return lv
+        # extrapolate
+        last = XP_CURVE[-1]
+        extra = xp - last
+        lv = len(XP_CURVE) - 1
+        step = 1015
+        while extra >= step:
+            extra -= step
+            lv += 1
+            step += 120
+        return lv
+
     db = get_db()
     cur = db.cursor(dictionary=True)
     cur.execute("""
@@ -723,10 +746,21 @@ def get_cards():
         FROM triad_cards WHERE user_id = %s
     """, (user["id"],))
     cards = cur.fetchall()
-    # Log XP values for debugging
+
+    # Recalculate levels using GDD curve; update DB if stale
+    updates = []
     for c in cards:
-        if c.get("xp", 0) > 0:
-            print(f"[XP-SERVER] GET cards: instance {c['instanceId']} ({c['cardId']}) xp={c['xp']} level={c['level']}", flush=True)
+        correct = _calc_level(c["xp"])
+        if correct != c["level"]:
+            c["level"] = correct
+            updates.append((correct, c["instanceId"]))
+    if updates:
+        cur2 = db.cursor()
+        for lv, iid in updates:
+            cur2.execute("UPDATE triad_cards SET level = %s WHERE id = %s", (lv, iid))
+        db.commit()
+        cur2.close()
+
     cur.close()
     db.close()
     return jsonify(cards)
