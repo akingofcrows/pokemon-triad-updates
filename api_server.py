@@ -512,20 +512,23 @@ def post_match():
     db = get_db()
     cur = db.cursor(dictionary=True)
 
-    # New XP curve: level N requires cumulative XP as defined by xp_to_next_level
-    XP_CURVE = [0, 40, 95, 170, 270, 405, 580, 805, 1090, 1445, 1880, 2405, 3030, 3770, 4640, 5655]
+    # XP curve using Pokémon cubic formula: n³ / divisor
+    # Divisor=4 for Medium-Fast (default), scaling so:
+    # Lv.2=2xp, Lv.5=31xp, Lv.10=250xp, Lv.16=1024xp
+    # A ~20 XP match gets you ~5 levels early, slowing down later.
+    XP_DIVISOR = 4
 
     def _level_for_xp(xp):
-        """Returns (level, leftover xp) using the new XP curve."""
-        for lv, threshold in enumerate(XP_CURVE):
-            if xp < threshold:
-                prev = XP_CURVE[lv - 1] if lv > 0 else 0
-                return lv, xp - prev
-        # Extrapolate beyond defined curve
-        last = XP_CURVE[-1]
-        extra = xp - last
-        levels_beyond = extra // 1200 + 1
-        return len(XP_CURVE) + levels_beyond, extra % 1200
+        """Returns (level, leftover xp) using cubic formula n³ / divisor."""
+        lo, hi = 1, 100
+        while lo < hi:
+            mid = (lo + hi + 1) // 2
+            if (mid * mid * mid) // XP_DIVISOR <= xp:
+                lo = mid
+            else:
+                hi = mid - 1
+        needed = (lo * lo * lo) // XP_DIVISOR
+        return lo, xp - needed
 
     growth = []
     # Combine legacy capture XP + bonus XP, plus new cardXp total
