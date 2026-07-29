@@ -169,6 +169,20 @@ def init_db():
             cur.execute(f"ALTER TABLE triad_gifts ADD COLUMN {col} {coldef}")
         except:
             pass
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS triad_story_progress (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            location_id VARCHAR(64) NOT NULL,
+            node_id VARCHAR(64) NOT NULL,
+            completed TINYINT DEFAULT 0,
+            first_clear TINYINT DEFAULT 0,
+            times_cleared INT DEFAULT 0,
+            cleared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES triad_users(id),
+            UNIQUE KEY user_node (user_id, location_id, node_id)
+        )
+    """)
     # Drop deprecated profile_json column if it exists
     try:
         cur.execute("ALTER TABLE triad_users DROP COLUMN profile_json")
@@ -430,7 +444,93 @@ def put_location():
     return jsonify({"ok": True, "location": loc})
 
 
-def _generate_friend_code(db):
+@app.route("/api/me/story", methods=["GET"])
+def get_story_progress():
+    """Get the player's story mode progress for all locations."""
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+    cur.execute(
+        "SELECT location_id, node_id, completed, first_clear, times_cleared "
+        "FROM triad_story_progress WHERE user_id = %s",
+        (user["id"],),
+    )
+    rows = cur.fetchall() or []
+    cur.close()
+    db.close()
+
+    # Build a map: locationId -> { nodeId -> {completed, firstClear, timesCleared} }
+    progress = {}
+    for row in rows:
+        loc = row["location_id"]
+        if loc not in progress:
+            progress[loc] = {}
+        progress[loc][row["node_id"]] = {
+            "completed": bool(row["completed"]),
+            "firstClear": bool(row["first_clear"]),
+            "timesCleared": row["times_cleared"],
+        }
+    return jsonify({"progress": progress})
+
+
+@app.route("/api/me/story/node-complete", methods=["POST"])
+def complete_story_node():
+    """Mark a story node as completed."""
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+    location_id = (data.get("locationId") or "").strip()
+    node_id = (data.get("nodeId") or "").strip()
+    if not location_id or not node_id:
+        return jsonify({"error": "locationId and nodeId are required."}), 400
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    # Check if node already exists in progress
+    cur.execute(
+        "SELECT id, completed, times_cleared FROM triad_story_progress "
+        "WHERE user_id = %s AND location_id = %s AND node_id = %s",
+        (user["id"], location_id, node_id),
+    )
+    existing = cur.fetchone()
+
+    first_clear = False
+    if existing:
+        new_times = (existing["times_cleared"] or 0) + 1
+        was_completed = bool(existing["completed"])
+        cur.execute(
+            "UPDATE triad_story_progress SET completed = 1, times_cleared = %s "
+            "WHERE id = %s",
+            (new_times, existing["id"]),
+        )
+    else:
+        cur.execute(
+            "INSERT INTO triad_story_progress "
+            "(user_id, location_id, node_id, completed, first_clear, times_cleared) "
+            "VALUES (%s, %s, %s, 1, 1, 1)",
+            (user["id"], location_id, node_id),
+        )
+        first_clear = True
+
+    # If this completes all nodes in the location, unlock the next location(s)
+    # The client handles this logic; server just records progress.
+
+    db.commit()
+    cur.close()
+    db.close()
+
+    return jsonify({
+        "ok": True,
+        "locationId": location_id,
+        "nodeId": node_id,
+        "firstClear": first_clear,
+    })
     """Generate a unique 12-digit friend code not already in use."""
     import random
     cur = db.cursor(dictionary=True)
