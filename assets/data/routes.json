@@ -1,0 +1,77 @@
+{
+  "locations": [
+    {
+      "id": "route_1",
+      "name": "Route 1",
+      "region": "kanto",
+      "unlockRequirement": null,
+      "wildLevelRange": { "min": 3, "max": 4 },
+      "nodes": [
+        {
+          "id": "route_1_wild_1",
+          "type": "wild",
+          "requiredNode": null,
+          "encounterTable": [
+            { "cardId": "card_pidgey_1", "weight": 40, "rarity": "common" },
+            { "cardId": "card_rattata_1", "weight": 30, "rarity": "common" },
+            { "cardId": "card_oddish_1", "weight": 30, "rarity": "common" },
+            { "cardId": "card_bellsprout_1", "weight": 30, "rarity": "common" }
+          ]
+        },
+        {
+          "id": "route_1_wild_2",
+          "type": "wild",
+          "requiredNode": "route_1_wild_1",
+          "encounterTable": [
+            { "cardId": "card_pidgey_1", "weight": 40, "rarity": "common" },
+            { "cardId": "card_rattata_1", "weight": 30, "rarity": "common" },
+            { "cardId": "card_oddish_1", "weight": 30, "rarity": "common" },
+            { "cardId": "card_bellsprout_1", "weight": 30, "rarity": "common" }
+          ]
+        },
+        {
+          "id": "route_1_wild_3",
+          "type": "wild",
+          "requiredNode": "route_1_wild_2",
+          "encounterTable": [
+            { "cardId": "card_pidgey_1", "weight": 40, "rarity": "common" },
+            { "cardId": "card_rattata_1", "weight": 30, "rarity": "common" },
+            { "cardId": "card_oddish_1", "weight": 30, "rarity": "common" },
+            { "cardId": "card_bellsprout_1", "weight": 30, "rarity": "common" }
+          ]
+        }
+      ],
+      "completionUnlocks": ["viridian_city"]
+    },
+    {
+      "id": "viridian_city",
+      "name": "Viridian City",
+      "region": "kanto",
+      "wildLevelRange": { "min": 0, "max": 0 },
+      "nodes": [
+        {
+          "id": "viridian_pokemart",
+          "type": "story",
+          "requiredNode": null
+        },
+        {
+          "id": "viridian_center",
+          "type": "story",
+          "requiredNode": null
+        },
+        {
+          "id": "viridian_route2",
+          "type": "story",
+          "requiredNode": null
+        },
+        {
+          "id": "viridian_gym",
+          "type": "trainer",
+          "requiredNode": null,
+          "npcId": "giovanni"
+        }
+      ],
+      "completionUnlocks": []
+    }
+  ]
+}

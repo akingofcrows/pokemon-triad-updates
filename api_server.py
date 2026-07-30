@@ -665,15 +665,22 @@ def post_match():
             new_level, leftover = _level_for_xp(new_xp)
             stat_bumped = None
             if new_level > old_level:
-                # Level up: random stat bump
+                # Level up: 25% chance of a random stat bump
                 import random
-                bumped = random.choice(["bonus_north", "bonus_south", "bonus_east", "bonus_west"])
-                stat_bumped = bumped.split("_")[1][0].upper()
-                cur.execute(
-                    f"UPDATE triad_cards SET xp = %s, level = %s, {bumped} = {bumped} + 1 "
-                    f"WHERE id = %s",
-                    (new_xp, new_level, row["id"]),
-                )
+                stat_bumped = None
+                if random.random() < 0.25:
+                    bumped = random.choice(["bonus_north", "bonus_south", "bonus_east", "bonus_west"])
+                    stat_bumped = bumped.split("_")[1][0].upper()
+                    cur.execute(
+                        f"UPDATE triad_cards SET xp = %s, level = %s, {bumped} = {bumped} + 1 "
+                        f"WHERE id = %s",
+                        (new_xp, new_level, row["id"]),
+                    )
+                else:
+                    cur.execute(
+                        "UPDATE triad_cards SET xp = %s, level = %s WHERE id = %s",
+                        (new_xp, new_level, row["id"]),
+                    )
             else:
                 cur.execute(
                     "UPDATE triad_cards SET xp = %s, level = %s WHERE id = %s",
@@ -693,6 +700,33 @@ def post_match():
     field = {"win": "wins", "loss": "losses", "draw": "draws"}.get(outcome)
     if field:
         cur.execute(f"UPDATE triad_characters SET {field} = {field} + 1 WHERE user_id = %s", (user["id"],))
+
+    # Create card instances for captured shiny wild cards
+    captured_cards = data.get("capturedCards") or []
+    if captured_cards:
+        print(f"[CAPTURE] received capturedCards: {captured_cards}", flush=True)
+    for c in captured_cards:
+        card_id = c.get("cardId", "")
+        level = c.get("level", 1)
+        # Calculate starting XP for this level
+        xp_start = 0
+        if level > 1 and level <= len(XP_CURVE):
+            xp_start = XP_CURVE[level - 1]
+        cur.execute(
+            "INSERT INTO triad_cards (user_id, card_id, xp, level, is_shiny, source) "
+            "VALUES (%s, %s, %s, %s, 1, 'wild capture')",
+            (user["id"], card_id, xp_start, level),
+        )
+        new_inst_id = cur.lastrowid
+        growth.append({
+            "cardId": card_id,
+            "instanceId": new_inst_id,
+            "leveledUp": False,
+            "newLevel": 1,
+            "statBumped": None,
+            "xpGained": 0,
+            "captured": True,
+        })
 
     db.commit()
     # Verify XP was persisted
@@ -944,7 +978,95 @@ def evolve():
     user = _require_auth()
     if not user:
         return jsonify({"error": "Unauthorized"}), 401
-    return jsonify({"ok": True})
+
+    data = request.get_json()
+    card_id = (data.get("cardId") or "").strip()
+    to_id = (data.get("toId") or "").strip()
+    if not card_id or not to_id:
+        return jsonify({"error": "cardId and toId are required"}), 400
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    # Find the card instance by its current card_id and user
+    cur.execute(
+        "SELECT id, card_id, xp, level, bonus_north, bonus_south, bonus_east, bonus_west, is_shiny "
+        "FROM triad_cards WHERE user_id = %s AND card_id = %s ORDER BY level DESC LIMIT 1",
+        (user["id"], card_id),
+    )
+    row = cur.fetchone()
+    if not row:
+        cur.close()
+        db.close()
+        return jsonify({"error": "Card not found"}), 404
+
+    # Replace the card_id with the evolved form, preserving all stats
+    cur.execute(
+        "UPDATE triad_cards SET card_id = %s WHERE id = %s",
+        (to_id, row["id"]),
+    )
+    db.commit()
+    cur.close()
+    db.close()
+
+    return jsonify({
+        "ok": True,
+        "instanceId": row["id"],
+        "newCardId": to_id,
+        "preservedBonuses": {
+            "north": row["bonus_north"],
+            "south": row["bonus_south"],
+            "east": row["bonus_east"],
+            "west": row["bonus_west"],
+        },
+    })
+
+
+@app.route("/api/me/booster", methods=["POST"])
+def buy_booster():
+    """Purchase a booster pack — creates card instances and deducts money."""
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+    cards = data.get("cards") or []
+    if not cards:
+        return jsonify({"error": "cards list is required"}), 400
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    # Deduct 500 PokéDollars
+    _ensure_character(user["id"], db)
+    cur.execute("SELECT money FROM triad_characters WHERE user_id = %s", (user["id"],))
+    row = cur.fetchone()
+    money = row["money"] if row else 0
+    if money < 500:
+        cur.close()
+        db.close()
+        return jsonify({"error": "Not enough money"}), 402
+
+    XP_CURVE = [0, 40, 95, 170, 270, 405, 580, 805, 1090, 1445, 1880, 2405, 3030, 3770, 4640, 5655]
+
+    created = []
+    for c in cards:
+        card_id = c.get("cardId", "")
+        level = c.get("level", 1)
+        is_shiny = 1 if c.get("isShiny") else 0
+        xp_start = XP_CURVE[level - 1] if 1 <= level <= len(XP_CURVE) else 0
+        cur.execute(
+            "INSERT INTO triad_cards (user_id, card_id, xp, level, is_shiny, source) "
+            "VALUES (%s, %s, %s, %s, %s, 'booster pack')",
+            (user["id"], card_id, xp_start, level, is_shiny),
+        )
+        created.append({"cardId": card_id, "instanceId": cur.lastrowid, "level": level, "isShiny": bool(is_shiny)})
+
+    cur.execute("UPDATE triad_characters SET money = money - 500 WHERE user_id = %s", (user["id"],))
+    db.commit()
+    cur.close()
+    db.close()
+    return jsonify({"ok": True, "cards": created})
 
 
 @app.route("/api/chat", methods=["GET"])
