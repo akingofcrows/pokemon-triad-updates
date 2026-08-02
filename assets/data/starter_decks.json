@@ -1,0 +1,40 @@
+{
+  "decks": [
+    {
+      "id": "starter_grass",
+      "name": "Bulbasaur Starter",
+      "description": "A Grass-type starter deck",
+      "cards": [
+        "card_bulbasaur_1",
+        "card_pidgey_1",
+        "card_rattata_1",
+        "card_caterpie_1",
+        "trainer_oak"
+      ]
+    },
+    {
+      "id": "starter_fire",
+      "name": "Charmander Starter",
+      "description": "A Fire-type starter deck",
+      "cards": [
+        "card_charmander_1",
+        "card_pidgey_1",
+        "card_rattata_1",
+        "card_spearow_1",
+        "trainer_oak"
+      ]
+    },
+    {
+      "id": "starter_water",
+      "name": "Squirtle Starter",
+      "description": "A Water-type starter deck",
+      "cards": [
+        "card_squirtle_1",
+        "card_pidgey_1",
+        "card_rattata_1",
+        "card_weedle_1",
+        "trainer_oak"
+      ]
+    }
+  ]
+}

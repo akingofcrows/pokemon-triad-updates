@@ -1,0 +1,8 @@
+f = open('api_server.py')
+c = f.read()
+f.close()
+c = c.replace('"DB_PORT", 3307', '"DB_PORT", 3306')
+f = open('api_server.py', 'w')
+f.write(c)
+f.close()
+print('port fixed')

@@ -1,0 +1,198 @@
+{
+  "npcs": [
+    {
+      "id": "npc_youngster_joey",
+      "name": "Youngster Joey",
+      "difficulty": "easy",
+      "flavor": "My Rattata is in the top percentage!",
+      "cards": [
+        "card_rattata_1",
+        "card_pidgey_1",
+        "card_sentret_1",
+        "card_spearow_1",
+        "card_meowth_1"
+      ],
+      "portrait": "YOUNGSTER.png",
+      "victoryQuote": "My Rattata is in the top percentage!\nJust you wait!",
+      "defeatQuote": "See? I told you my Rattata\nwas something special!"
+    },
+    {
+      "id": "npc_lass",
+      "name": "Lass",
+      "difficulty": "easy",
+      "flavor": "Let's have a cute and fun battle!",
+      "cards": [
+        "card_clefairy_1",
+        "card_jigglypuff_1",
+        "card_vulpix_1",
+        "card_meowth_1",
+        "card_bellsprout_1"
+      ],
+      "portrait": "LASS.png",
+      "victoryQuote": "Oh, you're actually pretty good...\nfor a rookie!",
+      "defeatQuote": "That was a cute battle!\nLet's do it again sometime~"
+    },
+    {
+      "id": "npc_brock",
+      "name": "Brock",
+      "difficulty": "easy",
+      "flavor": "I'm Brock, the rock-solid Gym Leader!",
+      "cards": [
+        "card_geodude_1",
+        "card_onix_1",
+        "card_sandshrew_1",
+        "card_rhyhorn_1",
+        "card_cubone_1"
+      ],
+      "portrait": "LEADER_Brock.png",
+      "victoryQuote": "You're tougher than you look...\nI'll remember this battle!",
+      "defeatQuote": "Ha! Rock-solid defense wins again.\nTrain hard and come back!"
+    },
+    {
+      "id": "npc_misty",
+      "name": "Misty",
+      "difficulty": "easy",
+      "flavor": "Don't underestimate water types!",
+      "cards": [
+        "card_staryu_1",
+        "card_goldeen_1",
+        "card_horsea_1",
+        "card_psyduck_1",
+        "card_poliwag_1"
+      ],
+      "portrait": "LEADER_Misty.png",
+      "victoryQuote": "You really know how to make a splash!\nI'm impressed.",
+      "defeatQuote": "Water types flow around everything!\nBetter luck next time, Trainer."
+    },
+    {
+      "id": "npc_lt_surge",
+      "name": "Lt. Surge",
+      "difficulty": "medium",
+      "flavor": "Electric types saved me in the war!",
+      "cards": [
+        "card_voltorb_1",
+        "card_pikachu_1",
+        "card_magnemite_1",
+        "card_electabuzz_1",
+        "card_raichu_1"
+      ],
+      "portrait": "LEADER_Surge.png",
+      "victoryQuote": "Zzzt! You short-circuited my strategy!\nOutstanding, soldier!",
+      "defeatQuote": "Ha ha! Electric types never lose their charge!\nYou'll need more training, rookie!"
+    },
+    {
+      "id": "npc_erika",
+      "name": "Erika",
+      "difficulty": "medium",
+      "flavor": "Grass types are elegant and deadly.",
+      "cards": [
+        "card_weepinbell_1",
+        "card_gloom_1",
+        "card_exeggcute_1",
+        "card_tangela_1",
+        "card_vileplume_1"
+      ],
+      "portrait": "LEADER_Erika.png",
+      "victoryQuote": "Oh my... your strategy pruned my team\nlike a master gardener!",
+      "defeatQuote": "Grass types grow stronger with every battle.\nNurture your team and try again."
+    },
+    {
+      "id": "npc_koga",
+      "name": "Koga",
+      "difficulty": "medium",
+      "flavor": "Poison runs through my veins...",
+      "cards": [
+        "card_ekans_1",
+        "card_koffing_1",
+        "card_grimer_1",
+        "card_zubat_1",
+        "card_venomoth_1"
+      ],
+      "portrait": "LEADER_Koga.png"
+    },
+    {
+      "id": "npc_sabrina",
+      "name": "Sabrina",
+      "difficulty": "medium",
+      "flavor": "I see your defeat before it happens.",
+      "cards": [
+        "card_abra_1",
+        "card_drowzee_1",
+        "card_mrmime_1",
+        "card_kadabra_1",
+        "card_alakazam_1"
+      ],
+      "portrait": "LEADER_Sabrina.png"
+    },
+    {
+      "id": "npc_blaine",
+      "name": "Blaine",
+      "difficulty": "hard",
+      "flavor": "Better bring Burn Heal!",
+      "cards": [
+        "card_vulpix_1",
+        "card_ponyta_1",
+        "card_growlithe_1",
+        "card_magmar_1",
+        "card_arcanine_1"
+      ],
+      "portrait": "LEADER_Blaine.png"
+    },
+    {
+      "id": "npc_giovanni",
+      "name": "Giovanni",
+      "difficulty": "hard",
+      "flavor": "Team Rocket rules the world!",
+      "cards": [
+        "card_diglett_1",
+        "card_sandslash_1",
+        "card_marowak_1",
+        "card_nidoking_1",
+        "card_rhydon_1"
+      ],
+      "portrait": "LEADER_Giovanni.png"
+    },
+    {
+      "id": "npc_lance",
+      "name": "Lance",
+      "difficulty": "hard",
+      "flavor": "Dragons are virtually indestructible!",
+      "cards": [
+        "card_dratini_1",
+        "card_dragonair_1",
+        "card_dragonite_1",
+        "card_gyarados_1",
+        "card_charizard_1"
+      ],
+      "portrait": "ELITEFOUR_Lance.png"
+    },
+    {
+      "id": "npc_prof_oak",
+      "name": "Prof. Oak",
+      "difficulty": "hard",
+      "flavor": "Are you a boy or a girl?",
+      "cards": [
+        "card_venusaur_1",
+        "card_charizard_1",
+        "card_blastoise_1",
+        "card_snorlax_1",
+        "card_chansey_1"
+      ],
+      "portrait": "PROFESSOR.png"
+    },
+    {
+      "id": "npc_red",
+      "name": "Red",
+      "difficulty": "epic",
+      "flavor": "...",
+      "cards": [
+        "card_pikachu_1",
+        "card_espeon_1",
+        "card_snorlax_1",
+        "card_lapras_1",
+        "card_mewtwo_1"
+      ],
+      "portrait": "POKEMONTRAINER_Red.png"
+    }
+  ]
+}

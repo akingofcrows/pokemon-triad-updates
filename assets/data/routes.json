@@ -1,0 +1,640 @@
+{
+  "locations": [
+    {
+      "id": "pallet_town", "name": "Pallet Town", "region": "kanto",
+      "wildLevelRange": { "min": 0, "max": 0 },
+      "nodes": [
+        { "id": "pallet_oaks_lab", "type": "story" },
+        { "id": "pallet_center", "type": "story" },
+        { "id": "pallet_route1", "type": "story" }
+      ],
+      "completionUnlocks": ["route_1"]
+    },
+    {
+      "id": "route_1", "name": "Route 1", "region": "kanto",
+      "wildLevelRange": { "min": 2, "max": 4 },
+      "nodes": [
+        { "id": "route_1_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_pidgey_1", "weight": 40, "rarity": "common" },
+          { "cardId": "card_rattata_1", "weight": 35, "rarity": "common" },
+          { "cardId": "card_spearow_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_oddish_1", "weight": 10, "rarity": "common" }
+        ]}
+      ],
+      "completionUnlocks": ["viridian_city"]
+    },
+    {
+      "id": "viridian_city", "name": "Viridian City", "region": "kanto",
+      "wildLevelRange": { "min": 0, "max": 0 },
+      "nodes": [
+        { "id": "viridian_pokemart", "type": "story" },
+        { "id": "viridian_center", "type": "story" },
+        { "id": "viridian_gym", "type": "trainer", "npcId": "giovanni" }
+      ],
+      "completionUnlocks": ["route_22", "route_2"]
+    },
+    {
+      "id": "route_22", "name": "Route 22", "region": "kanto",
+      "unlockRequirement": "trainerLevel:3",
+      "wildLevelRange": { "min": 3, "max": 5 },
+      "nodes": [
+        { "id": "r22_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_rattata_1", "weight": 25, "rarity": "common" },
+          { "cardId": "card_spearow_1", "weight": 25, "rarity": "common" },
+          { "cardId": "card_nidoran_m_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_nidoran_f_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_mankey_1", "weight": 10, "rarity": "common" },
+          { "cardId": "card_fearow_1", "weight": 5, "rarity": "uncommon" }
+        ]}
+      ],
+      "completionUnlocks": []
+    },
+    {
+      "id": "route_2", "name": "Route 2", "region": "kanto",
+      "wildLevelRange": { "min": 3, "max": 5 },
+      "nodes": [
+        { "id": "r2_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_pidgey_1", "weight": 25, "rarity": "common" },
+          { "cardId": "card_rattata_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_caterpie_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_weedle_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_pidgeotto_1", "weight": 10, "rarity": "uncommon" },
+          { "cardId": "card_pikachu_1", "weight": 10, "rarity": "uncommon" },
+          { "cardId": "card_metapod_1", "weight": 5, "rarity": "common" }
+        ]}
+      ],
+      "completionUnlocks": ["viridian_forest"]
+    },
+    {
+      "id": "viridian_forest", "name": "Viridian Forest", "region": "kanto",
+      "unlockRequirement": "trainerLevel:5",
+      "wildLevelRange": { "min": 4, "max": 7 },
+      "nodes": [
+        { "id": "vf_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_caterpie_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_weedle_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_metapod_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_kakuna_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_pikachu_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_butterfree_1", "weight": 5, "rarity": "uncommon" },
+          { "cardId": "card_beedrill_1", "weight": 5, "rarity": "uncommon" },
+          { "cardId": "card_bulbasaur_1", "weight": 3, "rarity": "rare" },
+          { "cardId": "card_scyther_1", "weight": 2, "rarity": "rare" }
+        ]}
+      ],
+      "completionUnlocks": ["pewter_city"]
+    },
+    {
+      "id": "pewter_city", "name": "Pewter City", "region": "kanto",
+      "wildLevelRange": { "min": 0, "max": 0 },
+      "nodes": [
+        { "id": "pewter_center", "type": "story" },
+        { "id": "pewter_mart", "type": "story" },
+        { "id": "pewter_gym", "type": "trainer", "npcId": "brock" }
+      ],
+      "completionUnlocks": ["route_3"]
+    },
+    {
+      "id": "route_3", "name": "Route 3", "region": "kanto",
+      "wildLevelRange": { "min": 6, "max": 10 },
+      "nodes": [
+        { "id": "r3_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_pidgey_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_spearow_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_jigglypuff_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_nidoran_m_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_nidoran_f_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_sandshrew_1", "weight": 10, "rarity": "uncommon" }
+        ]}
+      ],
+      "completionUnlocks": ["mt_moon"]
+    },
+    {
+      "id": "mt_moon", "name": "Mt. Moon", "region": "kanto",
+      "unlockRequirement": "trainerLevel:10",
+      "wildLevelRange": { "min": 8, "max": 12 },
+      "nodes": [
+        { "id": "mtm_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_zubat_1", "weight": 35, "rarity": "common" },
+          { "cardId": "card_geodude_1", "weight": 25, "rarity": "common" },
+          { "cardId": "card_paras_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_sandshrew_1", "weight": 8, "rarity": "uncommon" },
+          { "cardId": "card_clefairy_1", "weight": 8, "rarity": "uncommon" },
+          { "cardId": "card_onix_1", "weight": 5, "rarity": "rare" },
+          { "cardId": "card_clefable_1", "weight": 2, "rarity": "rare" },
+          { "cardId": "card_golbat_1", "weight": 1, "rarity": "uncommon" },
+          { "cardId": "card_graveler_1", "weight": 1, "rarity": "uncommon" }
+        ]}
+      ],
+      "completionUnlocks": ["route_4"]
+    },
+    {
+      "id": "route_4", "name": "Route 4", "region": "kanto",
+      "wildLevelRange": { "min": 8, "max": 12 },
+      "nodes": [
+        { "id": "r4_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_rattata_1", "weight": 30, "rarity": "common" },
+          { "cardId": "card_spearow_1", "weight": 25, "rarity": "common" },
+          { "cardId": "card_ekans_1", "weight": 25, "rarity": "common" },
+          { "cardId": "card_sandshrew_1", "weight": 20, "rarity": "uncommon" }
+        ]}
+      ],
+      "completionUnlocks": ["cerulean_city"]
+    },
+    {
+      "id": "cerulean_city", "name": "Cerulean City", "region": "kanto",
+      "wildLevelRange": { "min": 0, "max": 0 },
+      "nodes": [
+        { "id": "cerulean_center", "type": "story" },
+        { "id": "cerulean_mart", "type": "story" },
+        { "id": "cerulean_gym", "type": "trainer", "npcId": "misty" }
+      ],
+      "completionUnlocks": ["route_24", "route_5"]
+    },
+    {
+      "id": "route_24", "name": "Route 24", "region": "kanto",
+      "wildLevelRange": { "min": 10, "max": 14 },
+      "nodes": [
+        { "id": "r24_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_caterpie_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_weedle_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_oddish_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_bellsprout_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_abra_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_metapod_1", "weight": 10, "rarity": "common" },
+          { "cardId": "card_kakuna_1", "weight": 10, "rarity": "common" },
+          { "cardId": "card_kadabra_1", "weight": 3, "rarity": "uncommon" },
+          { "cardId": "card_weepinbell_1", "weight": 2, "rarity": "uncommon" }
+        ]}
+      ],
+      "completionUnlocks": ["route_25"]
+    },
+    {
+      "id": "route_25", "name": "Route 25", "region": "kanto",
+      "wildLevelRange": { "min": 11, "max": 15 },
+      "nodes": [
+        { "id": "r25_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_caterpie_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_weedle_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_oddish_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_bellsprout_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_abra_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_pidgeotto_1", "weight": 10, "rarity": "uncommon" },
+          { "cardId": "card_gloom_1", "weight": 8, "rarity": "uncommon" },
+          { "cardId": "card_kadabra_1", "weight": 5, "rarity": "uncommon" },
+          { "cardId": "card_squirtle_1", "weight": 2, "rarity": "rare" }
+        ]}
+      ],
+      "completionUnlocks": []
+    },
+    {
+      "id": "route_5", "name": "Route 5", "region": "kanto",
+      "wildLevelRange": { "min": 12, "max": 16 },
+      "nodes": [
+        { "id": "r5_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_pidgey_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_rattata_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_meowth_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_jigglypuff_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_pidgeotto_1", "weight": 10, "rarity": "uncommon" },
+          { "cardId": "card_raticate_1", "weight": 10, "rarity": "uncommon" },
+          { "cardId": "card_chansey_1", "weight": 5, "rarity": "rare" }
+        ]}
+      ],
+      "completionUnlocks": []
+    },
+    {
+      "id": "route_6", "name": "Route 6", "region": "kanto",
+      "wildLevelRange": { "min": 12, "max": 16 },
+      "nodes": [
+        { "id": "r6_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_pidgey_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_rattata_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_oddish_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_bellsprout_1", "weight": 10, "rarity": "common" },
+          { "cardId": "card_meowth_1", "weight": 10, "rarity": "common" },
+          { "cardId": "card_pidgeotto_1", "weight": 8, "rarity": "uncommon" },
+          { "cardId": "card_raticate_1", "weight": 8, "rarity": "uncommon" },
+          { "cardId": "card_gloom_1", "weight": 5, "rarity": "uncommon" },
+          { "cardId": "card_persian_1", "weight": 2, "rarity": "uncommon" },
+          { "cardId": "card_weepinbell_1", "weight": 2, "rarity": "uncommon" }
+        ]}
+      ],
+      "completionUnlocks": ["vermilion_city"]
+    },
+    {
+      "id": "vermilion_city", "name": "Vermilion City", "region": "kanto",
+      "wildLevelRange": { "min": 0, "max": 0 },
+      "nodes": [
+        { "id": "vermilion_center", "type": "story" },
+        { "id": "vermilion_mart", "type": "story" },
+        { "id": "vermilion_gym", "type": "trainer", "npcId": "lt_surge" }
+      ],
+      "completionUnlocks": ["route_11"]
+    },
+    {
+      "id": "route_11", "name": "Route 11", "region": "kanto",
+      "wildLevelRange": { "min": 14, "max": 18 },
+      "nodes": [
+        { "id": "r11_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_spearow_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_rattata_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_ekans_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_sandshrew_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_drowzee_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_fearow_1", "weight": 8, "rarity": "uncommon" },
+          { "cardId": "card_raticate_1", "weight": 5, "rarity": "uncommon" },
+          { "cardId": "card_hypno_1", "weight": 5, "rarity": "uncommon" },
+          { "cardId": "card_tauros_1", "weight": 2, "rarity": "rare" }
+        ]}
+      ],
+      "completionUnlocks": []
+    },
+    {
+      "id": "route_9", "name": "Route 9", "region": "kanto",
+      "unlockRequirement": "trainerLevel:15",
+      "wildLevelRange": { "min": 16, "max": 20 },
+      "nodes": [
+        { "id": "r9_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_rattata_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_spearow_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_ekans_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_sandshrew_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_raticate_1", "weight": 10, "rarity": "uncommon" },
+          { "cardId": "card_fearow_1", "weight": 10, "rarity": "uncommon" },
+          { "cardId": "card_sandslash_1", "weight": 5, "rarity": "uncommon" }
+        ]}
+      ],
+      "completionUnlocks": ["route_10"]
+    },
+    {
+      "id": "route_10", "name": "Route 10", "region": "kanto",
+      "wildLevelRange": { "min": 16, "max": 20 },
+      "nodes": [
+        { "id": "r10_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_rattata_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_spearow_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_voltorb_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_magnemite_1", "weight": 20, "rarity": "uncommon" },
+          { "cardId": "card_fearow_1", "weight": 10, "rarity": "uncommon" },
+          { "cardId": "card_electrode_1", "weight": 8, "rarity": "uncommon" },
+          { "cardId": "card_magneton_1", "weight": 5, "rarity": "uncommon" },
+          { "cardId": "card_electabuzz_1", "weight": 5, "rarity": "rare" },
+          { "cardId": "card_zapdos_1", "weight": 2, "rarity": "rare" }
+        ]}
+      ],
+      "completionUnlocks": ["rock_tunnel"]
+    },
+    {
+      "id": "rock_tunnel", "name": "Rock Tunnel", "region": "kanto",
+      "unlockRequirement": "trainerLevel:18",
+      "wildLevelRange": { "min": 18, "max": 24 },
+      "nodes": [
+        { "id": "rt_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_zubat_1", "weight": 25, "rarity": "common" },
+          { "cardId": "card_geodude_1", "weight": 25, "rarity": "common" },
+          { "cardId": "card_machop_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_onix_1", "weight": 10, "rarity": "rare" },
+          { "cardId": "card_golbat_1", "weight": 8, "rarity": "uncommon" },
+          { "cardId": "card_graveler_1", "weight": 5, "rarity": "uncommon" },
+          { "cardId": "card_machoke_1", "weight": 5, "rarity": "uncommon" },
+          { "cardId": "card_kangaskhan_1", "weight": 2, "rarity": "rare" }
+        ]}
+      ],
+      "completionUnlocks": ["lavender_town"]
+    },
+    {
+      "id": "lavender_town", "name": "Lavender Town", "region": "kanto",
+      "wildLevelRange": { "min": 0, "max": 0 },
+      "nodes": [
+        { "id": "lavender_center", "type": "story" },
+        { "id": "lavender_mart", "type": "story" },
+        { "id": "lavender_tower", "type": "story" }
+      ],
+      "completionUnlocks": ["route_8", "route_12"]
+    },
+    {
+      "id": "route_8", "name": "Route 8", "region": "kanto",
+      "wildLevelRange": { "min": 20, "max": 26 },
+      "nodes": [
+        { "id": "r8_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_pidgey_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_rattata_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_vulpix_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_growlithe_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_jigglypuff_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_pidgeotto_1", "weight": 10, "rarity": "uncommon" },
+          { "cardId": "card_raticate_1", "weight": 8, "rarity": "uncommon" },
+          { "cardId": "card_ninetales_1", "weight": 3, "rarity": "rare" },
+          { "cardId": "card_arcanine_1", "weight": 3, "rarity": "rare" },
+          { "cardId": "card_wigglytuff_1", "weight": 1, "rarity": "uncommon" }
+        ]}
+      ],
+      "completionUnlocks": ["route_7"]
+    },
+    {
+      "id": "route_7", "name": "Route 7", "region": "kanto",
+      "wildLevelRange": { "min": 22, "max": 28 },
+      "nodes": [
+        { "id": "r7_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_pidgey_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_rattata_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_vulpix_1", "weight": 12, "rarity": "uncommon" },
+          { "cardId": "card_growlithe_1", "weight": 12, "rarity": "uncommon" },
+          { "cardId": "card_meowth_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_abra_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_pidgeotto_1", "weight": 10, "rarity": "uncommon" },
+          { "cardId": "card_kadabra_1", "weight": 6, "rarity": "uncommon" }
+        ]}
+      ],
+      "completionUnlocks": ["celadon_city"]
+    },
+    {
+      "id": "celadon_city", "name": "Celadon City", "region": "kanto",
+      "wildLevelRange": { "min": 0, "max": 0 },
+      "nodes": [
+        { "id": "celadon_center", "type": "story" },
+        { "id": "celadon_mart", "type": "story" },
+        { "id": "celadon_gym", "type": "trainer", "npcId": "erika" }
+      ],
+      "completionUnlocks": ["route_16"]
+    },
+    {
+      "id": "route_16", "name": "Route 16", "region": "kanto",
+      "wildLevelRange": { "min": 24, "max": 30 },
+      "nodes": [
+        { "id": "r16_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_rattata_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_spearow_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_doduo_1", "weight": 25, "rarity": "common" },
+          { "cardId": "card_tauros_1", "weight": 15, "rarity": "rare" },
+          { "cardId": "card_raticate_1", "weight": 8, "rarity": "uncommon" },
+          { "cardId": "card_fearow_1", "weight": 7, "rarity": "uncommon" },
+          { "cardId": "card_snorlax_1", "weight": 5, "rarity": "rare" }
+        ]}
+      ],
+      "completionUnlocks": ["route_17"]
+    },
+    {
+      "id": "route_17", "name": "Route 17", "region": "kanto",
+      "wildLevelRange": { "min": 26, "max": 32 },
+      "nodes": [
+        { "id": "r17_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_rattata_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_spearow_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_doduo_1", "weight": 25, "rarity": "common" },
+          { "cardId": "card_ponyta_1", "weight": 20, "rarity": "uncommon" },
+          { "cardId": "card_dodrio_1", "weight": 10, "rarity": "uncommon" },
+          { "cardId": "card_rapidash_1", "weight": 10, "rarity": "uncommon" },
+          { "cardId": "card_tauros_1", "weight": 5, "rarity": "rare" }
+        ]}
+      ],
+      "completionUnlocks": ["route_18"]
+    },
+    {
+      "id": "route_18", "name": "Route 18", "region": "kanto",
+      "wildLevelRange": { "min": 28, "max": 34 },
+      "nodes": [
+        { "id": "r18_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_rattata_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_spearow_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_doduo_1", "weight": 25, "rarity": "common" },
+          { "cardId": "card_rapidash_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_dodrio_1", "weight": 10, "rarity": "uncommon" },
+          { "cardId": "card_farfetchd_1", "weight": 10, "rarity": "rare" },
+          { "cardId": "card_fearow_1", "weight": 10, "rarity": "uncommon" }
+        ]}
+      ],
+      "completionUnlocks": ["fuchsia_city"]
+    },
+    {
+      "id": "fuchsia_city", "name": "Fuchsia City", "region": "kanto",
+      "wildLevelRange": { "min": 0, "max": 0 },
+      "nodes": [
+        { "id": "fuchsia_center", "type": "story" },
+        { "id": "fuchsia_mart", "type": "story" },
+        { "id": "fuchsia_gym", "type": "trainer", "npcId": "koga" }
+      ],
+      "completionUnlocks": ["route_15"]
+    },
+    {
+      "id": "route_15", "name": "Route 15", "region": "kanto",
+      "wildLevelRange": { "min": 30, "max": 36 },
+      "nodes": [
+        { "id": "r15_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_pidgey_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_oddish_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_gloom_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_venonat_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_ditto_1", "weight": 15, "rarity": "rare" },
+          { "cardId": "card_venomoth_1", "weight": 10, "rarity": "uncommon" },
+          { "cardId": "card_weepinbell_1", "weight": 10, "rarity": "uncommon" }
+        ]}
+      ],
+      "completionUnlocks": ["route_14"]
+    },
+    {
+      "id": "route_14", "name": "Route 14", "region": "kanto",
+      "wildLevelRange": { "min": 32, "max": 38 },
+      "nodes": [
+        { "id": "r14_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_pidgeotto_1", "weight": 20, "rarity": "uncommon" },
+          { "cardId": "card_gloom_1", "weight": 20, "rarity": "uncommon" },
+          { "cardId": "card_venomoth_1", "weight": 20, "rarity": "uncommon" },
+          { "cardId": "card_weepinbell_1", "weight": 20, "rarity": "uncommon" },
+          { "cardId": "card_venonat_1", "weight": 10, "rarity": "common" },
+          { "cardId": "card_pinsir_1", "weight": 10, "rarity": "rare" }
+        ]}
+      ],
+      "completionUnlocks": ["route_13"]
+    },
+    {
+      "id": "route_13", "name": "Route 13", "region": "kanto",
+      "wildLevelRange": { "min": 34, "max": 40 },
+      "nodes": [
+        { "id": "r13_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_pidgeotto_1", "weight": 20, "rarity": "uncommon" },
+          { "cardId": "card_gloom_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_venomoth_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_farfetchd_1", "weight": 15, "rarity": "rare" },
+          { "cardId": "card_ditto_1", "weight": 15, "rarity": "rare" },
+          { "cardId": "card_weepinbell_1", "weight": 10, "rarity": "uncommon" },
+          { "cardId": "card_tangela_1", "weight": 10, "rarity": "rare" }
+        ]}
+      ],
+      "completionUnlocks": ["route_12"]
+    },
+    {
+      "id": "route_12", "name": "Route 12", "region": "kanto",
+      "wildLevelRange": { "min": 36, "max": 42 },
+      "nodes": [
+        { "id": "r12_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_pidgeotto_1", "weight": 20, "rarity": "uncommon" },
+          { "cardId": "card_gloom_1", "weight": 20, "rarity": "uncommon" },
+          { "cardId": "card_venomoth_1", "weight": 20, "rarity": "uncommon" },
+          { "cardId": "card_snorlax_1", "weight": 20, "rarity": "rare" },
+          { "cardId": "card_weepinbell_1", "weight": 10, "rarity": "uncommon" },
+          { "cardId": "card_tangela_1", "weight": 10, "rarity": "rare" }
+        ]}
+      ],
+      "completionUnlocks": []
+    },
+    {
+      "id": "saffron_city", "name": "Saffron City", "region": "kanto",
+      "unlockRequirement": "trainerLevel:30",
+      "wildLevelRange": { "min": 0, "max": 0 },
+      "nodes": [
+        { "id": "saffron_center", "type": "story" },
+        { "id": "saffron_mart", "type": "story" },
+        { "id": "saffron_gym", "type": "trainer", "npcId": "sabrina" }
+      ],
+      "completionUnlocks": ["route_5", "route_6", "route_7", "route_8"]
+    },
+    {
+      "id": "route_19", "name": "Route 19", "region": "kanto",
+      "unlockRequirement": "trainerLevel:35",
+      "wildLevelRange": { "min": 38, "max": 44 },
+      "nodes": [
+        { "id": "r19_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_tentacool_1", "weight": 35, "rarity": "common" },
+          { "cardId": "card_horsea_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_staryu_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_magikarp_1", "weight": 10, "rarity": "common" },
+          { "cardId": "card_tentacruel_1", "weight": 8, "rarity": "uncommon" },
+          { "cardId": "card_seadra_1", "weight": 7, "rarity": "uncommon" },
+          { "cardId": "card_gyarados_1", "weight": 5, "rarity": "rare" }
+        ]}
+      ],
+      "completionUnlocks": ["route_20"]
+    },
+    {
+      "id": "route_20", "name": "Route 20", "region": "kanto",
+      "wildLevelRange": { "min": 40, "max": 46 },
+      "nodes": [
+        { "id": "r20_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_tentacool_1", "weight": 25, "rarity": "common" },
+          { "cardId": "card_horsea_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_shellder_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_staryu_1", "weight": 12, "rarity": "uncommon" },
+          { "cardId": "card_krabby_1", "weight": 12, "rarity": "common" },
+          { "cardId": "card_tentacruel_1", "weight": 8, "rarity": "uncommon" },
+          { "cardId": "card_seadra_1", "weight": 5, "rarity": "uncommon" },
+          { "cardId": "card_cloyster_1", "weight": 4, "rarity": "uncommon" },
+          { "cardId": "card_lapras_1", "weight": 4, "rarity": "rare" }
+        ]}
+      ],
+      "completionUnlocks": ["seafoam_islands"]
+    },
+    {
+      "id": "seafoam_islands", "name": "Seafoam Islands", "region": "kanto",
+      "unlockRequirement": "trainerLevel:40",
+      "wildLevelRange": { "min": 42, "max": 50 },
+      "nodes": [
+        { "id": "sf_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_zubat_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_golbat_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_seel_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_shellder_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_dewgong_1", "weight": 12, "rarity": "uncommon" },
+          { "cardId": "card_cloyster_1", "weight": 10, "rarity": "uncommon" },
+          { "cardId": "card_jynx_1", "weight": 8, "rarity": "rare" },
+          { "cardId": "card_articuno_1", "weight": 5, "rarity": "rare" }
+        ]}
+      ],
+      "completionUnlocks": ["cinnabar_island"]
+    },
+    {
+      "id": "cinnabar_island", "name": "Cinnabar Island", "region": "kanto",
+      "wildLevelRange": { "min": 0, "max": 0 },
+      "nodes": [
+        { "id": "cinnabar_center", "type": "story" },
+        { "id": "cinnabar_mart", "type": "story" },
+        { "id": "cinnabar_gym", "type": "trainer", "npcId": "blaine" }
+      ],
+      "completionUnlocks": ["pokemon_mansion", "route_21"]
+    },
+    {
+      "id": "pokemon_mansion", "name": "Pok\u00e9mon Mansion", "region": "kanto",
+      "unlockRequirement": "trainerLevel:45",
+      "wildLevelRange": { "min": 44, "max": 54 },
+      "nodes": [
+        { "id": "pm_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_vulpix_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_growlithe_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_ponyta_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_koffing_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_grimer_1", "weight": 15, "rarity": "common" },
+          { "cardId": "card_rapidash_1", "weight": 8, "rarity": "uncommon" },
+          { "cardId": "card_weezing_1", "weight": 5, "rarity": "uncommon" },
+          { "cardId": "card_muk_1", "weight": 5, "rarity": "uncommon" },
+          { "cardId": "card_magmar_1", "weight": 3, "rarity": "rare" },
+          { "cardId": "card_moltres_1", "weight": 2, "rarity": "rare" },
+          { "cardId": "card_charizard_1", "weight": 1, "rarity": "rare" },
+          { "cardId": "card_arcanine_1", "weight": 1, "rarity": "rare" }
+        ]}
+      ],
+      "completionUnlocks": []
+    },
+    {
+      "id": "route_21", "name": "Route 21", "region": "kanto",
+      "wildLevelRange": { "min": 42, "max": 48 },
+      "nodes": [
+        { "id": "r21_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_tentacool_1", "weight": 30, "rarity": "common" },
+          { "cardId": "card_horsea_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_shellder_1", "weight": 20, "rarity": "common" },
+          { "cardId": "card_staryu_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_tangela_1", "weight": 15, "rarity": "rare" }
+        ]}
+      ],
+      "completionUnlocks": []
+    },
+    {
+      "id": "route_23", "name": "Route 23", "region": "kanto",
+      "unlockRequirement": "trainerLevel:50",
+      "wildLevelRange": { "min": 48, "max": 56 },
+      "nodes": [
+        { "id": "r23_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_arbok_1", "weight": 12, "rarity": "uncommon" },
+          { "cardId": "card_sandslash_1", "weight": 12, "rarity": "uncommon" },
+          { "cardId": "card_primeape_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_fearow_1", "weight": 20, "rarity": "uncommon" },
+          { "cardId": "card_nidoking_1", "weight": 15, "rarity": "rare" },
+          { "cardId": "card_nidoqueen_1", "weight": 15, "rarity": "rare" },
+          { "cardId": "card_primape_1", "weight": 8, "rarity": "uncommon" },
+          { "cardId": "card_dragonite_1", "weight": 3, "rarity": "rare" }
+        ]}
+      ],
+      "completionUnlocks": ["victory_road"]
+    },
+    {
+      "id": "victory_road", "name": "Victory Road", "region": "kanto",
+      "unlockRequirement": "trainerLevel:55",
+      "wildLevelRange": { "min": 50, "max": 60 },
+      "nodes": [
+        { "id": "vr_wild", "type": "wild", "encounterTable": [
+          { "cardId": "card_machoke_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_graveler_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_golbat_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_onix_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_marowak_1", "weight": 15, "rarity": "uncommon" },
+          { "cardId": "card_machamp_1", "weight": 8, "rarity": "rare" },
+          { "cardId": "card_golem_1", "weight": 8, "rarity": "rare" },
+          { "cardId": "card_rhydon_1", "weight": 5, "rarity": "rare" },
+          { "cardId": "card_moltres_1", "weight": 4, "rarity": "rare" }
+        ]}
+      ],
+      "completionUnlocks": ["indigo_plateau"]
+    },
+    {
+      "id": "indigo_plateau", "name": "Indigo Plateau", "region": "kanto",
+      "wildLevelRange": { "min": 0, "max": 0 },
+      "nodes": [
+        { "id": "indigo_center", "type": "story" },
+        { "id": "indigo_mart", "type": "story" },
+        { "id": "indigo_elite4", "type": "trainer", "npcId": "lorelei" }
+      ],
+      "completionUnlocks": []
+    }
+  ]
+}

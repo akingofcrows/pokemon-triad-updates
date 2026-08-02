@@ -1,0 +1,20 @@
+{
+  "boosters": [
+    {
+      "id": "field_trip",
+      "name": "Field Trip Booster",
+      "price": 500,
+      "cardCount": 5,
+      "description": "5 random Pokémon cards — a great way to start your collection!",
+      "dropRates": {
+        "common": 60,
+        "uncommon": 30,
+        "rare": 8,
+        "epic": 1,
+        "legendary": 1
+      },
+      "levelRange": { "min": 1, "max": 5 },
+      "shinyChance": 64
+    }
+  ]
+}
