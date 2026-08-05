@@ -1295,6 +1295,11 @@
             "id": "default",
             "label": "Default",
             "file": "trainers/male/hats/feather_hat__default.png"
+          },
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/male/hats/feather_hat__black.png"
           }
         ]
       },
@@ -2732,6 +2737,11 @@
             "id": "default",
             "label": "Default",
             "file": "trainers/female/hats/feather_hat__default.png"
+          },
+          {
+            "id": "black",
+            "label": "Black",
+            "file": "trainers/female/hats/feather_hat__black.png"
           }
         ]
       },

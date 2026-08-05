@@ -3,9 +3,44 @@
     {
       "id": "field_trip",
       "name": "Field Trip Booster",
+      "setId": "field_trip",
       "price": 500,
       "cardCount": 5,
-      "description": "5 random Pokémon cards — a great way to start your collection!",
+      "description": "5 random Pokémon from the Field Trip Set — bugs, grass-types, and forest friends!",
+      "dropRates": {
+        "common": 60,
+        "uncommon": 30,
+        "rare": 8,
+        "epic": 1,
+        "legendary": 1
+      },
+      "levelRange": { "min": 1, "max": 5 },
+      "shinyChance": 64
+    },
+    {
+      "id": "safari_tour",
+      "name": "Safari Tour Booster",
+      "setId": "safari_tour",
+      "price": 500,
+      "cardCount": 5,
+      "description": "5 random Pokémon from the Safari Tour Set — exotic safari zone and grassland Pokémon!",
+      "dropRates": {
+        "common": 60,
+        "uncommon": 30,
+        "rare": 8,
+        "epic": 1,
+        "legendary": 1
+      },
+      "levelRange": { "min": 1, "max": 5 },
+      "shinyChance": 64
+    },
+    {
+      "id": "urban_life",
+      "name": "Urban Life Booster",
+      "setId": "urban_life",
+      "price": 500,
+      "cardCount": 5,
+      "description": "5 random Pokémon from the Urban Life Set — city-dwelling and town Pokémon!",
       "dropRates": {
         "common": 60,
         "uncommon": 30,
