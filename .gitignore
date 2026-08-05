@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+
+# One-off local admin/debug scripts — not part of the deployed service.
+check_cards.py
+fix_and_restart.py
+fix_evolve_mess.py
+fix_level.py
+revert_bulba.py
