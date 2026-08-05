@@ -16,7 +16,7 @@ class CardSet {
       id: json['id'] as String,
       name: json['name'] as String,
       description: json['description'] as String? ?? '',
-      cardIds: (json['cardIds'] as List<dynamic>).cast<String>(),
+      cardIds: (json['cardIds'] as List<dynamic>?)?.cast<String>() ?? const [],
     );
   }
 }

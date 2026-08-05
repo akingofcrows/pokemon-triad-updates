@@ -8,11 +8,13 @@ class MatchGrowthResult {
     required this.growth,
     required this.pendingEvolutions,
     this.bonusXp = const {},
+    this.trainerXpEarned = 0,
   });
 
   final List<GrowthUpdate> growth;
   final List<PendingEvolution> pendingEvolutions;
   final Map<String, int> bonusXp; // cardId → bonus XP amount
+  final int trainerXpEarned;
 
   factory MatchGrowthResult.fromJson(Map<String, dynamic> json) {
     return MatchGrowthResult(

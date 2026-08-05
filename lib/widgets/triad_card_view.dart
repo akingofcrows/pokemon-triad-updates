@@ -67,6 +67,12 @@ class TriadCardView extends StatefulWidget {
       paths.add('assets/ui/sparkle.png');
       paths.add(kShinyBgAsset);
     }
+    if (isEliteCard(card.id)) {
+      paths.add(kEliteBgAsset);
+    } else {
+      final tb = trainerBgAsset(card.id);
+      if (tb != null) paths.add(tb);
+    }
     return ImageAssetCache.instance.preload(paths);
   }
 }
@@ -88,11 +94,13 @@ class _TriadCardViewState extends State<TriadCardView> {
   @override
   void didUpdateWidget(covariant TriadCardView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final wasShiny = oldWidget._isShiny;
     if (widget.card != oldWidget.card ||
-        widget.showRarityFrame != oldWidget.showRarityFrame) {
+        widget.showRarityFrame != oldWidget.showRarityFrame ||
+        _isShiny != wasShiny) {
       _loadImages();
     }
-    final wasAnimated = oldWidget.card.holo || oldWidget._isShiny;
+    final wasAnimated = oldWidget.card.holo || wasShiny;
     final isAnimated = widget.card.holo || _isShiny;
     if (isAnimated && !wasAnimated) {
       _tick = 0;
@@ -124,7 +132,18 @@ class _TriadCardViewState extends State<TriadCardView> {
     final futures = <String, Future<ui.Image?>>{};
     void add(String key, String path) =>
         futures[key] = ImageAssetCache.instance.load(path);
-    add('bg', kCardBgAsset);
+    if (isEliteCard(card.id)) {
+      add('eliteBg', kEliteBgAsset);
+      add('bg', kCardBgAsset);
+    } else {
+      final trainerBg = trainerBgAsset(card.id);
+      if (trainerBg != null) {
+        add('eliteBg', trainerBg);
+        add('bg', kCardBgAsset);
+      } else {
+        add('bg', kCardBgAsset);
+      }
+    }
     add('nums', kNumbersAsset);
     if (card.image.isNotEmpty) {
       // Use shiny sprite when the player has a shiny instance
@@ -154,6 +173,7 @@ class _TriadCardViewState extends State<TriadCardView> {
       painter: _TriadCardPainter(
         card: widget.card,
         cardBg: im['bg'],
+        eliteBg: im['eliteBg'],
         numbers: im['nums'],
         artwork: im['art'],
         typeIcon: im['type'],
@@ -183,6 +203,7 @@ class _TriadCardPainter extends CustomPainter {
   _TriadCardPainter({
     required this.card,
     required this.cardBg,
+    required this.eliteBg,
     required this.numbers,
     required this.artwork,
     required this.typeIcon,
@@ -197,6 +218,7 @@ class _TriadCardPainter extends CustomPainter {
 
   final TriadCard card;
   final ui.Image? cardBg;
+  final ui.Image? eliteBg;
   final ui.Image? numbers;
   final ui.Image? artwork;
   final ui.Image? typeIcon;
@@ -214,6 +236,7 @@ class _TriadCardPainter extends CustomPainter {
       size,
       card: card,
       cardBg: cardBg,
+      eliteBg: eliteBg,
       numbers: numbers,
       artwork: artwork,
       typeIcon: typeIcon,

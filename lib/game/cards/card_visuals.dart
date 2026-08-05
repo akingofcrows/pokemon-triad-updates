@@ -13,6 +13,7 @@ import '../../models/triad_card.dart';
 /// art itself and must not be changed.
 const Map<String, int> kAffinityBgIndex = {
   'normal': 0,
+  'neutral': 0,
   'fighting': 1,
   'rock': 2,
   'fire': 3,
@@ -62,7 +63,45 @@ const Color kOpponentOwnerColor = Color(0xFFF44336);
 const Color kNeutralOwnerColor = Color(0xFF9E9E9E);
 
 const String kCardBgAsset = 'assets/ui/card_bg.png';
+const String kEliteBgAsset = 'assets/ui/elite.png';
+const String kGymLeaderBgAsset = 'assets/ui/gym_leader.png';
+const String kTrainerBgAsset = 'assets/ui/trainerbg.png';
+const String kOakBgAsset = 'assets/ui/oakbg.png';
 const String kNumbersAsset = 'assets/ui/numbers.png';
+
+/// Elite 4 and Champion trainer card IDs.
+const _elite4CardIds = {
+  'trainer_lance',
+  'trainer_lorelei',
+  'trainer_bruno',
+  'trainer_agatha',
+  'trainer_champion',
+};
+
+/// Gym Leader trainer card IDs.
+const _gymLeaderCardIds = {
+  'trainer_brock',
+  'trainer_misty',
+  'trainer_surge',
+  'trainer_erika',
+  'trainer_koga',
+  'trainer_sabrina',
+  'trainer_blaine',
+  'trainer_giovanni',
+};
+
+/// Returns the custom background asset for a trainer card, or null if the
+/// card should use the standard type-based background.
+String? trainerBgAsset(String cardId) {
+  if (_elite4CardIds.contains(cardId)) return kEliteBgAsset;
+  if (_gymLeaderCardIds.contains(cardId)) return kGymLeaderBgAsset;
+  if (cardId == 'trainer_oak') return kOakBgAsset;
+  if (cardId.startsWith('trainer_')) return kTrainerBgAsset;
+  return null;
+}
+
+/// Returns true if [cardId] belongs to an Elite 4 / Champion trainer card.
+bool isEliteCard(String cardId) => _elite4CardIds.contains(cardId);
 
 Color ownerBorderColor(CardOwner owner) {
   switch (owner) {
@@ -156,6 +195,7 @@ void paintTriadCardFace(
   Size size, {
   required TriadCard card,
   Image? cardBg,
+  Image? eliteBg,
   Image? numbers,
   Image? artwork,
   Image? typeIcon,
@@ -182,7 +222,14 @@ void paintTriadCardFace(
   canvas.save();
   canvas.clipRRect(rrect);
 
-  if (cardBg != null) {
+  // Trainer cards may use a custom background (elite, gym leader, etc.)
+  final customBg = trainerBgAsset(card.id);
+  final trainerBgImage = customBg != null ? eliteBg : null;
+  // Note: eliteBg is reused as a generic "trainer background" slot here
+
+  if (trainerBgImage != null) {
+    canvas.drawImageRect(trainerBgImage, Offset.zero & Size(trainerBgImage.width.toDouble(), trainerBgImage.height.toDouble()), rect, Paint());
+  } else if (cardBg != null) {
     canvas.drawImageRect(cardBg, cardBgSourceRect(card.affinity), rect, Paint());
   } else {
     canvas.drawRect(rect, Paint()..color = const Color(0xFF333333));

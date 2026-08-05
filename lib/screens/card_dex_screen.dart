@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import '../app/player_profile_controller.dart';
@@ -21,6 +25,55 @@ class _CardDexScreenState extends State<CardDexScreen> with SingleTickerProvider
   late final TabController _tabController;
   String _selectedSetId = 'all';
   _SortMode _sortMode = _SortMode.number;
+
+  // Lazy-built lookup: cardId → list of set names that contain this card
+  Map<String, List<String>>? _cardSets;
+  // cardId → list of location names where this card appears in encounters
+  Map<String, List<String>>? _cardLocations;
+  // set ID → booster name
+  static const _setToBooster = {
+    'field_trip': 'Field Trip Booster',
+    'safari_tour': 'Safari Tour Booster',
+    'urban_life': 'Urban Life Booster',
+    'base': 'Kanto Collection',
+    'johto': 'Johto Collection',
+  };
+
+  Future<void> _ensureLookups() async {
+    if (_cardSets != null && _cardLocations != null) return;
+
+    // Build card → sets lookup
+    final sets = CardRepository.instance.sets;
+    final cardSets = <String, List<String>>{};
+    for (final set in sets) {
+      for (final cardId in set.cardIds) {
+        cardSets.putIfAbsent(cardId, () => []).add(set.name);
+      }
+    }
+    _cardSets = cardSets;
+
+    // Build card → locations lookup from routes.json
+    final cardLocations = <String, List<String>>{};
+    try {
+      final jsonStr = await rootBundle.loadString('assets/data/routes.json');
+      final data = jsonDecode(jsonStr) as Map<String, dynamic>;
+      final locations = data['locations'] as List<dynamic>? ?? [];
+      for (final loc in locations) {
+        final locName = (loc['name'] as String?) ?? '';
+        final nodes = loc['nodes'] as List<dynamic>? ?? [];
+        for (final node in nodes) {
+          final table = node['encounterTable'] as List<dynamic>? ?? [];
+          for (final entry in table) {
+            final cardId = entry['cardId'] as String?;
+            if (cardId != null) {
+              cardLocations.putIfAbsent(cardId, () => []).add(locName);
+            }
+          }
+        }
+      }
+    } catch (_) {}
+    _cardLocations = cardLocations;
+  }
 
   @override
   void initState() {
@@ -52,7 +105,9 @@ class _CardDexScreenState extends State<CardDexScreen> with SingleTickerProvider
       orElse: () => sets.first,
     );
 
-    final allCards = repository.cardsForIds(selectedSet.cardIds);
+    final allCards = _selectedSetId == 'all'
+        ? repository.allCards
+        : repository.cardsForIds(selectedSet.cardIds);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D0D1A),
@@ -158,22 +213,37 @@ class _CardDexScreenState extends State<CardDexScreen> with SingleTickerProvider
         final everOwned = everOwnedCardIds.contains(card.id);
         final isSeen = seenCardIds.contains(card.id);
 
+        Widget cardWidget;
+        bool isUnlocked;
         // Shiny Dex:
         // - ever owned shiny (now or previously) → full color
         // - never owned shiny → dark grey
         if (shinyOnly) {
-          if (shinyIds.contains(card.id) || everOwnedShinyCardIds.contains(card.id)) {
-            return TriadCardView(card: card.copyWith(shiny: true), size: 100);
+          final hasShiny = shinyIds.contains(card.id) || everOwnedShinyCardIds.contains(card.id);
+          isUnlocked = hasShiny;
+          if (hasShiny) {
+            cardWidget = TriadCardView(card: card.copyWith(shiny: true), size: 100);
+          } else {
+            cardWidget = _greyedCard(card, seen: false);
           }
-          return _greyedCard(card, seen: false);
+        } else {
+          // Card Dex:
+          // - ever owned (now or previously) → full color
+          // - seen but never owned → bright grey
+          // - never seen → dark grey
+          // Trainers are always unlocked since they aren't wild encounters.
+          isUnlocked = everOwned || isSeen || card.cardType == TriadCardType.trainer;
+          if (everOwned) {
+            cardWidget = TriadCardView(card: card, size: 100);
+          } else {
+            cardWidget = _greyedCard(card, seen: isSeen);
+          }
         }
 
-        // Card Dex:
-        // - ever owned (now or previously) → full color
-        // - seen but never owned → bright grey
-        // - never seen → dark grey
-        if (everOwned) return TriadCardView(card: card, size: 100);
-        return _greyedCard(card, seen: isSeen);
+        return GestureDetector(
+          onTap: () => _showCardInfo(context, card, isUnlocked: isUnlocked),
+          child: cardWidget,
+        );
       },
     );
   }
@@ -223,6 +293,278 @@ class _CardDexScreenState extends State<CardDexScreen> with SingleTickerProvider
     }
     return partsA.length.compareTo(partsB.length);
   }
+
+  void _showCardInfo(BuildContext context, TriadCard card, {bool isUnlocked = true}) {
+    if (!isUnlocked) {
+      showDialog(
+        context: context,
+        builder: (ctx) => Dialog(
+          backgroundColor: const Color(0xFF1A1A2E),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.help_outline, size: 64, color: Colors.white24),
+                const SizedBox(height: 16),
+                const Text(
+                  'UNKNOWN',
+                  style: TextStyle(
+                    color: Colors.white38,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 4,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'You haven\'t encountered this Pokémon yet.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 13),
+                ),
+                const SizedBox(height: 20),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Close', style: TextStyle(color: Colors.amber)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+
+    _ensureLookups().then((_) {
+      if (!mounted) return;
+      final cardSets = _cardSets?[card.id] ?? <String>[];
+      final cardLocations = _cardLocations?[card.id] ?? <String>[];
+
+      // Find which boosters this card can come from (matching set IDs)
+      final boosterNames = <String>{};
+      final sets = CardRepository.instance.sets;
+      for (final set in sets) {
+        if (set.cardIds.contains(card.id)) {
+          final boosterName = _setToBooster[set.id] ?? set.name;
+          boosterNames.add(boosterName);
+        }
+      }
+
+      // Evolution line (calculated inside _buildEvoChain)
+
+      showDialog(
+        context: context,
+        builder: (ctx) => Dialog(
+          backgroundColor: const Color(0xFF1A1A2E),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with card image
+                Center(
+                  child: TriadCardView(card: card, size: 120),
+                ),
+                const SizedBox(height: 12),
+                Center(
+                  child: Text(
+                    '${card.name}  #${card.cardNumber}',
+                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Center(
+                  child: Text(
+                    '${_capitalize(card.rarity.name)} · ${_capitalize(card.affinity)}${card.cardType == TriadCardType.trainer ? " · Trainer" : ""}',
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 14),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Pokédex entry (fetched from PokéAPI)
+                if (card.cardType == TriadCardType.pokemon)
+                  _PokedexEntry(speciesId: card.speciesId),
+                // Evolution line
+                const SizedBox(height: 12),
+                _buildEvoChain(card),
+                // Found in boosters
+                if (boosterNames.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _sectionTitle('Found in Boosters'),
+                  const SizedBox(height: 4),
+                  ...boosterNames.map((b) => Padding(
+                    padding: const EdgeInsets.only(bottom: 2),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.card_giftcard, size: 14, color: Colors.amber),
+                        const SizedBox(width: 6),
+                        Text(b, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                      ],
+                    ),
+                  )),
+                ],
+                // Found in locations
+                if (cardLocations.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _sectionTitle('Found in Locations'),
+                  const SizedBox(height: 8),
+                  _buildLocationGrid(cardLocations),
+                ],
+                // Sets
+                if (cardSets.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _sectionTitle('Card Sets'),
+                  const SizedBox(height: 4),
+                  ...cardSets.map((s) => Padding(
+                    padding: const EdgeInsets.only(bottom: 2),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.collections_bookmark, size: 14, color: Colors.blueAccent),
+                        const SizedBox(width: 6),
+                        Text(s, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                      ],
+                    ),
+                  )),
+                ],
+                const SizedBox(height: 16),
+                Center(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Close', style: TextStyle(color: Colors.amber)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildEvoChain(TriadCard card) {
+    final line = CardRepository.instance.evolutionLineFor(card.id);
+    if (line.isStandalone) return const SizedBox.shrink();
+
+    final nodes = <Widget>[];
+    final repository = CardRepository.instance;
+
+    Widget node(String cardId, {bool highlight = false}) {
+      final c = repository.cardById(cardId);
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: highlight ? Colors.amber.withValues(alpha: 0.15) : Colors.white10,
+              borderRadius: BorderRadius.circular(6),
+              border: highlight
+                  ? Border.all(color: Colors.amber, width: 1.5)
+                  : Border.all(color: Colors.white24, width: 1),
+            ),
+            child: c != null
+                ? TriadCardView(card: c, size: 40)
+                : const Icon(Icons.help_outline, color: Colors.white24, size: 20),
+          ),
+          const SizedBox(height: 3),
+          Text(c?.name ?? cardId, style: const TextStyle(fontSize: 10, color: Colors.white70)),
+        ],
+      );
+    }
+
+    Widget arrow(int level) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Lv.$level', style: const TextStyle(fontSize: 8, color: Colors.amber)),
+            const Icon(Icons.arrow_forward, size: 12),
+          ],
+        ),
+      );
+    }
+
+    for (final step in line.ancestors) {
+      nodes.add(node(step.cardId));
+      nodes.add(arrow(step.level));
+    }
+    nodes.add(node(card.id, highlight: true));
+    for (final step in line.descendants) {
+      nodes.add(arrow(step.level));
+      nodes.add(node(step.cardId));
+    }
+    for (final branch in line.branchOptions) {
+      nodes.add(arrow(branch.level));
+      nodes.add(node(branch.cardId));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle('Evolution Line'),
+        const SizedBox(height: 8),
+        Center(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(mainAxisSize: MainAxisSize.min, children: nodes),
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
+  Widget _buildLocationGrid(List<String> locations) {
+    const columns = 3;
+    final rows = <List<String>>[];
+    for (var i = 0; i < locations.length; i += columns) {
+      rows.add(locations.sublist(i, (i + columns).clamp(0, locations.length)));
+    }
+    return Column(
+      children: rows.map((row) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Row(
+            children: [
+              for (var i = 0; i < columns; i++)
+                Expanded(
+                  child: i < row.length
+                      ? Row(
+                          children: [
+                            const Icon(Icons.location_on, size: 12, color: Colors.greenAccent),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(row[i], style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                            ),
+                          ],
+                        )
+                      : const SizedBox.shrink(),
+                ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        color: Colors.amber,
+        fontSize: 13,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1,
+      ),
+    );
+  }
+
+  String _capitalize(String s) =>
+      s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}';
 }
 
 /// Inline set selector (same pattern as CollectionScreen).
@@ -260,4 +602,150 @@ class _SetSelector extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Fetches and displays Pokédex data from PokéAPI for a given species.
+class _PokedexEntry extends StatefulWidget {
+  const _PokedexEntry({required this.speciesId});
+  final String speciesId;
+
+  @override
+  State<_PokedexEntry> createState() => _PokedexEntryState();
+}
+
+class _PokedexEntryState extends State<_PokedexEntry> {
+  String? _flavorText;
+  String? _genus;
+  String? _habitat;
+  String? _height;
+  String? _weight;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetch();
+  }
+
+  Future<void> _fetch() async {
+    try {
+      final species = widget.speciesId.toLowerCase().replaceAll(' ', '-');
+      final results = await Future.wait([
+        http.get(Uri.parse('https://pokeapi.co/api/v2/pokemon-species/$species')),
+        http.get(Uri.parse('https://pokeapi.co/api/v2/pokemon/$species')),
+      ]);
+
+      // Parse species data
+      if (results[0].statusCode == 200) {
+        final data = jsonDecode(results[0].body) as Map<String, dynamic>;
+        // English flavor text
+        final entries = data['flavor_text_entries'] as List<dynamic>? ?? [];
+        for (final e in entries) {
+          final lang = (e['language'] as Map<String, dynamic>?)?['name'];
+          if (lang == 'en') {
+            var text = (e['flavor_text'] as String?) ?? '';
+            // Clean up newlines and form feeds
+            _flavorText = text.replaceAll('\n', ' ').replaceAll('\f', ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+            break;
+          }
+        }
+        // Genus (category)
+        final genera = data['genera'] as List<dynamic>? ?? [];
+        for (final g in genera) {
+          final lang = (g['language'] as Map<String, dynamic>?)?['name'];
+          if (lang == 'en') {
+            _genus = (g['genus'] as String?) ?? '';
+            break;
+          }
+        }
+        // Habitat
+        final hab = data['habitat'] as Map<String, dynamic>?;
+        _habitat = hab?['name'] as String?;
+      }
+
+      // Parse pokemon data (height/weight)
+      if (results[1].statusCode == 200) {
+        final data = jsonDecode(results[1].body) as Map<String, dynamic>;
+        final h = (data['height'] as num?) ?? 0;
+        final w = (data['weight'] as num?) ?? 0;
+        _height = '${(h / 10).toStringAsFixed(1)} m';
+        _weight = '${(w / 10).toStringAsFixed(1)} kg';
+      }
+    } catch (e) {
+      _error = e.toString();
+    }
+    if (mounted) setState(() => _loading = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Center(
+          child: SizedBox(
+            width: 20, height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.amber),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Flavor text
+        if (_flavorText != null) ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            ),
+            child: Text(
+              _flavorText!,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.8),
+                fontSize: 13,
+                fontStyle: FontStyle.italic,
+                height: 1.4,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        // Info rows
+        if (_genus != null)
+          _dexRow('Category', _genus!),
+        if (_height != null)
+          _dexRow('Height', _height!),
+        if (_weight != null)
+          _dexRow('Weight', _weight!),
+        if (_habitat != null)
+          _dexRow('Habitat', _capitalizeFirst(_habitat!)),
+      ],
+    );
+  }
+
+  Widget _dexRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 70,
+            child: Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13)),
+          ),
+          Expanded(
+            child: Text(value, style: const TextStyle(color: Colors.white, fontSize: 13)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _capitalizeFirst(String s) =>
+      s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}';
 }

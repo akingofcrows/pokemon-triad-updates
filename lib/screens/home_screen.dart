@@ -17,6 +17,8 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../app/player_profile_controller.dart';
 import '../app/routes.dart';
 import '../app/story_progress_controller.dart';
+import 'trainer_card_screen.dart';
+import 'character_customization_sheet.dart';
 import '../models/card_growth.dart';
 import '../models/deck.dart';
 import '../models/player_profile.dart';
@@ -32,6 +34,23 @@ import '../widgets/update_dialog.dart';
 import '../widgets/battery_indicator.dart';
 import 'battle_menu_screen.dart';
 
+/// One edge-hugging gradient band used to fake a debossed/inset-shadow
+/// look on the active-deck box (Flutter has no native inset BoxShadow).
+class _DebossEdge {
+  const _DebossEdge(this.begin, this.end, this.color, this.stops);
+  final Alignment begin;
+  final Alignment end;
+  final Color color;
+  final List<double> stops;
+}
+
+final _debossEdges = [
+  _DebossEdge(Alignment.topCenter, Alignment.bottomCenter, Colors.black.withValues(alpha: 0.5), const [0.0, 0.05]),
+  _DebossEdge(Alignment.centerLeft, Alignment.centerRight, Colors.black.withValues(alpha: 0.38), const [0.0, 0.035]),
+  _DebossEdge(Alignment.bottomCenter, Alignment.topCenter, Colors.white.withValues(alpha: 0.18), const [0.0, 0.035]),
+  _DebossEdge(Alignment.centerRight, Alignment.centerLeft, Colors.white.withValues(alpha: 0.11), const [0.0, 0.025]),
+];
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -44,6 +63,7 @@ class _HomeScreenState extends State<HomeScreen>
   int _currentTab = 0;
   bool _battleVisible = false;
   bool _battleSoloOpen = false;
+  bool _trainerCardOpen = false;
   late final Ticker _ticker;
   Duration _elapsed = Duration.zero;
   List<CardGrowth> _topCards = [];
@@ -301,11 +321,10 @@ class _HomeScreenState extends State<HomeScreen>
     final hasStarterDeck = _hasStarterDeckLocal || profile.decks.isNotEmpty ||
         (ctrl.activeQuest?.objectives.any((o) => o.description == 'Receive your starter deck' && o.completed) ?? false);
 
-    return ScaffoldMessenger(
-      key: _scaffoldMessengerKey,
-      child: Scaffold(
+    return Scaffold(
       key: _scaffoldKey,
       resizeToAvoidBottomInset: false,
+      extendBody: true,
       drawer: _buildDrawer(context, appearance, profile),
       body: Stack(
         clipBehavior: Clip.hardEdge,
@@ -323,19 +342,28 @@ class _HomeScreenState extends State<HomeScreen>
             top: 0,
             left: 0,
             right: 0,
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFF0D0D1A),
-              ),
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  child: Row(
-                    children: [
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF1E1E1E),
+                        border: Border(
+                          bottom: BorderSide(color: Color(0xFF444444), width: 1),
+                        ),
+                      ),
+                      child: SafeArea(
+                        bottom: false,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          child: Row(
+                            children: [
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
                           const Text('FAVES',
                             style: TextStyle(color: Colors.white, fontSize: 9, fontFamily: 'PowerGreen')),
                           const SizedBox(height: 2),
@@ -343,22 +371,20 @@ class _HomeScreenState extends State<HomeScreen>
                         ],
                       ),
                       const Spacer(),
-                      // PokéDollars
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-                        child: Text('₽ ${profile.money}',
-                          style: const TextStyle(fontFamily: 'PowerGreen', fontSize: 13, color: Colors.white70)),
+                      Transform.translate(
+                        offset: const Offset(-80, 0),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E1E1E),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                          ),
+                          child: Text('₽ ${profile.money}',
+                            style: const TextStyle(fontFamily: 'PowerGreen', fontSize: 13, color: Color(0xFFC9A44C))),
+                        ),
                       ),
-                      const SizedBox(width: 10),
-                      // Trainer Level
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-                        child: Text('TL ${context.watch<PlayerProfileController>().trainerLevel}',
-                          style: const TextStyle(fontFamily: 'PowerGreen', fontSize: 13, color: Colors.white70)),
-                      ),
-                      const Spacer(),
+                      const SizedBox(width: 12),
                       _topIcon(Icons.notifications_none, () {}),
                       const SizedBox(width: 16),
                       _topIcon(Icons.mail_outline, () {}),
@@ -370,6 +396,24 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
           ),
+        ),
+      // Shadow gradient below top bar
+      Container(
+        height: 12,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.black.withValues(alpha: 0.55),
+              Colors.transparent,
+            ],
+          ),
+        ),
+      ),
+    ],
+  ),
+),
           SafeArea(
             bottom: false,
             child: Center(
@@ -386,14 +430,18 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
                 const SizedBox(height: 2),
                 // Trainer Card button
-                GestureDetector(
-                  onTap: () => Navigator.pushNamed(context, AppRoutes.trainerCard),
-                  child: Container(
+                Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    onTap: () => setState(() => _trainerCardOpen = true),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                      color: const Color(0xFF1E1E1E),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.06), width: 1),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -408,6 +456,7 @@ class _HomeScreenState extends State<HomeScreen>
                             )),
                       ],
                     ),
+                  ),
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -439,12 +488,16 @@ class _HomeScreenState extends State<HomeScreen>
           Positioned(
             top: kToolbarHeight + MediaQuery.of(context).padding.top + 14,
             right: 8,
-            child: GestureDetector(
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+              child: InkWell(
               onTap: () => Navigator.pushNamed(context, AppRoutes.missions),
+              borderRadius: BorderRadius.circular(10),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0D0D1A),
+                  color: const Color(0xFF1E1E1E),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
                 ),
@@ -456,6 +509,7 @@ class _HomeScreenState extends State<HomeScreen>
                     const Text('Missions', style: TextStyle(color: Colors.white70, fontSize: 12)),
                   ],
                 ),
+              ),
               ),
             ),
           ),
@@ -478,73 +532,152 @@ class _HomeScreenState extends State<HomeScreen>
           // Connection Lost overlay
           if (_connectionLost)
             const Positioned.fill(child: _ConnectionLostOverlay()),
+          // Trainer Card overlay — nav bars stay clear, content blurred
+          if (_trainerCardOpen)
+            Positioned.fill(
+              child: _TrainerCardOverlay(onClose: () => setState(() => _trainerCardOpen = false)),
+            ),
+          // XP circle — on top of everything (higher z-index)
+          if (!_connectionLost)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + kToolbarHeight - 36,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Transform.translate(
+                  offset: const Offset(2, 0),
+                  child: _TrainerXpCircle(appearance: appearance),
+                ),
+              ),
+            ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentTab,
-        onTap: (i) {
-          if (i == 5) {
-            _scaffoldKey.currentState?.openDrawer();
-            return;
-          }
-          // Battle tab toggle: slide up / slide down
-          if (i == 4) {
-            if (_battleVisible) {
-              _dismissBattlePanel();
-            } else {
-              setState(() { _battleVisible = true; _battleSoloOpen = false; _currentTab = 4; });
-            }
-            return;
-          }
-          setState(() => _currentTab = i);
-          if (i == 0) { _battleVisible = false; _battleSoloOpen = false; _busy = false; return; }
-          if (_battleVisible) { setState(() { _battleVisible = false; _battleSoloOpen = false; }); }
-          if (_busy) return;
-          switch (i) {
-            case 1: _busy = true; Navigator.pushNamed(context, AppRoutes.collection).then((_) => _busy = false);
-            case 2: _busy = true; Navigator.pushNamed(context, AppRoutes.deckBuilder).then((_) => _busy = false);
-            case 3: _busy = true; Navigator.pushNamed(context, AppRoutes.trainerCard).then((_) => _busy = false);
-          }
-        },
-        backgroundColor: const Color(0xFF0D0D1A),
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white,
-        selectedLabelStyle: const TextStyle(
-          fontSize: 11,
-          shadows: [Shadow(color: Colors.black87, blurRadius: 2, offset: Offset(2, 2))],
+      bottomNavigationBar: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFF1E1E1E),
+              border: Border(
+                top: BorderSide(color: Color(0xFF444444), width: 1),
+              ),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _bottomNavIcon(Icons.home, 'Home', 0),
+                    _bottomNavImage('assets/ui/collection.png', 'Collection', 1),
+                    _bottomNavImage('assets/ui/deck.png', 'Decks', 2),
+                    _bottomNavIcon(Icons.people, 'Social', 3),
+                    _bottomNavIcon(Icons.sports_esports, 'Battle', 4),
+                    _bottomNavIcon(Icons.menu, 'Menu', 5),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 11,
-          shadows: [Shadow(color: Colors.black87, blurRadius: 2, offset: Offset(2, 2))],
-        ),
-        type: BottomNavigationBarType.fixed,
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Image.asset('assets/ui/collection.png', width: 24, height: 24), label: 'Collection'),
-          BottomNavigationBarItem(icon: Image.asset('assets/ui/deck.png', width: 24, height: 24), label: 'Decks'),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Social'),
-          BottomNavigationBarItem(icon: Icon(Icons.sports_esports), label: 'Battle'),
-          BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'Menu'),
-        ],
-      ),
       ),
     );
+  }
+
+  Widget _bottomNavIcon(IconData icon, String label, int index) {
+    final active = _currentTab == index;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _onNavTap(index),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: Colors.white, size: 22),
+              const SizedBox(height: 2),
+              Text(label, style: TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                shadows: const [Shadow(color: Colors.black87, blurRadius: 2, offset: Offset(2, 2))],
+              )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _bottomNavImage(String asset, String label, int index) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _onNavTap(index),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(asset, width: 22, height: 22),
+              const SizedBox(height: 2),
+              Text(label, style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                shadows: [Shadow(color: Colors.black87, blurRadius: 2, offset: Offset(2, 2))],
+              )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _onNavTap(int i) {
+    if (i == 5) {
+      _scaffoldKey.currentState?.openDrawer();
+      return;
+    }
+    if (i == 4) {
+      if (_battleVisible) {
+        _dismissBattlePanel();
+      } else {
+        setState(() { _battleVisible = true; _battleSoloOpen = false; _currentTab = 4; });
+      }
+      return;
+    }
+    setState(() => _currentTab = i);
+    if (i == 0) { _battleVisible = false; _battleSoloOpen = false; _busy = false; return; }
+    if (_battleVisible) { setState(() { _battleVisible = false; _battleSoloOpen = false; }); }
+    if (_busy) return;
+    switch (i) {
+      case 1: _busy = true; Navigator.pushNamed(context, AppRoutes.collection).then((_) => _busy = false);
+      case 2: _busy = true; Navigator.pushNamed(context, AppRoutes.deckBuilder).then((_) => _busy = false);
+      case 3: _busy = true; setState(() => _trainerCardOpen = true); _busy = false;
+    }
   }
 
   Widget _buildFavoritesButton(BuildContext context) {
     final ctrl = context.read<PlayerProfileController>();
     final favInsts = ctrl.favoriteInstances;
-    return GestureDetector(
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
       onTap: () => _showFavorites(context),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         height: 38,
         padding: favInsts.isNotEmpty
             ? const EdgeInsets.symmetric(horizontal: 6)
             : const EdgeInsets.symmetric(horizontal: 6),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+          color: const Color(0xFF1E1E1E),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06), width: 1),
         ),
         clipBehavior: Clip.none,
         child: Center(
@@ -578,13 +711,19 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ),
       ),
+      ),
     );
   }
 
   Widget _topIcon(IconData icon, VoidCallback onTap, {int badge = 0}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Stack(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Stack(
         clipBehavior: Clip.none,
         children: [
           Icon(icon, color: Colors.white70, size: 24),
@@ -607,6 +746,8 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
         ],
+          ),
+        ),
       ),
     );
   }
@@ -704,147 +845,211 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildActiveDeckButton(Deck? deck) {
     final ctrl = context.read<PlayerProfileController>();
     final growth = ctrl.cardGrowth;
-    final cardWidgets = <Widget>[];
-    if (deck != null) {
-      for (var i = 0; i < deck.cardIds.length; i++) {
-        final id = deck.cardIds[i];
-        final card = CardRepository.instance.cardById(id);
-        // Use instance-specific growth if available
-        CardGrowth? g;
-        final instId = deck.instanceIds != null && i < deck.instanceIds!.length
-            ? deck.instanceIds![i]
-            : null;
-        if (instId != null && instId > 0) {
-          g = ctrl.allCardInstances.where((inst) => inst.instanceId == instId).firstOrNull;
-        }
-        // If no specific instance found, use the best per cardId
-        g ??= growth[id];
-        cardWidgets.add(
-          SizedBox(
-            width: 64, height: 64,
-            child: card != null ? TriadCardView(card: card, size: 64, growth: g) : const SizedBox.shrink(),
-          ),
-        );
-      }
-    }
-
+    final boxImg = deck?.boxImage ?? 'field_deck';
     return GestureDetector(
       onTap: () => Navigator.pushNamed(context, AppRoutes.deckBuilder),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // "ACTIVE DECK" label with drop shadow
           Text(
             deck != null ? 'ACTIVE DECK' : 'No Active Deck',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 2,
-              fontFamily: 'PowerGreen',
-              shadows: const [
-                Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(1, 2)),
-              ],
+            style: const TextStyle(
+              color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800,
+              letterSpacing: 2, fontFamily: 'PowerGreen',
+              shadows: [Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(1, 2))],
             ),
           ),
-          const SizedBox(height: 6),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-            ),
+          Transform.translate(
+            offset: const Offset(0, -16),
+            child: SizedBox(
+            width: 220,
+            height: 150,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (cardWidgets.isNotEmpty) ...[
-                      // Row 1: first 3 cards
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: cardWidgets.take(3).toList()
-                          ..addAll(List.filled(3 - cardWidgets.take(3).length, const SizedBox(width: 64, height: 64))),
-                      ),
-                      if (cardWidgets.length > 3)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: cardWidgets.skip(3).take(2).toList()
-                              ..addAll(List.filled(2 - cardWidgets.skip(3).take(2).length, const SizedBox(width: 64, height: 64))),
-                          ),
-                        ),
-                    ] else
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 40),
-                        child: Text(
-                          'Visit the Deck Builder to create one!',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontFamily: 'PowerGreen',
-                            shadows: const [
-                              Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(1, 2)),
-                            ],
-                          ),
-                        ),
-                      ),
-                  ],
+                Positioned(
+                  left: 20,
+                  bottom: 0,
+                  child: Image.asset('assets/images/Booster Pack/$boxImg.png', width: 170, height: 120, fit: BoxFit.contain),
                 ),
-                // Deck name badge
+                if (deck != null && deck.cardIds.isNotEmpty)
+                  _buildFeaturedCard(deck, ctrl, growth),
                 if (deck != null)
                   Positioned(
-                    top: -10,
-                    left: -8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFC9A44C),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        deck.name,
-                        style: const TextStyle(color: Color(0xFF0D0D1A), fontSize: 11, fontWeight: FontWeight.bold),
-                      ),
+                    top: 44,
+                    left: 30,
+                    right: 50,
+                    child: Center(
+                      child: Text(deck.name,
+                        style: TextStyle(color: Colors.white, fontSize: 14, fontFamily: 'PowerGreen', shadows: [Shadow(color: boxImg == 'field_deck' ? const Color(0xFF169A3D) : Colors.black87, blurRadius: 3, offset: const Offset(1, 1))])),
                     ),
                   ),
               ],
             ),
           ),
+            ),
         ],
       ),
     );
   }
 
+  Widget _buildFeaturedCard(Deck deck, PlayerProfileController ctrl, Map<String, CardGrowth> growth) {
+    final idx = (deck.featuredCardIndex ?? 0).clamp(0, deck.cardIds.length - 1);
+    final id = deck.cardIds[idx];
+    final card = CardRepository.instance.cardById(id);
+    if (card == null) return const SizedBox.shrink();
+
+    CardGrowth? g;
+    final instId = deck.instanceIds != null && idx < deck.instanceIds!.length
+        ? deck.instanceIds![idx]
+        : null;
+    if (instId != null && instId > 0) {
+      g = ctrl.allCardInstances.where((inst) => inst.instanceId == instId).firstOrNull;
+    }
+    // Only use instance-specific; don't fall back to general pool
+
+    return Positioned(
+      left: 68,
+      top: 72,
+      child: Transform.rotate(
+        angle: -0.08,
+        child: SizedBox(
+          width: 64, height: 64,
+          child: TriadCardView(card: card, size: 64, growth: g),
+        ),
+      ),
+    );
+  }
+
+  void _showCustomization(BuildContext ctx, TrainerAppearance appearance) {
+    showModalBottomSheet(
+      context: ctx,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => CharacterCustomizationSheet(appearance: appearance),
+    );
+  }
+
   Widget _buildDrawer(BuildContext context, TrainerAppearance appearance, PlayerProfile profile) {
+    final storyCtrl = context.watch<StoryProgressController>();
+    final profileCtrl = context.watch<PlayerProfileController>();
+    final trainerLevel = profileCtrl.trainerLevel;
+    final trainerXp = profileCtrl.trainerXpInLevel;
+    final trainerXpMax = profileCtrl.trainerXpForNextLevel;
     return Drawer(
-      backgroundColor: const Color(0xFF0D0D1A),
-      child: SafeArea(
+      backgroundColor: Colors.transparent,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF1E1E1E),
+            borderRadius: BorderRadius.horizontal(right: Radius.circular(16)),
+            border: Border(
+              right: BorderSide(color: Color(0xFF444444), width: 1),
+            ),
+          ),
+          child: SafeArea(
         child: Column(
           children: [
             // Trainer header
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.white12)),
-              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 20, 12, 16),
               child: Column(
                 children: [
-                  TrainerSpriteStack(appearance: appearance, size: 100),
-                  const SizedBox(height: 8),
-                  Text(
-                    profile.trainerName ?? profile.playerName,
-                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  GestureDetector(
+                    onTap: () => _showCustomization(context, appearance),
+                    child: TrainerSpriteStack(appearance: appearance, size: 100),
                   ),
-                  if (profile.friendCode != null)
-                    Text(
-                      _formatFriendCode(profile.friendCode!),
-                      style: const TextStyle(color: Colors.white38, fontSize: 12),
+                  const SizedBox(height: 12),
+                  // Debossed name + friend code card
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E1E1E),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.06),
+                        width: 1,
+                      ),
                     ),
+                    child: Column(
+                      children: [
+                        Text(
+                          '${profile.trainerName ?? profile.playerName} — Lv. $trainerLevel',
+                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        // Trainer XP bar
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(3),
+                          child: LinearProgressIndicator(
+                            value: trainerXpMax > 0 ? trainerXp / trainerXpMax : 0,
+                            minHeight: 4,
+                            backgroundColor: Colors.white.withValues(alpha: 0.08),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              appearance.gender == 'girl'
+                                  ? const Color(0xFFF472B6)
+                                  : Colors.cyan,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '$trainerXp / $trainerXpMax XP',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.white.withValues(alpha: 0.35),
+                            fontFamily: 'Tiny5',
+                          ),
+                        ),
+                        if (profile.friendCode != null) ...[
+                          const SizedBox(height: 14),
+                          Text(
+                            'FRIEND CODE',
+                            style: TextStyle(
+                              fontFamily: 'Tiny5',
+                              fontSize: 10,
+                              color: Colors.white.withValues(alpha: 0.2),
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  _formatFriendCode(profile.friendCode!),
+                                  style: const TextStyle(color: Colors.white38, fontSize: 12, letterSpacing: 0.5),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              GestureDetector(
+                                onTap: () {
+                                  final formatted = _formatFriendCode(profile.friendCode!);
+                                  Clipboard.setData(ClipboardData(text: formatted));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Friend code copied!'),
+                                      duration: Duration(seconds: 1),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                },
+                                child: Icon(Icons.copy, size: 14, color: Colors.white.withValues(alpha: 0.25)),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -884,6 +1089,8 @@ class _HomeScreenState extends State<HomeScreen>
           ],
         ),
       ),
+    ),
+  ),
     );
   }
 
@@ -1227,7 +1434,7 @@ class _HomeScreenState extends State<HomeScreen>
   Future<String> _getVersion() async {
     try {
       final info = await PackageInfo.fromPlatform();
-      return '${info.version}+${info.buildNumber}';
+      return info.version;
     } catch (_) {
       return 'unknown';
     }
@@ -1435,10 +1642,10 @@ class _FavoritesDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D1A),
+      backgroundColor: const Color(0xFF252525),
       appBar: AppBar(
         title: const Text('Favorite Cards'),
-        backgroundColor: const Color(0xFF0D0D1A),
+        backgroundColor: const Color(0xFF252525),
       ),
       body: PageView.builder(
         itemCount: instances.length,
@@ -1547,6 +1754,28 @@ class _OrbitingTrainer extends StatelessWidget {
 }
 
 // ─── Gift list dialog ───────────────────────────────────────────────────
+String? _boosterImageFor(String itemId) {
+  const map = {
+    'field_trip': 'assets/images/Booster Pack/field.png',
+    'kanto': 'assets/images/Booster Pack/kanto.png',
+    'johto': 'assets/images/Booster Pack/johto.png',
+    'safari': 'assets/images/Booster Pack/safari.png',
+    'urban': 'assets/images/Booster Pack/urban.png',
+  };
+  return map[itemId];
+}
+
+String? _boosterNameFor(String itemId) {
+  const map = {
+    'field_trip': 'Field Trip Booster',
+    'kanto': 'Kanto Collection',
+    'johto': 'Johto Collection',
+    'safari': 'Safari Tour',
+    'urban': 'Urban Life',
+  };
+  return map[itemId];
+}
+
 class _GiftListDialog extends StatefulWidget {
   const _GiftListDialog({
     required this.gifts,
@@ -1578,8 +1807,15 @@ class _GiftListDialogState extends State<_GiftListDialog> {
     final cardName = card?.name ?? itemId;
     try {
       await widget.apiClient.claimGift(giftId);
-      // Refresh collection so the card shows up immediately
-      await widget.profileController.loadFromServer();
+      // If this is a booster gift, add to local inventory immediately
+      final isBooster = card == null && _boosterImageFor(itemId) != null;
+      if (isBooster) {
+        final qty = gift['quantity'] as int? ?? 1;
+        widget.profileController.addBoosterToInventory(itemId, qty);
+      } else {
+        // Refresh collection so card gifts show up immediately
+        await widget.profileController.loadFromServer();
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -1652,9 +1888,9 @@ class _GiftListDialogState extends State<_GiftListDialog> {
           margin: const EdgeInsets.symmetric(horizontal: 20),
           constraints: const BoxConstraints(maxHeight: 400),
           decoration: BoxDecoration(
-            color: const Color(0xCC0D0D1A),
+            color: const Color(0xFF141414),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+            border: Border.all(color: const Color(0xFF444444)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1684,14 +1920,17 @@ class _GiftListDialogState extends State<_GiftListDialog> {
                           final itemId = g['item_id'] as String? ?? '';
                           final qty = g['quantity'] as int? ?? 1;
                           final card = itemId.isNotEmpty ? CardRepository.instance.cardById(itemId) : null;
-                          final name = card?.name ?? itemId;
+                          final boosterImg = _boosterImageFor(itemId);
+                          final name = card?.name ?? _boosterNameFor(itemId) ?? itemId;
                           final claiming = _claiming.contains(giftId);
 
                           return ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: card != null
                                 ? SizedBox(width: 40, height: 40, child: TriadCardView(card: card, size: 40))
-                                : const Icon(Icons.card_giftcard, color: Colors.white54),
+                                : boosterImg != null
+                                    ? ClipRRect(borderRadius: BorderRadius.circular(4), child: Image.asset(boosterImg, width: 40, height: 55, fit: BoxFit.cover))
+                                    : const Icon(Icons.card_giftcard, color: Colors.white54),
                             title: Text('$name x$qty', style: const TextStyle(color: Colors.white, fontSize: 14)),
                             subtitle: Text(msg, style: const TextStyle(color: Colors.white54, fontSize: 11), maxLines: 2, overflow: TextOverflow.ellipsis),
                             trailing: claiming
@@ -2090,4 +2329,266 @@ class _BattleOption extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─── Trainer Card Overlay ─────────────────────────────────────────────
+
+class _TrainerCardOverlay extends StatefulWidget {
+  const _TrainerCardOverlay({required this.onClose});
+  final VoidCallback onClose;
+
+  @override
+  State<_TrainerCardOverlay> createState() => _TrainerCardOverlayState();
+}
+
+class _TrainerCardOverlayState extends State<_TrainerCardOverlay>
+    with TickerProviderStateMixin {
+  late final AnimationController _tiltController;
+  late final Animation<double> _tiltAnimation;
+  late final AnimationController _flipController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tiltController = AnimationController(
+        vsync: this, duration: const Duration(seconds: 3))
+      ..repeat(reverse: true);
+    _tiltAnimation = Tween<double>(begin: -0.035, end: 0.035).animate(
+      CurvedAnimation(parent: _tiltController, curve: Curves.easeInOut),
+    );
+    _flipController = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 600));
+  }
+
+  @override
+  void dispose() {
+    _tiltController.dispose();
+    _flipController.dispose();
+    super.dispose();
+  }
+
+  void _flip() {
+    if (_flipController.isAnimating) return;
+    if (_flipController.value == 0) {
+      _flipController.forward();
+    } else {
+      _flipController.reverse();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = context.watch<PlayerProfileController>().profile;
+    final isGirl = profile.gender == 'girl';
+    final topH = MediaQuery.of(context).padding.top + 63;
+    final botH = MediaQuery.of(context).padding.bottom - 3;
+
+    return Column(
+      children: [
+        SizedBox(height: topH),
+        Expanded(
+          child: ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: widget.onClose,
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Container(color: Colors.black.withValues(alpha: 0.3)),
+                    ),
+                    Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: GestureDetector(
+                        onTap: _flip,
+                        child: AnimatedBuilder(
+                          animation: Listenable.merge([_tiltAnimation, _flipController]),
+                          builder: (context, child) {
+                            final flipAngle = _flipController.value * 3.1415926535;
+                            final showingBack = _flipController.value >= 0.5;
+                            final face = showingBack
+                                ? Transform(
+                                    alignment: Alignment.center,
+                                    transform: Matrix4.identity()..rotateY(3.1415926535),
+                                    child: CardBackWidget(isGirl: isGirl, profile: profile),
+                                  )
+                                : CardFrontWidget(isGirl: isGirl, profile: profile);
+                            return Transform(
+                              alignment: Alignment.center,
+                              transform: Matrix4.identity()
+                                ..setEntry(3, 2, 0.0015)
+                                ..rotateZ(_tiltAnimation.value)
+                                ..rotateY(flipAngle),
+                              child: face,
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+        SizedBox(height: botH),
+      ],
+    );
+  }
+}
+
+// ─── Trainer XP circle in top nav ─────────────────────────────────────
+
+class _TrainerXpCircle extends StatelessWidget {
+  const _TrainerXpCircle({required this.appearance});
+  final TrainerAppearance appearance;
+
+  @override
+  Widget build(BuildContext context) {
+    final ctrl = context.watch<PlayerProfileController>();
+    final lv = ctrl.trainerLevel;
+    final inLv = ctrl.trainerXpInLevel;
+    final next = ctrl.trainerXpForNextLevel;
+    final progress = next > 0 ? inLv / next : 0.0;
+    final badgeColor = appearance.gender == 'girl'
+        ? const Color(0xFFF472B6)
+        : const Color(0xFF4FC3F7);
+
+    // Bottom half of sprite clipped to oval inside the ring
+    // Shared sprite builder helper
+    Widget _sprite() => OverflowBox(
+      minWidth: 64,
+      maxWidth: 64,
+      minHeight: 64,
+      maxHeight: 64,
+      alignment: Alignment.topCenter,
+      child: Transform.translate(
+        offset: const Offset(0, -6),
+        child: TrainerSpriteStack(appearance: appearance, size: 64),
+      ),
+    );
+
+    // Bottom half behind ring
+    final spriteBottom = ClipRect(
+      clipper: _BottomHalfClipper(),
+      child: SizedBox(width: 72, height: 72, child: _sprite()),
+    );
+
+    // Top half overflows ring
+    final spriteTop = ClipRect(
+      clipper: _TopHalfClipper(),
+      child: SizedBox(width: 72, height: 72, child: _sprite()),
+    );
+
+    return SizedBox(
+      width: 72,
+      height: 72,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          // Layer 0: filled inner circle behind sprites
+          Container(
+            width: 52,
+            height: 52,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Color(0xFF1E1E1E),
+            ),
+          ),
+          // Layer 1: bottom half of sprite behind ring
+          spriteBottom,
+          // Layer 2: outer grey ring + progress ring
+          Container(
+            width: 72,
+            height: 72,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.fromBorderSide(BorderSide(color: Color(0xFF1E1E1E), width: 10)),
+            ),
+            child: Center(
+              child: SizedBox(
+                width: 52,
+                height: 52,
+                child: CircularProgressIndicator(
+                  value: progress,
+                  strokeWidth: 4,
+                  strokeCap: StrokeCap.round,
+                  valueColor: AlwaysStoppedAnimation<Color>(badgeColor),
+                  backgroundColor: const Color(0xFF444444),
+                ),
+              ),
+            ),
+          ),
+          // Layer 2.5: bottom partial 1px light grey border on outer ring
+          ClipRect(
+            clipper: _BottomPartialClipper(),
+            child: Container(
+              width: 72,
+              height: 72,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.fromBorderSide(BorderSide(color: Color(0xFF444444), width: 1)),
+              ),
+            ),
+          ),
+          // Layer 3: top half of sprite (over the ring)
+          spriteTop,
+          // Layer 4: level badge
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: -12,
+            child: Center(
+              child: Container(
+                width: 36,
+                height: 18,
+                decoration: BoxDecoration(
+                  color: badgeColor,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Center(
+                  child: Text(
+                    'Lvl $lv',
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TopHalfClipper extends CustomClipper<Rect> {
+  @override
+  Rect getClip(Size size) => Rect.fromLTRB(0, 0, size.width, size.height / 2);
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Rect> oldClipper) => false;
+}
+
+class _BottomHalfClipper extends CustomClipper<Rect> {
+  @override
+  Rect getClip(Size size) => Rect.fromLTRB(0, size.height / 2, size.width, size.height);
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Rect> oldClipper) => false;
+}
+
+class _BottomPartialClipper extends CustomClipper<Rect> {
+  @override
+  Rect getClip(Size size) => Rect.fromLTRB(0, size.height * 0.58, size.width, size.height);
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Rect> oldClipper) => false;
 }

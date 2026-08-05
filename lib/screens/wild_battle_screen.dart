@@ -12,6 +12,8 @@ import '../models/triad_card.dart';
 import '../services/card_repository.dart';
 import 'battle_screen.dart';
 import 'janken_screen.dart';
+import 'oaks_lab_screen.dart';
+import 'route_battle_screen.dart';
 
 class WildBattleLocationScreen extends StatefulWidget {
   const WildBattleLocationScreen({super.key});
@@ -117,9 +119,9 @@ class _WildBattleLocationScreenState extends State<WildBattleLocationScreen> {
 
     if (all.isEmpty) {
       return Scaffold(
-        backgroundColor: const Color(0xFF0D0D1A),
+        backgroundColor: const Color(0xFF141414),
         appBar: AppBar(
-          backgroundColor: const Color(0xFF0D0D1A), elevation: 0,
+          backgroundColor: const Color(0xFF1A1A1A), elevation: 0,
           title: const Text('CHOOSE A LOCATION', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 3)),
           centerTitle: true,
           leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white70), onPressed: () => Navigator.pop(context)),
@@ -129,9 +131,9 @@ class _WildBattleLocationScreenState extends State<WildBattleLocationScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D1A),
+      backgroundColor: const Color(0xFF141414),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0D0D1A), elevation: 0,
+        backgroundColor: const Color(0xFF1A1A1A), elevation: 0,
         title: const Text('CHOOSE A LOCATION', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 3)),
         centerTitle: true,
         leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white70), onPressed: () => Navigator.pop(context)),
@@ -148,16 +150,17 @@ class _WildBattleLocationScreenState extends State<WildBattleLocationScreen> {
           final species = _speciesFrom(loc);
           final lv = loc.wildLevelRange.max > 0 ? '${loc.wildLevelRange.min}–${loc.wildLevelRange.max}' : null;
           // Extract town facility info from nodes
-          bool hasGym = false, hasMart = false, hasCenter = false;
+          bool hasGym = false, hasMart = false, hasCenter = false, hasLab = false;
           String? gymNpcId;
           for (final n in loc.nodes) {
             if (n.npcId != null) { hasGym = true; gymNpcId = n.npcId; }
             if (n.id.contains('pokemart') || n.id.contains('mart')) hasMart = true;
             if (n.id.contains('center')) hasCenter = true;
+            if (n.id.contains('oaks_lab') || n.id.contains('lab')) hasLab = true;
           }
           return _LocationCard(id: loc.id, name: loc.name, imageAsset: _imageFor(loc.id),
             species: species, levelRange: lv, locked: locked, isRoute: isRoute,
-            hasGym: hasGym, hasMart: hasMart, hasCenter: hasCenter, gymNpcId: gymNpcId,
+            hasGym: hasGym, hasMart: hasMart, hasCenter: hasCenter, hasLab: hasLab, gymNpcId: gymNpcId,
             lockReason: lvLocked ? 'Requires Trainer Level $reqLv' : null,
             reqLevel: reqLv);
         },
@@ -169,12 +172,12 @@ class _WildBattleLocationScreenState extends State<WildBattleLocationScreen> {
 // ── Location card ──
 
 class _LocationCard extends StatelessWidget {
-  const _LocationCard({required this.id, required this.name, required this.imageAsset, required this.species, required this.levelRange, required this.locked, required this.isRoute, this.hasGym = false, this.hasMart = false, this.hasCenter = false, this.gymNpcId, this.lockReason, this.reqLevel});
+  const _LocationCard({required this.id, required this.name, required this.imageAsset, required this.species, required this.levelRange, required this.locked, required this.isRoute, this.hasGym = false, this.hasMart = false, this.hasCenter = false, this.hasLab = false, this.gymNpcId, this.lockReason, this.reqLevel});
   final String id, name, imageAsset;
   final List<String> species;
   final String? levelRange, lockReason;
   final int? reqLevel;
-  final bool locked, isRoute, hasGym, hasMart, hasCenter;
+  final bool locked, isRoute, hasGym, hasMart, hasCenter, hasLab;
   final String? gymNpcId;
 
   @override
@@ -184,12 +187,16 @@ class _LocationCard extends StatelessWidget {
       child: GestureDetector(
         onTap: locked
             ? () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lockReason ?? 'Locked \u2014 complete the previous location first.'), duration: const Duration(seconds: 1)))
-            : () => Navigator.push(context, MaterialPageRoute(builder: (_) => WildBattleDetailScreen(locationId: id, locationName: name, imageAsset: imageAsset, species: species, levelRange: levelRange, hasGym: hasGym, hasMart: hasMart, hasCenter: hasCenter, gymNpcId: gymNpcId))),
+            : () => Navigator.push(context, MaterialPageRoute(builder: (_) => WildBattleDetailScreen(locationId: id, locationName: name, imageAsset: imageAsset, species: species, levelRange: levelRange, hasGym: hasGym, hasMart: hasMart, hasCenter: hasCenter, hasLab: hasLab, gymNpcId: gymNpcId))),
         child: Container(
           decoration: BoxDecoration(
-            color: locked ? Colors.white.withValues(alpha: 0.03) : Colors.white.withValues(alpha: 0.06),
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF1E1E1E), Color(0xFF181818)],
+            ),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: locked ? Colors.white.withValues(alpha: 0.06) : Colors.white.withValues(alpha: 0.12)),
+            border: Border.all(color: locked ? const Color(0xFF333333) : const Color(0xFF444444)),
           ),
           child: Row(children: [
             ClipRRect(
@@ -216,8 +223,8 @@ class _LocationCard extends StatelessWidget {
                   Text(lockReason!, style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.w600))
                 else if (locked)
                   Text('Complete previous location to unlock', style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 12))
-                else if (!locked && !isRoute && hasGym)
-                  Text('Gym Leader \u2022 Pok\u00e9 Mart \u2022 Center', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12))
+                  else if (!locked && !isRoute)
+                    const SizedBox.shrink()
                 else if (!locked && !isRoute)
                   Text('Pok\u00e9 Mart \u2022 Pok\u00e9mon Center', style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 12)),
                 if (reqLevel != null && !locked) ...[
@@ -237,20 +244,20 @@ class _LocationCard extends StatelessWidget {
 // ── Location detail screen ──
 
 class WildBattleDetailScreen extends StatelessWidget {
-  const WildBattleDetailScreen({super.key, required this.locationId, required this.locationName, required this.imageAsset, required this.species, required this.levelRange, this.hasGym = false, this.hasMart = false, this.hasCenter = false, this.gymNpcId});
+  const WildBattleDetailScreen({super.key, required this.locationId, required this.locationName, required this.imageAsset, required this.species, required this.levelRange, this.hasGym = false, this.hasMart = false, this.hasCenter = false, this.hasLab = false, this.gymNpcId});
   final String locationId, locationName, imageAsset;
   final List<String> species;
   final String? levelRange;
-  final bool hasGym, hasMart, hasCenter;
+  final bool hasGym, hasMart, hasCenter, hasLab;
   final String? gymNpcId;
 
   @override
   Widget build(BuildContext context) {
     final total = species.length;
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D1A),
+      backgroundColor: const Color(0xFF141414),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0D0D1A), elevation: 0,
+        backgroundColor: const Color(0xFF1A1A1A), elevation: 0,
         title: Text(locationName.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 4)),
         centerTitle: true,
         leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white70), onPressed: () => Navigator.pop(context)),
@@ -269,14 +276,18 @@ class WildBattleDetailScreen extends StatelessWidget {
             const SizedBox(height: 10),
             _BattleModeButton(icon: Icons.search, label: 'Species Hunt', subtitle: 'Target a Pok\u00e9mon you\'ve discovered.', color: const Color(0xFF42A5F5), onTap: () => _speciesPicker(context, species)),
             const SizedBox(height: 10),
-            _BattleModeButton(icon: Icons.whatshot, label: 'Strong Encounter', subtitle: 'Higher-level Pok\u00e9mon, better rewards.', color: const Color(0xFFFF7043), locked: true, lockLabel: 'Locked'),
+            _BattleModeButton(icon: Icons.whatshot, label: 'Strong Encounter', subtitle: 'Higher-level Pokémon, better rewards.', color: const Color(0xFFFF7043), onTap: () => _startRandomWildBattle(context, locationId, locationName)),
             const SizedBox(height: 10),
-            _BattleModeButton(icon: Icons.auto_awesome, label: 'Shiny Hunt', subtitle: 'Slightly improved shiny odds.', color: const Color(0xFFFFCA28), locked: true, lockLabel: 'Locked'),
+            _BattleModeButton(icon: Icons.auto_awesome, label: 'Shiny Hunt', subtitle: 'Slightly improved shiny odds.', color: const Color(0xFFFFCA28), onTap: () => _startRandomWildBattle(context, locationId, locationName)),
             const Spacer(),
           ] else ...[
             const SizedBox(height: 8),
             if (hasGym) ...[
               _BattleModeButton(icon: Icons.emoji_events, label: 'Gym Leader', subtitle: gymNpcId != null ? 'Challenge ${gymNpcId![0].toUpperCase()}${gymNpcId!.substring(1)} to earn a badge.' : 'Challenge the Gym Leader.', color: const Color(0xFFFFCA28), onTap: () => _snack(context, 'Gym Battle — Coming soon!')),
+              const SizedBox(height: 10),
+            ],
+            if (hasLab) ...[
+              _BattleModeButton(icon: Icons.science, label: "Oak's Lab", subtitle: 'Visit Professor Oak for research and quests.', color: const Color(0xFF66BB6A), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OaksLabScreen()))),
               const SizedBox(height: 10),
             ],
             if (hasCenter) ...[
@@ -287,10 +298,10 @@ class WildBattleDetailScreen extends StatelessWidget {
               _BattleModeButton(icon: Icons.store, label: 'Poké Mart', subtitle: 'Buy cards, boosters, and consumables.', color: const Color(0xFF42A5F5), onTap: () => _snack(context, 'Poké Mart — Coming soon!')),
               const SizedBox(height: 10),
             ],
-            _BattleModeButton(icon: Icons.assignment, label: 'Missions', subtitle: 'Pick up quests and earn rewards.', color: const Color(0xFFAB47BC), onTap: () => _snack(context, 'Missions — Coming soon!')),
+            _BattleModeButton(icon: Icons.assignment, label: 'Missions', subtitle: 'Pick up quests and earn rewards.', color: const Color(0xFFAB47BC), onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => RouteBattleScreen(locationId: locationId)));
+            }),
             const Spacer(),
-            Text('Facilities: ${[if (hasGym) 'Gym', if (hasCenter) 'Pokémon Center', if (hasMart) 'Poké Mart', 'Missions'].join(', ')}',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 12)),
           ],
           const SizedBox(height: 16),
         ]),
@@ -392,7 +403,16 @@ class WildBattleDetailScreen extends StatelessWidget {
                   playerGoesFirst: playerGoesFirst,
                   opponentCards: wildCards,
                   onMatchComplete: (won) {
-                    // TODO: handle capture on win
+                    if (won) {
+                      final storyCtrl = context.read<StoryProgressController>();
+                      final loc = storyCtrl.locations.firstWhere((l) => l.id == locationId);
+                      for (final node in loc.nodes) {
+                        if (node.type == StoryNodeType.wild && !node.isCompleted) {
+                          storyCtrl.completeNode(locationId, node.id);
+                          break;
+                        }
+                      }
+                    }
                   },
                   onContinue: () {
                     Navigator.pop(context);

@@ -58,6 +58,11 @@ class _CollectionScreenState extends State<CollectionScreen> {
   // the old card to the new one instead of snapping straight to the new art.
   final Map<int, _PendingFlip> _flippingInstances = {};
 
+  // Multi-select batch sell state
+  bool _selectMode = false;
+  final Set<int> _selectedInstanceIds = {};
+  bool _batchSelling = false;
+
   @override
   Widget build(BuildContext context) {
     final repository = CardRepository.instance;
@@ -70,8 +75,11 @@ class _CollectionScreenState extends State<CollectionScreen> {
       orElse: () => sets.first,
     );
 
-    final setCardIds = selectedSet.cardIds.toSet();
-    var owned = instances.where((i) => setCardIds.contains(i.cardId)).toList();
+    // "all" is a virtual set meaning "no filter" — its cardIds is
+    // deliberately empty rather than a duplicated list of every card id.
+    var owned = selectedSet.id == 'all'
+        ? instances.toList()
+        : instances.where((i) => selectedSet.cardIds.contains(i.cardId)).toList();
     // Apply type/rarity filters
     if (_typeFilter != null) {
       owned = owned.where((i) {
@@ -144,152 +152,360 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Collection'),
+        title: _selectMode
+            ? Text('${_selectedInstanceIds.length} selected')
+            : const Text('Collection'),
+        leading: _selectMode
+            ? IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: _exitSelectMode,
+              )
+            : null,
         actions: [
-          _SortChip(
-            label: 'Name',
-            active: _sortMode == _SortMode.name,
-            ascending: _sortMode == _SortMode.name ? _sortAscending : null,
-            onTap: () => selectSort(_SortMode.name),
-          ),
-          _SortChip(
-            label: 'Num',
-            active: _sortMode == _SortMode.number,
-            ascending: _sortMode == _SortMode.number ? _sortAscending : null,
-            onTap: () => selectSort(_SortMode.number),
-          ),
-          _SortChip(
-            label: 'Lv',
-            active: _sortMode == _SortMode.level,
-            ascending: _sortMode == _SortMode.level ? _sortAscending : null,
-            onTap: () => selectSort(_SortMode.level, defaultAsc: false),
-          ),
-          _SortChip(
-            label: _rarityFilter != null
-                ? _capitalize(_rarityFilter!.name)
-                : 'Rarity',
-            active: _sortMode == _SortMode.rarity || _rarityFilter != null,
-            onTap: () => _showRarityModal(),
-          ),
-          _SortChip(
-            label: _typeFilter != null ? _capitalize(_typeFilter!) : 'Type',
-            icon: _typeFilter != null
-                ? Image.asset(
-                    typeIconAsset(_typeFilter!),
-                    width: 16,
-                    height: 16,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  )
-                : null,
-            active: _sortMode == _SortMode.type || _typeFilter != null,
-            onTap: () => _showTypeModal(),
-          ),
-          const SizedBox(width: 4),
+          if (_selectMode) ...[
+            if (_selectedInstanceIds.length == owned.length)
+              TextButton(
+                onPressed: () => setState(() => _selectedInstanceIds.clear()),
+                child: const Text('Deselect All', style: TextStyle(color: Colors.white70)),
+              )
+            else
+              TextButton(
+                onPressed: () => setState(() {
+                  for (final inst in owned) {
+                    if (inst.instanceId != null) {
+                      _selectedInstanceIds.add(inst.instanceId!);
+                    }
+                  }
+                }),
+                child: const Text('Select All', style: TextStyle(color: Colors.white70)),
+              ),
+          ] else ...[
+            _SortChip(
+              label: 'Name',
+              active: _sortMode == _SortMode.name,
+              ascending: _sortMode == _SortMode.name ? _sortAscending : null,
+              onTap: () => selectSort(_SortMode.name),
+            ),
+            _SortChip(
+              label: 'Num',
+              active: _sortMode == _SortMode.number,
+              ascending: _sortMode == _SortMode.number ? _sortAscending : null,
+              onTap: () => selectSort(_SortMode.number),
+            ),
+            _SortChip(
+              label: 'Lv',
+              active: _sortMode == _SortMode.level,
+              ascending: _sortMode == _SortMode.level ? _sortAscending : null,
+              onTap: () => selectSort(_SortMode.level, defaultAsc: false),
+            ),
+            _SortChip(
+              label: _rarityFilter != null
+                  ? _capitalize(_rarityFilter!.name)
+                  : 'Rarity',
+              active: _sortMode == _SortMode.rarity || _rarityFilter != null,
+              onTap: () => _showRarityModal(),
+            ),
+            _SortChip(
+              label: _typeFilter != null ? _capitalize(_typeFilter!) : 'Type',
+              icon: _typeFilter != null
+                  ? Image.asset(
+                      typeIconAsset(_typeFilter!),
+                      width: 16,
+                      height: 16,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    )
+                  : null,
+              active: _sortMode == _SortMode.type || _typeFilter != null,
+              onTap: () => _showTypeModal(),
+            ),
+            const SizedBox(width: 4),
+          ],
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          _SetSelector(
-            sets: sets,
-            selectedSetId: _selectedSetId,
-            onChanged: (id) => setState(() => _selectedSetId = id),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                '${owned.length} cards',
-                style: Theme.of(context).textTheme.bodySmall,
+          Column(
+            children: [
+              _SetSelector(
+                sets: sets,
+                selectedSetId: _selectedSetId,
+                onChanged: _selectMode
+                    ? (_) {} // no-op in select mode
+                    : (id) => setState(() => _selectedSetId = id),
               ),
-            ),
-          ),
-          Expanded(
-            child: GridView.builder(
-              padding: EdgeInsets.fromLTRB(
-                12,
-                12,
-                12,
-                12 + MediaQuery.of(context).padding.bottom,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '${owned.length} cards',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
               ),
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 110,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-                childAspectRatio: 1,
-              ),
-              itemCount: owned.length,
-              itemBuilder: (context, index) {
-                final instance = owned[index];
-                final pending = instance.instanceId != null
-                    ? _flippingInstances[instance.instanceId]
-                    : null;
-                final card =
-                    pending?.to ?? repository.cardById(instance.cardId);
-                if (card == null) return const SizedBox.shrink();
-                return GestureDetector(
-                  key: ValueKey(instance.instanceId),
-                  onTap: () => _showCardDetail(context, card, instance),
-                  child: Stack(
-                    children: [
-                      if (pending != null)
-                        _CardFlipTile(
-                          key: ValueKey('flip_${instance.instanceId}'),
-                          fromCard: pending.from,
-                          toCard: pending.to,
-                          growth: instance,
-                          size: 100,
-                          dataReady: pending.dataReady,
-                          onDone: () {
-                            if (mounted)
-                              setState(
-                                () => _flippingInstances.remove(
-                                  instance.instanceId,
+              Expanded(
+                child: GridView.builder(
+                  padding: EdgeInsets.fromLTRB(
+                    12,
+                    12,
+                    12,
+                    (_selectMode ? 80 : 12) + MediaQuery.of(context).padding.bottom,
+                  ),
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 110,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 1,
+                  ),
+                  itemCount: owned.length,
+                  itemBuilder: (context, index) {
+                    final instance = owned[index];
+                    final pending = instance.instanceId != null
+                        ? _flippingInstances[instance.instanceId]
+                        : null;
+                    final card =
+                        pending?.to ?? repository.cardById(instance.cardId);
+                    if (card == null) return const SizedBox.shrink();
+                    final instId = instance.instanceId;
+                    final isSelected = instId != null && _selectedInstanceIds.contains(instId);
+                    return GestureDetector(
+                      key: ValueKey(instance.instanceId),
+                      onTap: () {
+                        if (_selectMode) {
+                          _toggleSelection(instId);
+                        } else {
+                          _showCardDetail(context, card, instance);
+                        }
+                      },
+                      onLongPress: () {
+                        if (!_selectMode) {
+                          _enterSelectMode(instId);
+                        }
+                      },
+                      child: Stack(
+                        children: [
+                          if (pending != null)
+                            _CardFlipTile(
+                              key: ValueKey('flip_${instance.instanceId}'),
+                              fromCard: pending.from,
+                              toCard: pending.to,
+                              growth: instance,
+                              size: 100,
+                              dataReady: pending.dataReady,
+                              onDone: () {
+                                if (mounted)
+                                  setState(
+                                    () => _flippingInstances.remove(
+                                      instance.instanceId,
+                                    ),
+                                  );
+                              },
+                            )
+                          else
+                            TriadCardView(card: card, size: 100, growth: instance),
+                          if (card.cardType == TriadCardType.pokemon)
+                            Positioned(
+                              right: 4,
+                              bottom: 4,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 1,
                                 ),
-                              );
-                          },
-                        )
-                      else
-                        TriadCardView(card: card, size: 100, growth: instance),
-                      if (card.cardType == TriadCardType.pokemon)
-                        Positioned(
-                          right: 4,
-                          bottom: 4,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 1,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black54,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              'Lv.${instance.level}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.black87,
-                                    blurRadius: 2,
-                                    offset: Offset(1, 1),
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  'Lv.${instance.level}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black87,
+                                        blurRadius: 2,
+                                        offset: Offset(1, 1),
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-                    ],
-                  ),
-                );
-              },
+                          // Selection overlay
+                          if (_selectMode)
+                            Positioned.fill(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? Colors.amber.withValues(alpha: 0.3)
+                                      : Colors.black.withValues(alpha: 0.3),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: isSelected
+                                      ? Border.all(color: Colors.amber, width: 2.5)
+                                      : null,
+                                ),
+                                child: Align(
+                                  alignment: Alignment.topRight,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(4),
+                                    child: Icon(
+                                      isSelected
+                                          ? Icons.check_circle
+                                          : Icons.radio_button_unchecked,
+                                      color: isSelected
+                                          ? Colors.amber
+                                          : Colors.white38,
+                                      size: 22,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+          // ── Batch sell bottom bar ──
+          if (_selectMode && _selectedInstanceIds.isNotEmpty)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: _buildBatchSellBar(controller, owned),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _toggleSelection(int? instId) {
+    if (instId == null) return;
+    setState(() {
+      if (_selectedInstanceIds.contains(instId)) {
+        _selectedInstanceIds.remove(instId);
+        if (_selectedInstanceIds.isEmpty) {
+          _selectMode = false;
+        }
+      } else {
+        _selectedInstanceIds.add(instId);
+      }
+    });
+  }
+
+  void _enterSelectMode(int? instId) {
+    setState(() {
+      _selectMode = true;
+      if (instId != null) {
+        _selectedInstanceIds.add(instId);
+      }
+    });
+  }
+
+  void _exitSelectMode() {
+    setState(() {
+      _selectMode = false;
+      _selectedInstanceIds.clear();
+    });
+  }
+
+  int _sellPrice(CardGrowth growth, TriadCard card) {
+    final shinyMult = (growth.shiny == true) ? 3 : 1;
+    return card.worth * shinyMult;
+  }
+
+  Widget _buildBatchSellBar(PlayerProfileController ctrl, List<CardGrowth> owned) {
+    final selectedInstances = owned
+        .where((i) => i.instanceId != null && _selectedInstanceIds.contains(i.instanceId))
+        .toList();
+    var totalPrice = 0;
+    for (final inst in selectedInstances) {
+      final card = CardRepository.instance.cardById(inst.cardId);
+      if (card != null) {
+        totalPrice += _sellPrice(inst, card);
+      }
+    }
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + MediaQuery.of(context).padding.bottom),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A1A),
+        border: Border(top: BorderSide(color: Colors.amber.withValues(alpha: 0.3))),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${selectedInstances.length} cards selected',
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+                Text(
+                  'Sell for ₽$totalPrice',
+                  style: const TextStyle(color: Color(0xFFC9A44C), fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            width: 140,
+            height: 44,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFC9A44C),
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                disabledBackgroundColor: Colors.grey.shade700,
+              ),
+              onPressed: _batchSelling
+                  ? null
+                  : () => _batchSell(ctrl, selectedInstances, totalPrice),
+              child: _batchSelling
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Sell Selected', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _batchSell(
+    PlayerProfileController ctrl,
+    List<CardGrowth> selected,
+    int totalPrice,
+  ) async {
+    setState(() => _batchSelling = true);
+    var soldCount = 0;
+    for (final inst in selected) {
+      if (inst.instanceId == null) continue;
+      final card = CardRepository.instance.cardById(inst.cardId);
+      if (card == null) continue;
+      final price = _sellPrice(inst, card);
+      final ok = await ctrl.sellCardInstance(inst.instanceId!, price);
+      if (ok) soldCount++;
+    }
+    _exitSelectMode();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Sold $soldCount cards for ₽$totalPrice!'),
+          backgroundColor: Colors.green.shade800,
+        ),
+      );
+    }
   }
 
   List<TriadCard> _sortedCards(
@@ -785,6 +1001,43 @@ class _CollectionScreenState extends State<CollectionScreen> {
                       ),
                     ),
                   const SizedBox(height: 12),
+                  // Sell button
+                  if (growth != null)
+                    Center(
+                      child: SizedBox(
+                        width: 160,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () async {
+                              final instId = growth.instanceId;
+                              if (instId == null) return;
+                              final shinyMult = (growth.shiny == true) ? 3 : 1;
+                              final price = card.worth * shinyMult;
+                              final sold = await ctrl.sellCardInstance(instId, price);
+                              if (sold && dialogContext.mounted) {
+                                Navigator.pop(dialogContext);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Sold ${card.name} for ₽$price!')),
+                                );
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(14),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(14),
+                                color: const Color(0xFFC9A44C).withValues(alpha: 0.2),
+                                border: Border.all(color: const Color(0xFFC9A44C).withValues(alpha: 0.4), width: 1.2),
+                              ),
+                              child: Text('Sell for ₽${card.worth * ((growth?.shiny == true) ? 3 : 1)}', style: const TextStyle(color: Color(0xFFC9A44C), fontSize: 14)),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 8),
                   Center(
                     child: SizedBox(
                       width: 160,

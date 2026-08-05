@@ -36,6 +36,7 @@ class ResultsScreen extends StatefulWidget {
     this.onMatchComplete,
     this.opponentCards,
     this.capturedShinyCards,
+    this.capturedCards,
   });
 
   final MatchState finalState;
@@ -49,6 +50,7 @@ class ResultsScreen extends StatefulWidget {
   final void Function(bool playerWon)? onMatchComplete;
   final List<TriadCard>? opponentCards;
   final List<TriadCard>? capturedShinyCards;
+  final List<TriadCard>? capturedCards;
 
   @override
   State<ResultsScreen> createState() => _ResultsScreenState();
@@ -130,11 +132,12 @@ class _ResultsScreenState extends State<ResultsScreen>
         '[XP] results: first entry totalXp=${widget.finalState.cardXp.values.first.totalXp}',
       );
     }
-    final capturedCards =
-        widget.capturedShinyCards
-            ?.map((c) => {'cardId': c.id, 'level': c.baseLevel ?? 1})
-            .toList() ??
-        [];
+    final capturedCards = <Map<String, dynamic>>[
+      ...?widget.capturedShinyCards
+          ?.map((c) => {'cardId': c.id, 'level': c.baseLevel ?? 1}),
+      ...?widget.capturedCards
+          ?.map((c) => {'cardId': c.id, 'level': c.baseLevel ?? 1}),
+    ];
     if (capturedCards.isNotEmpty) {
       print('[CAPTURE] results sending capturedCards: $capturedCards');
     }
@@ -403,6 +406,25 @@ class _ResultsScreenState extends State<ResultsScreen>
                   ],
                 ),
               ],
+              // Trainer XP
+              if (growth != null && growth.trainerXpEarned > 0) ...[
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.person, size: 16, color: Colors.cyan.withValues(alpha: 0.7)),
+                    const SizedBox(width: 4),
+                    Text(
+                      '+${growth.trainerXpEarned} Trainer XP',
+                      style: TextStyle(
+                        color: Colors.cyan.withValues(alpha: 0.8),
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 20),
 
               // ── Deck cards with XP bars ──────────────────────────
@@ -420,11 +442,15 @@ class _ResultsScreenState extends State<ResultsScreen>
                   final cardId = widget.playerDeck!.cardIds[i];
                   final card = CardRepository.instance.cardById(cardId);
                   if (card == null) return const SizedBox.shrink();
+                  final instId = widget.playerDeck!.instanceIds != null &&
+                          i < widget.playerDeck!.instanceIds!.length
+                      ? widget.playerDeck!.instanceIds![i]
+                      : null;
                   final xp = _xpForCard(cardId);
                   final leveledUp = _cardLeveledUp(cardId);
                   final newLevel = _newLevelFor(cardId);
                   final breakdown = _cardBreakdown(cardId);
-                  final growth = _growthForCardId(cardId);
+                  final growth = _growthForSlot(cardId, instId);
                   final statBump = _statBumpedFor(cardId);
                   final displayCard = growth?.shiny == true
                       ? card.copyWith(shiny: true)
@@ -599,6 +625,19 @@ class _ResultsScreenState extends State<ResultsScreen>
       }
     }
     return result;
+  }
+
+  /// Find the CardGrowth for a specific card slot using its instance ID.
+  CardGrowth? _growthForSlot(String cardId, int? instanceId) {
+    try {
+      final instances = context.read<PlayerProfileController>().allCardInstances;
+      if (instanceId != null && instanceId > 0) {
+        return instances.where((i) => i.instanceId == instanceId).firstOrNull;
+      }
+      return instances.where((i) => i.cardId == cardId).firstOrNull;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Find the CardGrowth for a cardId from the player's instances.

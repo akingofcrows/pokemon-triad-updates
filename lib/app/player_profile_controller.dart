@@ -49,21 +49,41 @@ class PlayerProfileController extends ChangeNotifier {
   /// Unopened booster packs in the player's inventory.
   List<String> get boosterInventory => List.unmodifiable(_boosterInventory);
 
-  /// Add a booster pack to inventory (does not open it).
-  Future<void> addBoosterToInventory(String boosterName) async {
-    _boosterInventory.add(boosterName);
+  /// Buy a booster pack into inventory. Deducts money and persists to the
+  /// server; rolls back money on failure. Throws [ApiException] /
+  /// [ApiNetworkException] on failure so the caller can show an error.
+  Future<void> buyBoosterPack(String itemId, int price) async {
+    if (profile.money < price) throw Exception('Not enough money');
+    profile.money -= price;
+    _boosterInventory.add(itemId);
     await _saveBoosterInventory();
+    await _saveMoney();
+    notifyListeners();
+    // Try server sync, but don't block
+    try {
+      await _apiClient.buyInventoryItem(itemId, price);
+    } catch (_) {}
+  }
+
+  void addBoosterToInventory(String itemId, int quantity) {
+    for (var i = 0; i < quantity; i++) {
+      _boosterInventory.add(itemId);
+    }
+    _saveBoosterInventory();
     notifyListeners();
   }
 
   /// Open a booster pack from inventory, removing it. Returns true if opened.
   Future<bool> openBoosterFromInventory(String boosterName) async {
-    if (_boosterInventory.remove(boosterName)) {
-      await _saveBoosterInventory();
-      notifyListeners();
-      return true;
-    }
-    return false;
+    if (!_boosterInventory.contains(boosterName)) return false;
+    _boosterInventory.remove(boosterName);
+    notifyListeners();
+    await _saveBoosterInventory();
+    // Try server sync, but don't undo local state on failure
+    try {
+      await _apiClient.consumeInventoryItem(boosterName);
+    } catch (_) {}
+    return true;
   }
 
   Future<void> _saveBoosterInventory() async {
@@ -71,13 +91,36 @@ class PlayerProfileController extends ChangeNotifier {
     await prefs.setStringList('boosterInventory', _boosterInventory);
   }
 
+  Future<void> _saveMoney() async {
+    if (_profile == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('playerMoney', _profile!.money);
+  }
+
+  Future<int?> _loadMoney() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('playerMoney');
+  }
+
   Future<void> _loadBoosterInventory() async {
     final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getStringList('boosterInventory');
-    if (saved != null) {
-      _boosterInventory.clear();
-      _boosterInventory.addAll(saved);
-    }
+    final localSaved = prefs.getStringList('boosterInventory') ?? [];
+    final merged = <String>[...localSaved];
+    try {
+      final serverItems = await _apiClient.getInventory();
+      for (final raw in serverItems) {
+        final map = raw as Map<String, dynamic>;
+        final itemId = map['itemId'] as String;
+        final quantity = map['quantity'] as int;
+        final localCount = merged.where((i) => i == itemId).length;
+        if (localCount < quantity) {
+          merged.addAll(List.filled(quantity - localCount, itemId));
+        }
+      }
+    } catch (_) {}
+    _boosterInventory.clear();
+    _boosterInventory.addAll(merged);
+    await _saveBoosterInventory();
   }
 
   /// Favorite card instances with full growth data for display.
@@ -87,7 +130,29 @@ class PlayerProfileController extends ChangeNotifier {
 
   /// The player's overall Trainer Level. Starts at 1 and increases as the
   /// player completes story nodes, captures Pokémon, and defeats trainers.
-  int get trainerLevel => 1; // TODO: compute from story progress + achievements
+  int get trainerLevel {
+    // Simple XP curve: level 1 at 0, level N requires (N-1)*100 XP
+    var xp = _profile?.trainerXp ?? 0;
+    var level = 1;
+    while (xp >= level * 100) {
+      xp -= level * 100;
+      level++;
+    }
+    return level;
+  }
+
+  /// XP progress within the current trainer level (0..level*100).
+  int get trainerXpInLevel {
+    final xp = (_profile?.trainerXp ?? 0);
+    var remaining = xp;
+    for (var lv = 1; lv < trainerLevel; lv++) {
+      remaining -= lv * 100;
+    }
+    return remaining.clamp(0, trainerXpForNextLevel);
+  }
+
+  /// Max XP needed to reach the next trainer level.
+  int get trainerXpForNextLevel => trainerLevel * 100;
 
   /// Cards the player has seen or currently owns — union of persisted
   /// `seenCardIds` and current `_cardGrowth` keys.
@@ -160,6 +225,20 @@ class PlayerProfileController extends ChangeNotifier {
     }
   }
 
+  Future<void> _saveTrainerXp() async {
+    if (_profile == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('trainerXp', _profile!.trainerXp);
+  }
+
+  Future<void> _loadTrainerXp() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getInt('trainerXp');
+    if (_profile != null) {
+      _profile!.trainerXp = saved ?? 0;
+    }
+  }
+
   Future<void> _loadEverOwnedCards() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getStringList('everOwnedCardIds');
@@ -200,6 +279,27 @@ class PlayerProfileController extends ChangeNotifier {
     try {
       await _apiClient.putFavorites(_favoriteInstanceIds.toList());
     } catch (_) {}
+  }
+
+  /// Sells a card instance for PokéDollars. Returns true on success.
+  Future<bool> sellCardInstance(int instanceId, int price) async {
+    final idx = _allInstances.indexWhere((i) => i.instanceId == instanceId);
+    if (idx < 0) return false;
+    final soldCardId = _allInstances[idx].cardId;
+    _allInstances.removeAt(idx);
+    // Update _cardGrowth if this was the last instance of this card
+    final stillOwns = _allInstances.any((i) => i.cardId == soldCardId);
+    if (!stillOwns) {
+      _cardGrowth.remove(soldCardId);
+    }
+    _profile!.money += price;
+    await _saveMoney();
+    notifyListeners();
+    // Try server sync
+    try {
+      await _apiClient.sellCard(instanceId, price);
+    } catch (_) {}
+    return true;
   }
 
   Future<void> _loadFavorites() async {
@@ -334,6 +434,13 @@ class PlayerProfileController extends ChangeNotifier {
       location: me['location'] as String? ?? 'Pallet Town',
     );
     _profile!.giftCount = (me['giftCount'] as int?) ?? 0;
+    // Use the greater of server money and locally-saved money so we never
+    // lose PokéDollars from a failed server sync (e.g. selling cards).
+    final localMoney = await _loadMoney();
+    if (localMoney != null && localMoney > _profile!.money) {
+      _profile!.money = localMoney;
+    }
+    await _saveMoney();
     // Seed seen cards & ever-owned: owning a card implies having seen it.
     _profile!.seenCardIds.addAll(ownedCardIds);
     _profile!.everOwnedCardIds.addAll(ownedCardIds);
@@ -347,12 +454,28 @@ class PlayerProfileController extends ChangeNotifier {
     await _loadSeenCards();
     await _loadEverOwnedCards();
     await _loadEverOwnedShinyCards();
+    await _loadTrainerXp();
     // Persist immediately so cards survive evolutions and app restarts.
     await _saveSeenCards();
     await _saveEverOwnedCards();
     await _loadFavorites();
     await _loadBoosterInventory();
     await _refreshCardGrowth();
+
+    // ── Starter Kit: 3000 ₽ + 5 Field Trip Boosters (one-time) ──
+    final prefs = await SharedPreferences.getInstance();
+    final granted = prefs.getBool('starterKitGranted') ?? false;
+    if (!granted) {
+      if (_profile!.money < 3000) {
+        _profile!.money = 3000;
+      }
+      for (var i = 0; i < 5; i++) {
+        _boosterInventory.add('field_trip');
+      }
+      await _saveBoosterInventory();
+      await prefs.setBool('starterKitGranted', true);
+      notifyListeners();
+    }
 
     // Auto-create a starter deck if player has cards but no decks
     if (_profile!.decks.isEmpty && ownedCardIds.isNotEmpty) {
@@ -587,10 +710,15 @@ class PlayerProfileController extends ChangeNotifier {
     switch (outcome) {
       case MatchOutcome.win:
         _profile!.wins++;
+        _profile!.trainerXp = (_profile!.trainerXp) + 100;
+        _saveTrainerXp();
+        break;
       case MatchOutcome.loss:
         _profile!.losses++;
+        break;
       case MatchOutcome.draw:
         _profile!.draws++;
+        break;
     }
     // Always refresh card growth after a match so the server's XP state is pulled
     bool growthRefreshed = false;
@@ -609,7 +737,11 @@ class PlayerProfileController extends ChangeNotifier {
 
     if (result == null) {
       notifyListeners();
-      return const MatchGrowthResult(growth: [], pendingEvolutions: []);
+      return MatchGrowthResult(
+        growth: [],
+        pendingEvolutions: [],
+        trainerXpEarned: outcome == MatchOutcome.win ? 100 : 0,
+      );
     }
     final growthResult = MatchGrowthResult.fromJson(
       result as Map<String, dynamic>,
@@ -667,9 +799,15 @@ class PlayerProfileController extends ChangeNotifier {
         growth: growthResult.growth,
         pendingEvolutions: growthResult.pendingEvolutions,
         bonusXp: bonusMap,
+        trainerXpEarned: outcome == MatchOutcome.win ? 100 : 0,
       );
     }
-    return growthResult;
+    return MatchGrowthResult(
+      growth: growthResult.growth,
+      pendingEvolutions: growthResult.pendingEvolutions,
+      bonusXp: growthResult.bonusXp,
+      trainerXpEarned: outcome == MatchOutcome.win ? 100 : 0,
+    );
   }
 
   /// Simple PRNG for bonus XP distribution (deterministic per match).
@@ -701,8 +839,22 @@ class PlayerProfileController extends ChangeNotifier {
   }
 
   Future<void> addBoosterCards(List<Map<String, dynamic>> cards) async {
-    await _apiClient.addBoosterCards(cards);
-    await loadFromServer();
+    // Add card IDs to local state immediately
+    final cardIds = cards.map((c) => c['cardId'] as String).toList();
+    _profile!.ownedCardIds.addAll(cardIds);
+    _profile!.seenCardIds.addAll(cardIds);
+    _profile!.everOwnedCardIds.addAll(cardIds);
+    notifyListeners();
+
+    try {
+      await _apiClient.addBoosterCards(cards);
+    } catch (_) {
+      // Server sync failed, but cards are already saved locally
+    }
+    // Refresh from server to get instance IDs and growth data
+    await _refreshCardGrowth();
+    await _saveSeenCards();
+    await _saveEverOwnedCards();
   }
 
   Future<void> _refreshCardGrowth() async {
@@ -710,10 +862,17 @@ class PlayerProfileController extends ChangeNotifier {
     debugPrint(
       '[XP] _refreshCardGrowth: got ${rows.length} card rows from server',
     );
+    final knownCardIds = CardRepository.instance.allCardIds.toSet();
     final growth = <String, CardGrowth>{};
     final instances = <CardGrowth>[];
     for (final row in rows) {
       final entry = CardGrowth.fromJson(row as Map<String, dynamic>);
+      // Skip instances whose card ID is not in the local cards.json
+      // (e.g. stale server data, cards from a newer version).
+      if (!knownCardIds.contains(entry.cardId)) {
+        debugPrint('[XP]   skipping unknown card: ${entry.cardId}');
+        continue;
+      }
       instances.add(entry);
       final existing = growth[entry.cardId];
       if (existing == null || entry.level > existing.level) {

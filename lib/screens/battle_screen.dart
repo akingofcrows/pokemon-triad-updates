@@ -94,12 +94,23 @@ class _BattleScreenState extends State<BattleScreen> {
     // Check for captured shiny opponent cards — use opponentCards for wild battles,
     // or check board state for shiny flags
     final capturedShiny = <TriadCard>[];
+    final capturedNormal = <TriadCard>[];
     final rng = Random();
     final prebuiltOpponent = widget.opponentDeck.opponentCards;
 
     if (prebuiltOpponent != null) {
-      // For wild battles: if any shiny card was in the opponent deck,
-      // and the player won any cards, grant the shiny
+      // For wild battles: capture any flipped opponent cards
+      for (final cell in state.cells) {
+        final c = cell.card;
+        if (c != null && c.owner == CardOwner.player) {
+          // 10% base catch chance for normal cards
+          if (rng.nextInt(100) < 10) {
+            capturedNormal.add(c);
+            print('[CAPTURE] Player captured normal! cardId=${c.id} level=${c.baseLevel}');
+          }
+        }
+      }
+      // Also check for shiny capture (existing logic)
       final hasShiny = prebuiltOpponent.any((c) => c.shiny);
       if (hasShiny) {
         // Check if player captured any opponent card (same species)
@@ -143,6 +154,7 @@ class _BattleScreenState extends State<BattleScreen> {
           onMatchComplete: widget.onMatchComplete,
           opponentCards: widget.opponentCards,
           capturedShinyCards: capturedShiny,
+          capturedCards: capturedNormal,
         ),
       ),
     );

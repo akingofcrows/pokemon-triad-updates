@@ -133,22 +133,29 @@ const _boosterPacks = [
 
 // ── Booster pack tile ────────────────────────────────────────────────────
 
-class _BoosterPackTile extends StatelessWidget {
+class _BoosterPackTile extends StatefulWidget {
   const _BoosterPackTile({required this.pack, required this.money});
   final _BoosterPackData pack;
   final int money;
 
   @override
+  State<_BoosterPackTile> createState() => _BoosterPackTileState();
+}
+
+class _BoosterPackTileState extends State<_BoosterPackTile> {
+  bool _buying = false;
+
+  @override
   Widget build(BuildContext context) {
+    final pack = widget.pack;
+    final money = widget.money;
     final canAfford = money >= pack.price;
     return Material(
       color: Colors.white.withValues(alpha: 0.04),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: canAfford
-            ? () => _deductAndOpenBooster(context, pack.price)
-            : null,
+        onTap: (canAfford && !_buying) ? _buy : null,
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
@@ -234,17 +241,33 @@ class _BoosterPackTile extends StatelessWidget {
     );
   }
 
-  void _deductAndOpenBooster(BuildContext context, int price) {
+  Future<void> _buy() async {
+    final pack = widget.pack;
     final profileCtrl = context.read<PlayerProfileController>();
-    if (profileCtrl.profile.money < price) return;
-    profileCtrl.profile.money -= price;
-    profileCtrl.addBoosterToInventory(pack.name);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${pack.name} added to your Items!'),
-        backgroundColor: Colors.green,
-      ),
-    );
+    setState(() => _buying = true);
+    try {
+      await profileCtrl.buyBoosterPack(pack.name, pack.price);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Purchase failed. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    } finally {
+      if (mounted) setState(() => _buying = false);
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${pack.name} added to your Items!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 }
 
@@ -485,7 +508,7 @@ class _ShopSingleTileState extends State<_ShopSingleTile> with SingleTickerProvi
         final angle = t * pi;
         return Material(
           color: showBack
-              ? Colors.green.withValues(alpha: 0.08)
+              ? Colors.black.withValues(alpha: 0.35)
               : Colors.white.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(12),
           child: InkWell(
@@ -526,7 +549,26 @@ class _ShopSingleTileState extends State<_ShopSingleTile> with SingleTickerProvi
                 opacity: 0.4,
                 child: TriadCardView(card: item.card, size: 80),
               ),
-              const Icon(Icons.check_circle, color: Colors.green, size: 32),
+              Transform.rotate(
+                angle: -0.4,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(3),
+                    border: Border.all(color: Colors.red.shade300, width: 1.5),
+                  ),
+                  child: const Text(
+                    'SOLD',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ),
+              ),
             ],
           )
         else
@@ -565,21 +607,17 @@ class _ShopSingleTileState extends State<_ShopSingleTile> with SingleTickerProvi
           ],
         ),
         const SizedBox(height: 4),
-        // Price or purchased
-        if (purchased)
-          const Text(
-            'SOLD',
-            style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold),
-          )
-        else
-          Text(
-            '₽ ${item.price}',
-            style: TextStyle(
-              color: canAfford ? const Color(0xFFC9A44C) : Colors.grey,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-            ),
+        // Price
+        Text(
+          '₽ ${item.price}',
+          style: TextStyle(
+            color: canAfford ? const Color(0xFFC9A44C) : Colors.grey,
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            decoration: purchased ? TextDecoration.lineThrough : null,
+            decorationColor: Colors.red.withValues(alpha: 0.6),
           ),
+        ),
       ],
     );
   }

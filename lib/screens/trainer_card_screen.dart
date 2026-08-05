@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -57,20 +58,27 @@ class _TrainerCardScreenState extends State<TrainerCardScreen> with TickerProvid
   Widget build(BuildContext context) {
     final profile = context.watch<PlayerProfileController>().profile;
     final isGirl = profile.gender == 'girl';
+    final bgAsset = _bgFor(profile.location);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D1A),
+      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: const Text('Trainer Card'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Log Out',
-            onPressed: () => _logOut(context),
-          ),
-        ],
       ),
-      body: Center(
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+              child: Image.asset(bgAsset, fit: BoxFit.cover,
+                  color: Colors.black.withValues(alpha: 0.40),
+                  colorBlendMode: BlendMode.darken),
+            ),
+          ),
+          Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
           child: GestureDetector(
@@ -84,9 +92,9 @@ class _TrainerCardScreenState extends State<TrainerCardScreen> with TickerProvid
                     ? Transform(
                         alignment: Alignment.center,
                         transform: Matrix4.identity()..rotateY(math.pi),
-                        child: _CardBack(isGirl: isGirl, profile: profile),
+                        child: CardBackWidget(isGirl: isGirl, profile: profile),
                       )
-                    : _CardFront(isGirl: isGirl, profile: profile);
+                    : CardFrontWidget(isGirl: isGirl, profile: profile);
                 return Transform(
                   alignment: Alignment.center,
                   transform: Matrix4.identity()
@@ -100,7 +108,15 @@ class _TrainerCardScreenState extends State<TrainerCardScreen> with TickerProvid
           ),
         ),
       ),
+        ],
+      ),
     );
+  }
+
+  static String _bgFor(String? location) {
+    const def = 'assets/locations/oakslab.png';
+    if (location == null) return def;
+    return {'Pallet Town': 'assets/locations/oakslab.png', 'Route 1': 'assets/locations/route1.png', 'Viridian City': 'assets/locations/viridian.png', 'Route 2': 'assets/locations/route2.png', 'Viridian Forest': 'assets/locations/viridianforest.png'}[location] ?? def;
   }
 
   Future<void> _logOut(BuildContext context) async {
@@ -111,8 +127,8 @@ class _TrainerCardScreenState extends State<TrainerCardScreen> with TickerProvid
   }
 }
 
-class _CardFront extends StatelessWidget {
-  const _CardFront({required this.isGirl, required this.profile});
+class CardFrontWidget extends StatelessWidget {
+  const CardFrontWidget({required this.isGirl, required this.profile});
 
   final bool isGirl;
   final PlayerProfile profile;
@@ -224,8 +240,8 @@ class _CardFront extends StatelessWidget {
   }
 }
 
-class _CardBack extends StatelessWidget {
-  const _CardBack({required this.isGirl, required this.profile});
+class CardBackWidget extends StatelessWidget {
+  const CardBackWidget({required this.isGirl, required this.profile});
 
   final bool isGirl;
   final PlayerProfile profile;

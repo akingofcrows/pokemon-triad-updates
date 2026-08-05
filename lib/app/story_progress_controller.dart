@@ -46,6 +46,10 @@ class StoryProgressController extends ChangeNotifier {
 
     // Pallet Town (starting town) and Route 1 are always unlocked.
     _unlockedLocations = {'pallet_town', 'route_1'};
+    // Restore previously unlocked locations from local storage
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList('unlockedLocations') ?? [];
+    _unlockedLocations.addAll(saved);
   }
 
   Future<void> _syncProgress() async {
@@ -161,6 +165,7 @@ class StoryProgressController extends ChangeNotifier {
         }
       }
     }
+    _saveUnlockedLocations();
     notifyListeners();
   }
 
@@ -263,10 +268,17 @@ class StoryProgressController extends ChangeNotifier {
       for (final unlockId in loc.completionUnlocks) {
         _unlockedLocations.add(unlockId);
       }
+      _saveUnlockedLocations();
       notifyListeners();
     }
 
     return wasFirstClear;
+  }
+
+  /// Save unlocked locations to SharedPreferences.
+  Future<void> _saveUnlockedLocations() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('unlockedLocations', _unlockedLocations.toList());
   }
 
   /// Reset all local state (for logout).

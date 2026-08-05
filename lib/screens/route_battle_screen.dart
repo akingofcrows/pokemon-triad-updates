@@ -10,6 +10,7 @@ import '../app/story_progress_controller.dart';
 import '../models/card_values.dart';
 import '../models/deck.dart';
 import '../models/npc_trainer.dart';
+import '../models/quest.dart';
 import '../models/story_location.dart';
 import '../models/triad_card.dart';
 import '../services/card_repository.dart';
@@ -286,10 +287,7 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
         lockedReason = 'Deliver Oak\'s parcel first';
       }
     } else if (node.id == 'viridian_gym') {
-      // Greyed out until 7 badges (check profile)
-      final badges = context.read<PlayerProfileController>().profile.wins; // temp: use wins as badge proxy
-      greyedOut = true;
-      lockedReason = 'Need 7 badges';
+      // Gym is optional for location completion — always accessible
     }
 
     final icon = node.isCompleted ? Icons.check_circle : _nodeIconFor(node);
@@ -520,9 +518,13 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
   }
 
   void _showStoryScene(StoryProgressController ctrl, StoryNode node) {
+    final isPallet = _location.id == 'pallet_town';
     final isViridian = _location.id == 'viridian_city';
+    final profileCtrl = context.read<PlayerProfileController>();
 
-    if (node.id == 'viridian_pokemart') {
+    if (node.id == 'pallet_missions') {
+      _showOakParcelQuest(ctrl, node, profileCtrl);
+    } else if (node.id == 'viridian_pokemart') {
       if (node.isCompleted) {
         _showPokeMartShop(ctrl, node);
       } else {
@@ -637,7 +639,7 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
         borderRadius: BorderRadius.circular(10),
         onTap: canAfford ? () {
           Navigator.of(context).pop(); // close shop dialog
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const BoosterPackScreen()));
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const BoosterPackScreen(boosterName: 'field_trip')));
         } : null,
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -700,6 +702,12 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
                   onPressed: () {
                     Navigator.pop(ctx);
                     ctrl.completeNode(_location.id, node.id);
+                    // Mark "Visit the PokéMart in Viridian City" quest objective
+                    context.read<PlayerProfileController>()
+                        .completeObjective('Visit the PokéMart in Viridian City');
+                    // Also mark "Travel to Viridian City" if not already done
+                    context.read<PlayerProfileController>()
+                        .completeObjective('Travel to Viridian City');
                   },
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFF4CAF50),
@@ -714,6 +722,122 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
         ),
       ),
     );
+  }
+
+  void _showOakParcelQuest(StoryProgressController ctrl, StoryNode node, PlayerProfileController profileCtrl) {
+    final quest = profileCtrl.activeQuest;
+    final questActive = quest?.id == 'oaks_parcel';
+
+    if (!questActive) {
+      // Start the quest
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A3A14),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+            ),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('📋 OAK\'S PARCEL',
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 2)),
+                const SizedBox(height: 12),
+                const Text(
+                  'Professor Oak has a task for you.\n\n'
+                  '"I ordered a special parcel, but it hasn\'t arrived yet.\n'
+                  'Could you check the Poké Mart in Viridian City for me?"\n\n'
+                  'Deliver his parcel and return to Oak.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white70, height: 1.5, fontSize: 14),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      profileCtrl.startQuest(QuestData.oaksParcel);
+                      ctrl.completeNode(_location.id, node.id);
+                    },
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF4CAF50),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text('Accept Quest', style: TextStyle(fontSize: 16)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    } else if (quest!.completed) {
+      // Quest already completed
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: const Color(0xFF1A3A14),
+          title: const Text('✅ Quest Complete!', style: TextStyle(color: Colors.white)),
+          content: const Text('You already delivered Oak\'s parcel.\n\nHe thanks you for your help!',
+              style: TextStyle(color: Colors.white70)),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx),
+                child: const Text('OK', style: TextStyle(color: Colors.greenAccent))),
+          ],
+        ),
+      );
+    } else {
+      // Quest in progress — show status
+      final objCount = quest.doneCount;
+      final totalObj = quest.objectives.length;
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: const Color(0xFF1A3A14),
+          title: const Text('📋 Oak\'s Parcel', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Progress: $objCount/$totalObj', style: const TextStyle(color: Colors.amber)),
+              const SizedBox(height: 8),
+              for (final obj in quest.objectives)
+                Row(children: [
+                  Icon(obj.completed ? Icons.check_circle : Icons.radio_button_unchecked,
+                      color: obj.completed ? Colors.greenAccent : Colors.white38, size: 16),
+                  const SizedBox(width: 8),
+                  Text(obj.description,
+                      style: TextStyle(color: obj.completed ? Colors.white54 : Colors.white70, fontSize: 13)),
+                ]),
+              if (quest.allObjectivesDone) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      profileCtrl.completeObjective('Return the parcel to Professor Oak');
+                    },
+                    style: FilledButton.styleFrom(backgroundColor: const Color(0xFF4CAF50)),
+                    child: const Text('Deliver Parcel to Oak'),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx),
+                child: const Text('Close', style: TextStyle(color: Colors.white54))),
+          ],
+        ),
+      );
+    }
   }
 
   void _showDialog(StoryProgressController ctrl, StoryNode node,

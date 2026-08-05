@@ -10,6 +10,7 @@ class PlayerProfile {
     this.losses = 0,
     this.draws = 0,
     this.money = 0,
+    this.trainerXp = 0,
     this.joinedAt,
     this.trainerName,
     this.gender,
@@ -44,6 +45,7 @@ class PlayerProfile {
   int losses;
   int draws;
   int money;
+  int trainerXp;
 
   /// Raw `created_at` timestamp string from TTMMO's `player_profiles` table
   /// (e.g. `2026-07-01 12:34:56`) — parsed for display on the Trainer Card.

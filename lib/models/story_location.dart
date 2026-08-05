@@ -23,9 +23,12 @@ class StoryLocation {
     this.completionUnlocks = const [],
   });
 
-  /// Whether all nodes in this location are completed.
+  /// Whether all non-optional nodes (story + wild) in this location are completed.
+  /// Trainer/gym nodes are optional for location completion.
   bool get isFullyComplete {
-    return nodes.every((n) => n.isCompleted);
+    return nodes
+        .where((n) => n.type != StoryNodeType.trainer)
+        .every((n) => n.isCompleted);
   }
 
   /// The first incomplete node, or null if all done.

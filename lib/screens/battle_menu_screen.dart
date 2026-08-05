@@ -38,6 +38,7 @@ class BattleMenuContent extends StatefulWidget {
 
 class _BattleMenuContentState extends State<BattleMenuContent> with TickerProviderStateMixin {
   bool _soloOpen = false;
+  bool _soloVisible = false; // true while animating in or fully visible
   late final AnimationController _soloCtrl;
   late final Animation<Offset> _soloSlide;
 
@@ -52,8 +53,8 @@ class _BattleMenuContentState extends State<BattleMenuContent> with TickerProvid
       CurvedAnimation(parent: _soloCtrl, curve: Curves.easeOutCubic),
     );
 
-    _panelCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
-    _panelSlide = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(
+    _panelCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
+    _panelSlide = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
       CurvedAnimation(parent: _panelCtrl, curve: Curves.easeOutCubic),
     );
     _panelCtrl.addStatusListener((status) {
@@ -75,9 +76,11 @@ class _BattleMenuContentState extends State<BattleMenuContent> with TickerProvid
     // Handle external solo toggle
     if (widget.soloVisible != oldWidget.soloVisible) {
       if (widget.soloVisible && !_soloOpen) {
-        setState(() { _soloOpen = true; _soloCtrl.forward(); });
+        setState(() { _soloOpen = true; _soloVisible = true; _soloCtrl.forward(); });
       } else if (!widget.soloVisible && _soloOpen) {
-        setState(() { _soloOpen = false; _soloCtrl.reverse(); });
+        setState(() => _soloOpen = false);
+        _panelCtrl.forward();
+        _soloCtrl.reverse();
       }
     }
   }
@@ -93,6 +96,7 @@ class _BattleMenuContentState extends State<BattleMenuContent> with TickerProvid
     setState(() {
       _soloOpen = !_soloOpen;
       if (_soloOpen) {
+        _soloVisible = true;
         _soloCtrl.forward();
       } else {
         _soloCtrl.reverse();
@@ -109,34 +113,40 @@ class _BattleMenuContentState extends State<BattleMenuContent> with TickerProvid
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
     return Stack(
       children: [
         // ── Tappable translucent overlay dims background; tap dismisses panels ──
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: widget.onBackgroundTap,
-            child: Container(color: Colors.black.withValues(alpha: 0.15)),
+        if (widget.visible || !_panelCtrl.isDismissed)
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: widget.onBackgroundTap,
+              child: Container(color: Colors.black.withValues(alpha: 0.15)),
+            ),
           ),
-        ),
 
-        // ── Main panel slides up from bottom ──
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: SlideTransition(
-            position: _panelSlide,
-            child: _buildMainPanel(),
-          ),
-        ),
-
-        // ── Solo slide-up panel (over main panel) ──
-        if (_soloOpen)
+        // ── Main panel slides up from bottom (hidden when Solo is open) ──
+        if (widget.visible)
           Positioned(
             left: 0,
             right: 0,
-            bottom: 0,
+            bottom: bottomPadding,
+            child: SlideTransition(
+              position: _panelSlide,
+              child: Opacity(
+                opacity: _soloOpen ? 0.0 : 1.0,
+                child: _buildMainPanel(),
+              ),
+            ),
+          ),
+
+        // ── Solo slide-up panel (over main panel) ──
+        if (_soloVisible)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: bottomPadding,
             child: SlideTransition(
               position: _soloSlide,
               child: _buildSoloPanel(),
@@ -153,10 +163,14 @@ class _BattleMenuContentState extends State<BattleMenuContent> with TickerProvid
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
           padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
-          decoration: BoxDecoration(
-            color: const Color(0xFF0D0D1A).withValues(alpha: 0.92),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF1E1E1E), Color(0xFF141414)],
+            ),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border(top: BorderSide(color: Color(0xFF444444))),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -229,9 +243,13 @@ class _BattleMenuContentState extends State<BattleMenuContent> with TickerProvid
         child: Container(
           padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
           decoration: BoxDecoration(
-            color: const Color(0xFF0D0D1A).withValues(alpha: 0.92),
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF1E1E1E), Color(0xFF141414)],
+            ),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
+            border: Border(top: BorderSide(color: Color(0xFF444444))),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,

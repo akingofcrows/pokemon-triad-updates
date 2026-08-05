@@ -158,7 +158,7 @@ class ApiClient {
     final baseUrl = await baseUrlProvider();
     await _send(
       () async => http.post(
-        Uri.parse('$baseUrl/me/booster'),
+        Uri.parse('$baseUrl/me/open-booster'),
         headers: await _headers(),
         body: jsonEncode({'cards': cards}),
       ),
@@ -302,6 +302,40 @@ class ApiClient {
     return result as Map<String, dynamic>;
   }
 
+  /// The player's unopened item inventory (e.g. booster packs).
+  Future<List<dynamic>> getInventory() async {
+    final baseUrl = await baseUrlProvider();
+    final result = await _send(
+      () async => http.get(Uri.parse('$baseUrl/me/inventory'), headers: await _headers()),
+    );
+    return (result as Map<String, dynamic>)['items'] as List<dynamic>;
+  }
+
+  /// Buy an item into inventory (deducts money server-side) without opening it.
+  Future<Map<String, dynamic>> buyInventoryItem(String itemId, int price) async {
+    final baseUrl = await baseUrlProvider();
+    final result = await _send(
+      () async => http.post(
+        Uri.parse('$baseUrl/me/inventory/buy'),
+        headers: await _headers(),
+        body: jsonEncode({'itemId': itemId, 'price': price}),
+      ),
+    );
+    return result as Map<String, dynamic>;
+  }
+
+  /// Consume (open) one unit of an inventory item.
+  Future<void> consumeInventoryItem(String itemId) async {
+    final baseUrl = await baseUrlProvider();
+    await _send(
+      () async => http.post(
+        Uri.parse('$baseUrl/me/inventory/consume'),
+        headers: await _headers(),
+        body: jsonEncode({'itemId': itemId}),
+      ),
+    );
+  }
+
   Future<Map<String, dynamic>> getGifts() async {
     final baseUrl = await baseUrlProvider();
     final result = await _send(
@@ -391,6 +425,17 @@ class ApiClient {
         Uri.parse('$baseUrl/me/favorites'),
         headers: await _headers(),
         body: jsonEncode({'instanceIds': instanceIds}),
+      ),
+    );
+  }
+
+  Future<void> sellCard(int instanceId, int price) async {
+    final baseUrl = await baseUrlProvider();
+    await _send(
+      () async => http.post(
+        Uri.parse('$baseUrl/me/sell-card'),
+        headers: await _headers(),
+        body: jsonEncode({'instanceId': instanceId, 'price': price}),
       ),
     );
   }

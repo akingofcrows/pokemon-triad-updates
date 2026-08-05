@@ -58,6 +58,7 @@ class CardComponent extends PositionComponent with TapCallbacks, DragCallbacks {
   bool _dragging = false;
 
   Image? _cardBg;
+  Image? _eliteBg;
   Image? _numbers;
   Image? _artwork;
   Image? _typeIcon;
@@ -79,6 +80,10 @@ class CardComponent extends PositionComponent with TapCallbacks, DragCallbacks {
 
   void _loadSprites() {
     _cardBg = images.fromCache(flameImageKey(kCardBgAsset));
+    final trainerBg = trainerBgAsset(_card.id);
+    if (trainerBg != null) {
+      _eliteBg = images.fromCache(flameImageKey(trainerBg));
+    }
     _numbers = images.fromCache(flameImageKey(kNumbersAsset));
     final artPath = _card.shiny
         ? _card.image.replaceFirst('assets/pokemon/', 'assets/pokemon_shiny/')
@@ -97,6 +102,7 @@ class CardComponent extends PositionComponent with TapCallbacks, DragCallbacks {
     final artworkChanged = newCard.image != oldCard.image;
     final frameChanged = newCard.rarity != oldCard.rarity ||
         newCard.holo != oldCard.holo;
+    final eliteChanged = trainerBgAsset(newCard.id) != trainerBgAsset(oldCard.id);
     _card = newCard;
     final shinyChanged = newCard.shiny != oldCard.shiny;
     if (artworkChanged || shinyChanged) {
@@ -113,6 +119,10 @@ class CardComponent extends PositionComponent with TapCallbacks, DragCallbacks {
       _sparkleImage = newCard.shiny
           ? images.fromCache(flameImageKey(kSparkleAsset))
           : null;
+    }
+    if (eliteChanged) {
+      final tb = trainerBgAsset(newCard.id);
+      _eliteBg = tb != null ? images.fromCache(flameImageKey(tb)) : null;
     }
   }
 
@@ -192,6 +202,7 @@ class CardComponent extends PositionComponent with TapCallbacks, DragCallbacks {
       Size(size.x, size.y),
       card: _card,
       cardBg: _cardBg,
+      eliteBg: _eliteBg,
       numbers: _numbers,
       artwork: _artwork,
       typeIcon: _typeIcon,
