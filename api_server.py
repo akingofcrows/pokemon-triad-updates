@@ -1,8 +1,14 @@
 """TTMMO API Server — Flask + MySQL backend for Pokemon Triple Triad."""
 import hashlib
 import json
+import math
 import os
+import random
 import secrets
+import subprocess
+import sys
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from flask import Flask, jsonify, request, send_from_directory
 from flask_socketio import SocketIO, emit, join_room
@@ -10,6 +16,9 @@ import mysql.connector
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+
+# Server start time
+SERVER_START = datetime.now()
 
 # ── Database config ──────────────────────────────────────────────────────
 # Connects to Linux MySQL via SSH tunnel on port 3307
@@ -121,6 +130,16 @@ def init_db():
     except:
         pass
     cur.execute("""
+        CREATE TABLE IF NOT EXISTS triad_inventory (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            item_id VARCHAR(64) NOT NULL,
+            quantity INT NOT NULL DEFAULT 0,
+            FOREIGN KEY (user_id) REFERENCES triad_users(id),
+            UNIQUE KEY user_item (user_id, item_id)
+        )
+    """)
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS triad_decks (
             id VARCHAR(64) PRIMARY KEY,
             user_id INT NOT NULL,
@@ -183,6 +202,11 @@ def init_db():
             UNIQUE KEY user_node (user_id, location_id, node_id)
         )
     """)
+    # Migration: add seen_card_ids column to triad_characters
+    try:
+        cur.execute("ALTER TABLE triad_characters ADD COLUMN seen_card_ids TEXT")
+    except:
+        pass
     # Drop deprecated profile_json column if it exists
     try:
         cur.execute("ALTER TABLE triad_users DROP COLUMN profile_json")
@@ -216,6 +240,7 @@ def _get_character(user_id, db):
         "wins": row.get("wins"),
         "losses": row.get("losses"),
         "draws": row.get("draws"),
+        "seenCardIds": row.get("seen_card_ids"),
     }
 
 def _ensure_character(user_id, db):
@@ -254,12 +279,41 @@ def _char_col(key):
         "hairPath": "hair_path", "topPath": "top_path", "bottomPath": "bottom_path",
         "hatPath": "hat_path", "friendCode": "friend_code", "location": "location",
         "money": "money", "wins": "wins", "losses": "losses", "draws": "draws",
+        "seenCardIds": "seen_card_ids",
     }.get(key)
 
 
 # ── Auth helpers ─────────────────────────────────────────────────────────
 def _hash(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
+
+
+def _parse_json_list(raw):
+    """Parse a JSON-encoded list from a TEXT column, returning [] on failure."""
+    if not raw:
+        return []
+    try:
+        val = json.loads(raw)
+        return val if isinstance(val, list) else []
+    except (json.JSONDecodeError, TypeError):
+        return []
+
+
+@app.route("/api/me/seen-cards", methods=["PUT"])
+def put_seen_cards():
+    """Save the player's seen card IDs to the server."""
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json()
+    seen = data.get("seenCardIds") if data else []
+    if not isinstance(seen, list):
+        return jsonify({"error": "seenCardIds must be a list"}), 400
+    db = get_db()
+    _ensure_character(user["id"], db)
+    _save_character(user["id"], {"seenCardIds": json.dumps(seen)}, db)
+    db.close()
+    return jsonify({"ok": True})
 
 
 def _require_auth():
@@ -383,6 +437,7 @@ def get_me():
         "location": char.get("location", "Pallet Town"),
         "favorites": fav_ids,
         "giftCount": gift_count,
+        "seenCardIds": _parse_json_list(char.get("seenCardIds", "[]")),
     })
 
 
@@ -633,7 +688,7 @@ def post_match():
             extra -= step
             levels_beyond += 1
             step += 120
-        return len(XP_CURVE) + levels_beyond - 1, extra
+        return len(XP_CURVE) + levels_beyond, extra
 
     growth = []
     # Combine legacy capture XP + bonus XP, plus new cardXp total
@@ -862,7 +917,7 @@ def get_cards():
         # extrapolate
         last = XP_CURVE[-1]
         extra = xp - last
-        lv = len(XP_CURVE) - 1
+        lv = len(XP_CURVE)
         step = 1015
         while extra >= step:
             extra -= step
@@ -982,29 +1037,72 @@ def evolve():
     data = request.get_json()
     card_id = (data.get("cardId") or "").strip()
     to_id = (data.get("toId") or "").strip()
+    instance_id = data.get("instanceId")
+    print(f"[EVOLVE] cardId={card_id} toId={to_id} instanceId={instance_id}")
     if not card_id or not to_id:
         return jsonify({"error": "cardId and toId are required"}), 400
 
     db = get_db()
     cur = db.cursor(dictionary=True)
 
-    # Find the card instance by its current card_id and user
-    cur.execute(
-        "SELECT id, card_id, xp, level, bonus_north, bonus_south, bonus_east, bonus_west, is_shiny "
-        "FROM triad_cards WHERE user_id = %s AND card_id = %s ORDER BY level DESC LIMIT 1",
-        (user["id"], card_id),
-    )
+    # If instanceId is provided, evolve that exact instance.
+    # Otherwise fall back to highest-level instance (backward compat).
+    if instance_id:
+        cur.execute(
+            "SELECT id, card_id, xp, level, bonus_north, bonus_south, bonus_east, bonus_west, is_shiny "
+            "FROM triad_cards WHERE user_id = %s AND id = %s",
+            (user["id"], instance_id),
+        )
+    else:
+        cur.execute(
+            "SELECT id, card_id, xp, level, bonus_north, bonus_south, bonus_east, bonus_west, is_shiny "
+            "FROM triad_cards WHERE user_id = %s AND card_id = %s ORDER BY level DESC LIMIT 1",
+            (user["id"], card_id),
+        )
     row = cur.fetchone()
     if not row:
         cur.close()
         db.close()
         return jsonify({"error": "Card not found"}), 404
 
-    # Replace the card_id with the evolved form, preserving all stats
+    # Replace the card_id with the evolved form, preserving level/xp and
+    # shiny status — but each N/S/E/W leveling bonus independently loses a
+    # random ~25-75% chunk on evolution (always keeping at least 1 if it
+    # started above 0), so evolving isn't a strictly free stat upgrade.
+    def _evolved_bonus(v):
+        if v <= 0:
+            return v
+        lo = max(1, math.ceil(v * 0.25))
+        hi = max(lo, math.ceil(v * 0.75))
+        return max(1, v - random.randint(lo, hi))
+
+    new_bonus_north = _evolved_bonus(row["bonus_north"])
+    new_bonus_south = _evolved_bonus(row["bonus_south"])
+    new_bonus_east = _evolved_bonus(row["bonus_east"])
+    new_bonus_west = _evolved_bonus(row["bonus_west"])
+
     cur.execute(
-        "UPDATE triad_cards SET card_id = %s WHERE id = %s",
-        (to_id, row["id"]),
+        "UPDATE triad_cards SET card_id = %s, bonus_north = %s, bonus_south = %s, bonus_east = %s, bonus_west = %s "
+        "WHERE id = %s",
+        (to_id, new_bonus_north, new_bonus_south, new_bonus_east, new_bonus_west, row["id"]),
     )
+
+    # Update all player decks that reference the old card
+    cur.execute("SELECT id, card_ids_json FROM triad_decks WHERE user_id = %s", (user["id"],))
+    for deck_row in cur.fetchall():
+        try:
+            card_ids = json.loads(deck_row["card_ids_json"])
+            if isinstance(card_ids, dict):
+                card_ids = card_ids.get("cardIds", [])
+            if row["card_id"] in card_ids:
+                updated = [to_id if cid == row["card_id"] else cid for cid in card_ids]
+                cur.execute(
+                    "UPDATE triad_decks SET card_ids_json = %s WHERE id = %s",
+                    (json.dumps(updated), deck_row["id"]),
+                )
+        except (json.JSONDecodeError, TypeError):
+            pass
+
     db.commit()
     cur.close()
     db.close()
@@ -1013,11 +1111,11 @@ def evolve():
         "ok": True,
         "instanceId": row["id"],
         "newCardId": to_id,
-        "preservedBonuses": {
-            "north": row["bonus_north"],
-            "south": row["bonus_south"],
-            "east": row["bonus_east"],
-            "west": row["bonus_west"],
+        "newBonuses": {
+            "north": new_bonus_north,
+            "south": new_bonus_south,
+            "east": new_bonus_east,
+            "west": new_bonus_west,
         },
     })
 
@@ -1067,6 +1165,239 @@ def buy_booster():
     cur.close()
     db.close()
     return jsonify({"ok": True, "cards": created})
+
+
+@app.route("/api/me/open-booster", methods=["POST"])
+def open_booster():
+    """Open a booster pack from inventory — adds cards without deducting money."""
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+    cards = data.get("cards") or []
+    if not cards:
+        return jsonify({"error": "cards list is required"}), 400
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+    _ensure_character(user["id"], db)
+
+    XP_CURVE = [0, 40, 95, 170, 270, 405, 580, 805, 1090, 1445, 1880, 2405, 3030, 3770, 4640, 5655]
+
+    created = []
+    for c in cards:
+        card_id = c.get("cardId", "")
+        level = c.get("level", 1)
+        is_shiny = 1 if c.get("isShiny") else 0
+        bonus_north = c.get("bonusNorth", 0)
+        bonus_south = c.get("bonusSouth", 0)
+        bonus_east = c.get("bonusEast", 0)
+        bonus_west = c.get("bonusWest", 0)
+        xp_start = XP_CURVE[level - 1] if 1 <= level <= len(XP_CURVE) else 0
+        cur.execute(
+            "INSERT INTO triad_cards (user_id, card_id, xp, level, is_shiny, source, "
+            "bonus_north, bonus_south, bonus_east, bonus_west) "
+            "VALUES (%s, %s, %s, %s, %s, 'booster pack', %s, %s, %s, %s)",
+            (user["id"], card_id, xp_start, level, is_shiny,
+             bonus_north, bonus_south, bonus_east, bonus_west),
+        )
+        created.append({"cardId": card_id, "instanceId": cur.lastrowid, "level": level, "isShiny": bool(is_shiny)})
+
+    db.commit()
+    cur.close()
+    db.close()
+    return jsonify({"ok": True, "cards": created})
+
+
+@app.route("/api/me/inventory", methods=["GET"])
+def get_inventory():
+    """Return the player's unopened item inventory (e.g. booster packs)."""
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+    cur.execute(
+        "SELECT item_id, quantity FROM triad_inventory WHERE user_id = %s AND quantity > 0",
+        (user["id"],),
+    )
+    items = cur.fetchall()
+    cur.close()
+    db.close()
+    return jsonify({"items": [{"itemId": r["item_id"], "quantity": r["quantity"]} for r in items]})
+
+
+@app.route("/api/me/inventory/buy", methods=["POST"])
+def buy_inventory_item():
+    """Purchase an item (e.g. booster pack) into inventory without opening it."""
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+    item_id = data.get("itemId") or ""
+    price = data.get("price")
+    if not item_id or not isinstance(price, int) or price < 0:
+        return jsonify({"error": "itemId and a non-negative integer price are required"}), 400
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+    _ensure_character(user["id"], db)
+    cur.execute("SELECT money FROM triad_characters WHERE user_id = %s", (user["id"],))
+    row = cur.fetchone()
+    money = row["money"] if row else 0
+    if money < price:
+        cur.close()
+        db.close()
+        return jsonify({"error": "Not enough money"}), 402
+
+    cur.execute("UPDATE triad_characters SET money = money - %s WHERE user_id = %s", (price, user["id"]))
+    cur.close()
+    cur = db.cursor()
+    cur.execute(
+        "INSERT INTO triad_inventory (user_id, item_id, quantity) VALUES (%s, %s, 1) "
+        "ON DUPLICATE KEY UPDATE quantity = quantity + 1",
+        (user["id"], item_id),
+    )
+    db.commit()
+    cur.close()
+    db.close()
+    return jsonify({"ok": True, "money": money - price})
+
+
+@app.route("/api/me/inventory/consume", methods=["POST"])
+def consume_inventory_item():
+    """Open/consume one unit of an inventory item."""
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+    item_id = data.get("itemId") or ""
+    if not item_id:
+        return jsonify({"error": "itemId is required"}), 400
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+    cur.execute(
+        "SELECT quantity FROM triad_inventory WHERE user_id = %s AND item_id = %s",
+        (user["id"], item_id),
+    )
+    row = cur.fetchone()
+    if not row or row["quantity"] <= 0:
+        cur.close()
+        db.close()
+        return jsonify({"error": "You don't have that item"}), 400
+
+    cur.close()
+    cur = db.cursor()
+    cur.execute(
+        "UPDATE triad_inventory SET quantity = quantity - 1 WHERE user_id = %s AND item_id = %s",
+        (user["id"], item_id),
+    )
+    db.commit()
+    cur.close()
+    db.close()
+    return jsonify({"ok": True})
+
+
+# Two kinds of entries here: (1) evolved forms with no edge in
+# evolutions.json (Gen 2 chains and several regional variants are largely
+# unpopulated there), so the reachability check below can't see they're
+# evolved — excluded by id until that data gap is fixed; and (2) manual
+# curation from the shop registry tool (regional/alt-art variants and
+# strong single-stage picks the pool shouldn't sell cheaply).
+_SHOP_EVOLVED_EXCEPTIONS = {
+    # evolution-graph gaps
+    "card_furret_1", "card_azumarill_1", "card_persian_1_v1",
+    "card_dugtrio_1_v1", "card_graveler_1_v1", "card_golem_1_v1",
+    "card_ninetales_1_v1", "card_bayleef_1", "card_quilava_1",
+    "card_croconaw_1", "card_noctowl_1", "card_ledian_1",
+    "card_ariados_1", "card_lanturn_1", "card_xatu_1",
+    "card_flaaffy_1", "card_skiploom_1", "card_jumpluff_1",
+    "card_sunflora_1", "card_quagsire_1", "card_granbull_1",
+    "card_ursaring_1", "card_magcargo_1", "card_piloswine_1",
+    "card_octillery_1", "card_donphan_1", "card_hitmontop_1",
+    "card_pupitar_1", "card_hitmonlee_1", "card_hitmonchan_1",
+    # manual curation
+    "card_bulbasaur_1_v4", "card_diglett_1_v1", "card_meowth_1_v1",
+    "card_meowth_1_v1_v1", "card_geodude_1_v1", "card_vulpix_1_v1",
+    "card_sandshrew_1_v1", "card_rattata_1_v1", "card_omanyte_1",
+    "card_kabuto_1", "card_heracross_1",
+}
+
+
+def _load_shop_singles_pool():
+    """Base-form (first-evolution), common/uncommon Pokémon card ids eligible
+    for the daily shop — no Charizard/Blastoise/etc (evolved) and no
+    legendary/rare/epic tier (Mewtwo, Snorlax, Lapras, etc).
+    """
+    data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "data")
+    with open(os.path.join(data_dir, "cards.json"), encoding="utf-8") as f:
+        cards = json.load(f)["cards"]
+    with open(os.path.join(data_dir, "evolutions.json"), encoding="utf-8") as f:
+        chains = json.load(f)["chains"]
+
+    evolved_into = {c["to"] for c in chains}
+    return [
+        c["id"] for c in cards
+        if c["cardType"] == "pokemon"
+        and c["rarity"] in ("common", "uncommon")
+        and c["id"] not in evolved_into
+        and c["id"] not in _SHOP_EVOLVED_EXCEPTIONS
+        and not c["id"].startswith("card_unown_1")
+    ]
+
+
+# Candidate pool the daily shop draws 8 singles from — computed once at
+# startup from the evolution graph rather than hardcoded.
+SHOP_SINGLES_POOL = _load_shop_singles_pool()
+
+
+def _compute_daily_shop():
+    """Deterministic Poké Mart singles lineup for the current EST day.
+
+    Seeded by the EST calendar date, so every player sees the same 8 cards
+    (and the same levels/bonuses/prices) until the next rollover at
+    midnight EST, regardless of when in the day they request it.
+    """
+    est_date = datetime.now(ZoneInfo("America/New_York")).date()
+    seed = est_date.isoformat()
+    rng = random.Random(seed)
+
+    pool = SHOP_SINGLES_POOL[:]
+    rng.shuffle(pool)
+    chosen = pool[:8]
+
+    items = []
+    for card_id in chosen:
+        level = 3 + rng.randint(0, 4)  # level 3-7
+        bonus_north = rng.randint(0, 2)
+        bonus_south = rng.randint(0, 2)
+        bonus_east = rng.randint(0, 2)
+        bonus_west = rng.randint(0, 2)
+        bonus_total = bonus_north + bonus_south + bonus_east + bonus_west
+        price = 80 + level * 30 + bonus_total * 10
+        items.append({
+            "cardId": card_id,
+            "level": level,
+            "bonusNorth": bonus_north,
+            "bonusSouth": bonus_south,
+            "bonusEast": bonus_east,
+            "bonusWest": bonus_west,
+            "price": price,
+        })
+    return {"date": seed, "items": items}
+
+
+@app.route("/api/shop/today", methods=["GET"])
+def get_daily_shop():
+    """Return today's Poké Mart singles lineup (EST-anchored, same for all players)."""
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+    return jsonify(_compute_daily_shop())
 
 
 @app.route("/api/chat", methods=["GET"])
@@ -1150,27 +1481,38 @@ def claim_gift(gift_id):
         db.close()
         return jsonify({"error": "Gift not found or already claimed"}), 404
     cur.execute("UPDATE triad_gifts SET claimed = 1 WHERE id = %s", (gift_id,))
-    # Add the gifted item to player's collection with bonus stats
+    # Add the gifted item to player's collection/inventory
     if gift["gift_type"] == "item" and gift["item_id"]:
-        from_user = gift.get("from_username") or "Admin"
-        created = gift.get("created_at")
-        if hasattr(created, 'strftime'):
-            date_str = created.strftime('%m/%d/%Y')
-        else:
-            date_str = str(created or '')
-        source = f"Gift from {from_user} {date_str}"
-        is_shiny = gift.get("is_shiny", 0)
-        for _ in range(gift.get("quantity", 1)):
+        item_id = gift["item_id"]
+        qty = gift.get("quantity", 1)
+        # Check if this is a booster item (not a card ID)
+        is_booster = not item_id.startswith('card_')
+        if is_booster:
             cur.execute(
-                "INSERT INTO triad_cards (user_id, card_id, xp, level, "
-                "bonus_north, bonus_south, bonus_east, bonus_west, "
-                "is_shiny, source) "
-                "VALUES (%s, %s, 0, 1, %s, %s, %s, %s, %s, %s)",
-                (user["id"], gift["item_id"],
-                 gift.get("bonus_north", 0), gift.get("bonus_south", 0),
-                 gift.get("bonus_east", 0), gift.get("bonus_west", 0),
-                 is_shiny, source),
+                "INSERT INTO triad_inventory (user_id, item_id, quantity) VALUES (%s, %s, %s) "
+                "ON DUPLICATE KEY UPDATE quantity = quantity + %s",
+                (user["id"], item_id, qty, qty),
             )
+        else:
+            from_user = gift.get("from_username") or "Admin"
+            created = gift.get("created_at")
+            if hasattr(created, 'strftime'):
+                date_str = created.strftime('%m/%d/%Y')
+            else:
+                date_str = str(created or '')
+            source = f"Gift from {from_user} {date_str}"
+            is_shiny = gift.get("is_shiny", 0)
+            for _ in range(qty):
+                cur.execute(
+                    "INSERT INTO triad_cards (user_id, card_id, xp, level, "
+                    "bonus_north, bonus_south, bonus_east, bonus_west, "
+                    "is_shiny, source) "
+                    "VALUES (%s, %s, 0, 1, %s, %s, %s, %s, %s, %s)",
+                    (user["id"], item_id,
+                     gift.get("bonus_north", 0), gift.get("bonus_south", 0),
+                     gift.get("bonus_east", 0), gift.get("bonus_west", 0),
+                     is_shiny, source),
+                )
     db.commit()
     cur.close()
     db.close()
@@ -1178,6 +1520,36 @@ def claim_gift(gift_id):
         "type": gift["gift_type"], "itemId": gift["item_id"],
         "quantity": gift["quantity"], "message": gift["message"],
     }})
+
+
+@app.route("/api/me/sell-card", methods=["POST"])
+def sell_card():
+    """Sell a card instance for PokéDollars."""
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+    instance_id = data.get("instanceId")
+    price = data.get("price", 0)
+    if not instance_id:
+        return jsonify({"error": "instanceId required"}), 400
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+    cur.execute("SELECT * FROM triad_cards WHERE id = %s AND user_id = %s", (instance_id, user["id"]))
+    row = cur.fetchone()
+    if not row:
+        cur.close()
+        db.close()
+        return jsonify({"error": "Card not found"}), 404
+
+    cur.execute("DELETE FROM triad_cards WHERE id = %s", (instance_id,))
+    cur.execute("UPDATE triad_characters SET money = money + %s WHERE user_id = %s", (price, user["id"]))
+    db.commit()
+    cur.close()
+    db.close()
+    return jsonify({"ok": True})
 
 
 # Admin: grant gift (protected by simple admin key)
@@ -1246,6 +1618,7 @@ def get_decks():
     for r in rows:
         card_ids = []
         instance_ids = None
+        box_img = "field_deck"
         if r["card_ids_json"]:
             try:
                 parsed = json.loads(r["card_ids_json"])
@@ -1253,15 +1626,17 @@ def get_decks():
                     # Old format: just a list of card IDs
                     card_ids = parsed
                 elif isinstance(parsed, dict):
-                    # New format: {"cardIds": [...], "instanceIds": [...]}
+                    # New format: {"cardIds": [...], "instanceIds": [...], "boxImage": ...}
                     card_ids = parsed.get("cardIds", [])
                     instance_ids = parsed.get("instanceIds")
+                    box_img = parsed.get("boxImage", "field_deck")
             except json.JSONDecodeError:
                 pass
         decks.append({
             "id": r["id"],
             "name": r["name"],
             "cardIds": card_ids,
+            "boxImage": box_img,
             "isDefault": bool(r["active"]),
             "instanceIds": instance_ids,
         })
@@ -1279,17 +1654,17 @@ def put_deck():
     name = data.get("name", "Untitled")
     card_ids = data.get("cardIds", [])
     instance_ids = data.get("instanceIds")
+    box_image = data.get("boxImage", "field_deck")
     is_default = data.get("isDefault", False)
 
     if not deck_id:
         import uuid
         deck_id = str(uuid.uuid4())
 
-    # Store as JSON object if instance IDs are present, otherwise just the list
+    # Store as JSON object with metadata
+    stored = {"cardIds": card_ids, "boxImage": box_image}
     if instance_ids is not None:
-        stored = {"cardIds": card_ids, "instanceIds": instance_ids}
-    else:
-        stored = card_ids
+        stored["instanceIds"] = instance_ids
 
     db = get_db()
     cur = db.cursor()
@@ -1302,7 +1677,7 @@ def put_deck():
     db.commit()
     cur.close()
     db.close()
-    result = {"id": deck_id, "name": name, "cardIds": card_ids, "isDefault": is_default}
+    result = {"id": deck_id, "name": name, "cardIds": card_ids, "boxImage": box_image, "isDefault": is_default}
     if instance_ids is not None:
         result["instanceIds"] = instance_ids
     return jsonify(result)
@@ -1368,6 +1743,105 @@ def asset_manifest():
 def serve_asset(filepath):
     """Serve individual asset files from the assets directory."""
     return send_from_directory(ASSETS_DIR, filepath)
+
+# ── Admin Dashboard ─────────────────────────────────────────────────────
+
+@app.route("/admin")
+def admin_dashboard():
+    return """
+<!DOCTYPE html>
+<html><head><title>TTMMO Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{background:#1a1a2e;color:#eee;font-family:system-ui;max-width:600px;margin:20px auto;padding:0 16px}
+h1{color:#c9a44c;text-align:center}
+.card{background:#16213e;border-radius:12px;padding:16px;margin:12px 0;border:1px solid #0f3460}
+.btn{display:block;width:100%;padding:14px;margin:8px 0;border:none;border-radius:8px;font-size:16px;cursor:pointer;color:#fff}
+.btn-restart{background:#e74c3c}.btn-log{background:#2ecc71}.btn-status{background:#3498db}
+.btn-sync{background:#f39c12}.btn-ngrok{background:#9b59b6}
+pre{background:#0d1117;padding:10px;border-radius:8px;font-size:12px;max-height:300px;overflow:auto;white-space:pre-wrap}
+.status-ok{color:#2ecc71}.status-bad{color:#e74c3c}
+</style></head><body>
+<h1>TTMMO Server Admin</h1>
+<div class="card"><h3>Server Status</h3>
+<p>Running since: """ + SERVER_START.strftime("%Y-%m-%d %H:%M:%S") + """</p>
+<p id="db"></p><p id="ngrok"></p></div>
+<div class="card"><h3>Actions</h3>
+<button class="btn btn-restart" onclick="action('restart')">Restart Server</button>
+<button class="btn btn-log" onclick="action('logs')">View Logs</button>
+<button class="btn btn-ngrok" onclick="action('ngrok')">Restart ngrok</button>
+<button class="btn btn-status" onclick="location.reload()">Refresh Status</button>
+</div>
+<div id="output" class="card" style="display:none"><h3>Output</h3><pre id="out"></pre></div>
+<script>
+async function action(cmd) {
+  document.getElementById('output').style.display='block';
+  document.getElementById('out').textContent='Running...';
+  try {
+    const r = await fetch('/admin/'+cmd);
+    const t = await r.text();
+    document.getElementById('out').textContent=t;
+  } catch(e) {
+    document.getElementById('out').textContent='Error: '+e.message;
+  }
+}
+async function check() {
+  try {
+    const r = await fetch('/admin/status');
+    const d = await r.json();
+    document.getElementById('db').innerHTML='Database: <span class="'+(d.db?'status-ok':'status-bad')+'">'+(d.db?'Connected':'Disconnected')+'</span>';
+    document.getElementById('ngrok').innerHTML='ngrok: <span class="'+(d.ngrok?'status-ok':'status-bad')+'">'+(d.ngrok?'Running':'Not running')+'</span>';
+  }catch(e){}
+}
+check();
+</script></body></html>"""
+
+@app.route("/admin/status")
+def admin_status():
+    db_ok = False
+    try:
+        db = get_db()
+        cur = db.cursor()
+        cur.execute("SELECT 1")
+        cur.close()
+        db.close()
+        db_ok = True
+    except:
+        pass
+    ngrok_ok = False
+    try:
+        r = subprocess.run(["pgrep", "-f", "ngrok"], capture_output=True, text=True, timeout=3)
+        ngrok_ok = r.returncode == 0
+    except:
+        pass
+    return jsonify({"db": db_ok, "ngrok": ngrok_ok})
+
+@app.route("/admin/restart")
+def admin_restart():
+    """Restart the Flask server process."""
+    try:
+        subprocess.Popen([sys.executable] + sys.argv, cwd=os.getcwd())
+        os._exit(0)
+        return "Restarting..."
+    except Exception as e:
+        return f"Error: {e}"
+
+@app.route("/admin/logs")
+def admin_logs():
+    try:
+        r = subprocess.run(["tail", "-50", "/tmp/api.log"], capture_output=True, text=True, timeout=5)
+        return r.stdout or "No logs found"
+    except Exception as e:
+        return f"Error: {e}"
+
+@app.route("/admin/ngrok")
+def admin_ngrok():
+    try:
+        subprocess.run(["killall", "ngrok"], capture_output=True, timeout=5)
+        subprocess.Popen(["nohup", os.path.expanduser("~/ngrok"), "http", "3001", "--domain=unaggravated-dispersively-grayce"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return "ngrok restarted"
+    except Exception as e:
+        return f"Error: {e}"
 
 # ── Main ─────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
