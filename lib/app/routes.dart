@@ -14,7 +14,6 @@ import '../screens/login_screen.dart';
 import '../screens/oaks_lab_screen.dart';
 import '../screens/missions_screen.dart';
 import '../screens/opening_narration_screen.dart';
-import '../screens/pallet_town_screen.dart';
 import '../screens/register_screen.dart';
 import '../screens/session_loader_screen.dart';
 import '../screens/shop_screen.dart';
@@ -40,7 +39,6 @@ class AppRoutes {
   static const String openingNarration = '/opening-narration';
   static const String bedroom = '/bedroom';
   static const String houseDownstairs = '/house-downstairs';
-  static const String palletTown = '/pallet-town';
   static const String oaksLab = '/oaks-lab';
   static const String storyMode = '/story-mode';
   static const String missions = '/missions';
@@ -65,7 +63,6 @@ final Map<String, WidgetBuilder> appRoutes = {
   AppRoutes.openingNarration: (_) => const OpeningNarrationScreen(),
   AppRoutes.bedroom: (_) => const BedroomScreen(),
   AppRoutes.houseDownstairs: (_) => const HouseDownstairsScreen(),
-  AppRoutes.palletTown: (_) => const PalletTownScreen(),
   AppRoutes.oaksLab: (_) => const OaksLabScreen(),
   AppRoutes.storyMode: (_) => const StoryModeScreen(),
   AppRoutes.missions: (_) => const MissionsScreen(),

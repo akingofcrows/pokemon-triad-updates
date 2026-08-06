@@ -2,19 +2,24 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 import '../app/player_profile_controller.dart';
 import '../app/routes.dart';
+import '../config/feature_flags.dart';
 import '../models/trainer_appearance.dart';
 import '../models/triad_card.dart';
 import '../services/api_client.dart';
 import '../services/asset_manager.dart';
 import '../services/auth_service.dart';
 import '../services/card_repository.dart';
+import '../services/content_update_manager.dart';
+import '../widgets/content_update_dialog.dart';
 import '../widgets/server_down_screen.dart';
 import '../widgets/trainer_sprite_stack.dart';
 import '../widgets/triad_card_view.dart';
+import '../widgets/update_dialog.dart';
 
 /// Fetches the player's profile/decks from the server, then proceeds to
 /// Home. Reached right after a successful login/register, and at app boot
@@ -98,6 +103,51 @@ class _SessionLoaderScreenState extends State<SessionLoaderScreen>
       final baseUrl = await context.read<ApiClient>().baseUrlProvider();
       await assetMgr.init(baseUrl: baseUrl);
       assetMgr.syncIfNeeded(baseUrl: baseUrl); // fire and forget
+
+      // Phase-1 hybrid content/asset update system — gated behind a
+      // compile-time flag until proven on a real device. See
+      // pokemon_triad_update_and_asset_delivery_system.md.
+      if (kUseContentUpdateManager) {
+        final contentMgr = ContentUpdateManager.instance;
+        await contentMgr.init();
+        final manifest = await contentMgr.fetchManifest(baseUrl: baseUrl);
+        if (manifest != null) {
+          final installedVersion = (await PackageInfo.fromPlatform()).version;
+
+          if (!contentMgr.appVersionSupported(installedVersion, manifest)) {
+            // This install is too old to safely understand the new content
+            // shape (spec §13) — don't touch bundles, just prompt the
+            // existing app-update flow instead.
+            debugPrint(
+              'ContentUpdateManager: app $installedVersion below required '
+              '${manifest.minimumAppVersion}; skipping content sync',
+            );
+            if (mounted) await checkAndShowUpdateDialog(context);
+          } else {
+            final diffs = contentMgr.diff(manifest);
+
+            // Required bundles block progress; not dismissible.
+            if (mounted) {
+              await showContentUpdateDialogIfNeeded(
+                context,
+                diffs: diffs,
+                baseUrl: baseUrl,
+                changeNotes: manifest.changeNotes,
+              );
+            }
+
+            // Optional bundles are handed off to Home, which shows the
+            // non-blocking OptionalContentSheet once it has a
+            // post-navigation context (spec §10) and kicks off the actual
+            // downloads from there.
+            final optional = diffs.where((d) => !d.isRequired && d.isChanged).toList();
+            if (optional.isNotEmpty) {
+              ContentUpdateManager.pendingOptionalDiffs = optional;
+              ContentUpdateManager.pendingOptionalBaseUrl = baseUrl;
+            }
+          }
+        }
+      }
 
       // Brief pause to enjoy the animation
       await Future.delayed(const Duration(milliseconds: 800));

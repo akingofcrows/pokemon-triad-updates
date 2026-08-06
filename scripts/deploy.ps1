@@ -1,4 +1,10 @@
-param([Parameter(Mandatory=$true)][string]$Changelog)
+param(
+  [Parameter(Mandatory=$true)][string]$Changelog,
+  # Compatibility floor for the content-update system (spec §13). Only
+  # bump this manually when a content change is no longer safe for older
+  # installed app versions to consume — not on every deploy.
+  [string]$MinAppVersion = "1.0.70"
+)
 
 $ErrorActionPreference = "Stop"
 Push-Location "$PSScriptRoot\.."
@@ -71,6 +77,119 @@ if ($serverUp) {
   }
 } else {
   Write-Output "  Asset upload skipped (server offline)"
+}
+
+# ── Bundle-based content manifest (phase 1 hybrid update system) ──
+# Separate from the legacy flat-MD5 sync above (server/assets) — feeds the
+# new /api/content/manifest + /api/content/bundles/* routes instead. Old
+# AssetManager path above is untouched; this is purely additive.
+Write-Output "=== Generating content bundles ==="
+$contentDir = "$PSScriptRoot\..\server\content"
+$bundlesDir = "$contentDir\bundles"
+New-Item -ItemType Directory -Force -Path $bundlesDir | Out-Null
+
+$prevManifestPath = "$contentDir\manifest.json"
+$prevBundles = @{}
+if (Test-Path $prevManifestPath) {
+  $prev = Get-Content $prevManifestPath -Raw | ConvertFrom-Json
+  foreach ($b in $prev.bundles) { $prevBundles[$b.id] = $b }
+}
+
+$repoRoot = (Resolve-Path "$PSScriptRoot\..").Path
+$bundleDefs = @(
+  @{ id = "game_data";         required = $true;  paths = @("assets\data"); filter = "*.json" }
+  @{ id = "pokemon_art";       required = $false; paths = @("assets\pokemon") }
+  @{ id = "pokemon_shiny_art"; required = $false; paths = @("assets\pokemon_shiny") }
+  @{ id = "trainer_art";       required = $false; paths = @("assets\trainers") }
+  @{ id = "ui_art";            required = $false; paths = @("assets\ui") }
+  @{ id = "locations_art";     required = $false; paths = @("assets\locations") }
+  @{ id = "sprites_art";       required = $false; paths = @("assets\sprites") }
+  @{ id = "booster_pack_art";  required = $false; paths = @("assets\images\Booster Pack") }
+  @{ id = "icons_art";         required = $false; paths = @("assets\images\icons") }
+)
+
+$newBundles = @()
+$changedBundleFiles = @()
+foreach ($def in $bundleDefs) {
+  $id = $def.id
+  $tempZip = "$bundlesDir\${id}_new.zip"
+  if (Test-Path $tempZip) { Remove-Item $tempZip -Force }
+
+  $sourceItems = @()
+  foreach ($p in $def.paths) {
+    $full = Join-Path $repoRoot $p
+    if (-not (Test-Path $full)) { continue }
+    if ($def.filter) {
+      $sourceItems += (Get-ChildItem $full -Filter $def.filter -File).FullName
+    } else {
+      $sourceItems += $full
+    }
+  }
+  if ($sourceItems.Count -eq 0) {
+    Write-Output "  ${id}: no source files found, skipping"
+    continue
+  }
+
+  Compress-Archive -Path $sourceItems -DestinationPath $tempZip -Force
+  $hash = (Get-FileHash $tempZip -Algorithm SHA256).Hash.ToLower()
+  $sizeBytes = (Get-Item $tempZip).Length
+
+  $prevVersion = 0
+  $prevHash = $null
+  if ($prevBundles.ContainsKey($id)) {
+    $prevVersion = [int]$prevBundles[$id].version
+    $prevHash = $prevBundles[$id].sha256
+  }
+
+  if ($hash -eq $prevHash) {
+    Remove-Item $tempZip -Force
+    $version = $prevVersion
+    $finalZipName = "${id}_v${version}.zip"
+    Write-Output "  ${id}: unchanged (v$version)"
+  } else {
+    $version = $prevVersion + 1
+    $finalZipName = "${id}_v${version}.zip"
+    $finalZipPath = "$bundlesDir\$finalZipName"
+    if (Test-Path $finalZipPath) { Remove-Item $finalZipPath -Force }
+    Rename-Item $tempZip $finalZipName
+    $changedBundleFiles += $finalZipName
+    Write-Output "  ${id}: v$prevVersion -> v$version ($([math]::Round($sizeBytes/1kb))KB)"
+  }
+
+  $newBundles += @{
+    id = $id
+    version = $version
+    required = $def.required
+    sizeBytes = $sizeBytes
+    sha256 = $hash
+    url = "/api/content/bundles/$finalZipName"
+  }
+}
+
+$changeNotes = @($Changelog -split "`r?`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' })
+
+$contentManifest = @{
+  manifestVersion = 1
+  contentVersion = (($newBundles | ForEach-Object { $_.version }) | Measure-Object -Sum).Sum
+  minimumAppVersion = $MinAppVersion
+  changeNotes = $changeNotes
+  bundles = $newBundles
+}
+$contentManifest | ConvertTo-Json -Depth 10 | Set-Content $prevManifestPath -NoNewline
+Write-Output "  Content manifest: $($newBundles.Count) bundles, $($changedBundleFiles.Count) changed"
+
+if ($serverUp) {
+  try {
+    Start-Process scp -ArgumentList "$scpOpts $prevManifestPath akingofcrows@192.168.0.162:~/content/manifest.json" -Wait -NoNewWindow -Timeout 15
+    foreach ($zipName in $changedBundleFiles) {
+      Start-Process scp -ArgumentList "$scpOpts `"$bundlesDir\$zipName`" akingofcrows@192.168.0.162:~/content/bundles/$zipName" -Wait -NoNewWindow -Timeout 60
+    }
+    Write-Output "  Content bundles uploaded to server"
+  } catch {
+    Write-Output "  Content bundle upload skipped (scp failed)"
+  }
+} else {
+  Write-Output "  Content bundle upload skipped (server offline)"
 }
 
 # Push + release

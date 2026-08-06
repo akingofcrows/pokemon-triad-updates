@@ -4,6 +4,7 @@
       "id": "pallet_town", "name": "Pallet Town", "region": "kanto",
       "wildLevelRange": { "min": 0, "max": 0 },
       "nodes": [
+        { "id": "pallet_house", "type": "story" },
         { "id": "pallet_oaks_lab", "type": "story" },
         { "id": "pallet_missions", "type": "story" },
         { "id": "pallet_route1", "type": "story" }

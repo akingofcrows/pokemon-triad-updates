@@ -1,13 +1,16 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/services.dart' show rootBundle;
 
+import '../config/feature_flags.dart';
 import '../models/card_set.dart';
 import '../models/deck.dart';
 import '../models/evolution_chain.dart';
 import '../models/evolution_line.dart';
 import '../models/npc_trainer.dart';
 import '../models/triad_card.dart';
+import 'content_update_manager.dart';
 
 /// Loads and caches the static card pool from assets/data/*.json — the
 /// converted output of TTMMO's pokemon_cards.json/sets.json/starter_decks.json
@@ -27,12 +30,21 @@ class CardRepository {
   bool _loaded = false;
   bool get isLoaded => _loaded;
 
+  /// Reads `assets/data/[filename]`, preferring a downloaded `game_data`
+  /// bundle override (see ContentUpdateManager, gated behind
+  /// kUseContentUpdateManager) before falling back to the app-bundled copy.
+  Future<String> _loadDataJson(String filename) async {
+    if (kUseContentUpdateManager) {
+      final localPath = ContentUpdateManager.instance.localPath('game_data', filename);
+      if (localPath != null) return File(localPath).readAsString();
+    }
+    return rootBundle.loadString('assets/data/$filename');
+  }
+
   Future<void> load() async {
     if (_loaded) return;
 
-    final cardsJson =
-        jsonDecode(await rootBundle.loadString('assets/data/cards.json'))
-            as Map<String, dynamic>;
+    final cardsJson = jsonDecode(await _loadDataJson('cards.json')) as Map<String, dynamic>;
     _allCards = (cardsJson['cards'] as List<dynamic>)
         .map((e) => TriadCard.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -40,16 +52,12 @@ class CardRepository {
       _cardsById[card.id] = card;
     }
 
-    final setsJson =
-        jsonDecode(await rootBundle.loadString('assets/data/sets.json'))
-            as Map<String, dynamic>;
+    final setsJson = jsonDecode(await _loadDataJson('sets.json')) as Map<String, dynamic>;
     _sets = (setsJson['sets'] as List<dynamic>)
         .map((e) => CardSet.fromJson(e as Map<String, dynamic>))
         .toList();
 
-    final startersJson = jsonDecode(
-      await rootBundle.loadString('assets/data/starter_decks.json'),
-    ) as Map<String, dynamic>;
+    final startersJson = jsonDecode(await _loadDataJson('starter_decks.json')) as Map<String, dynamic>;
     _starterDecks = (startersJson['decks'] as List<dynamic>).map((e) {
       final map = e as Map<String, dynamic>;
       return Deck(
@@ -59,18 +67,14 @@ class CardRepository {
       );
     }).toList();
 
-    final evolutionsJson = jsonDecode(
-      await rootBundle.loadString('assets/data/evolutions.json'),
-    ) as Map<String, dynamic>;
+    final evolutionsJson = jsonDecode(await _loadDataJson('evolutions.json')) as Map<String, dynamic>;
     for (final e in evolutionsJson['chains'] as List<dynamic>) {
       final chain = EvolutionChain.fromJson(e as Map<String, dynamic>);
       _evolutionsByFrom.putIfAbsent(chain.from, () => []).add(chain);
       _evolutionsByTo[chain.to] = chain;
     }
 
-    final npcsJson = jsonDecode(
-      await rootBundle.loadString('assets/data/npcs.json'),
-    ) as Map<String, dynamic>;
+    final npcsJson = jsonDecode(await _loadDataJson('npcs.json')) as Map<String, dynamic>;
     _npcs = (npcsJson['npcs'] as List<dynamic>)
         .map((e) => NpcTrainer.fromJson(e as Map<String, dynamic>))
         .toList();

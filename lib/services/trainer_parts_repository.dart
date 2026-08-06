@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/services.dart' show rootBundle;
 
+import '../config/feature_flags.dart';
 import '../models/trainer_parts.dart';
+import 'content_update_manager.dart';
 
 /// Loads and caches the static trainer-appearance option catalog from
 /// assets/data/trainer_parts.json — the converted output of TTMMO's
@@ -19,7 +22,16 @@ class TrainerPartsRepository {
 
   Future<void> load() async {
     if (_loaded) return;
-    final json = jsonDecode(await rootBundle.loadString('assets/data/trainer_parts.json')) as Map<String, dynamic>;
+    String jsonStr;
+    final localPath = kUseContentUpdateManager
+        ? ContentUpdateManager.instance.localPath('game_data', 'trainer_parts.json')
+        : null;
+    if (localPath != null) {
+      jsonStr = await File(localPath).readAsString();
+    } else {
+      jsonStr = await rootBundle.loadString('assets/data/trainer_parts.json');
+    }
+    final json = jsonDecode(jsonStr) as Map<String, dynamic>;
     _male = TrainerGenderParts.fromJson(json['male'] as Map<String, dynamic>);
     _female = TrainerGenderParts.fromJson(json['female'] as Map<String, dynamic>);
     _loaded = true;

@@ -6,6 +6,7 @@ import '../app/routes.dart';
 import '../models/quest.dart';
 import '../services/api_client.dart';
 import '../widgets/quest_display.dart';
+import 'route_battle_screen.dart';
 
 /// Downstairs — Mom gives the player their first quest.
 class HouseDownstairsScreen extends StatefulWidget {
@@ -160,7 +161,10 @@ class _HouseDownstairsScreenState extends State<HouseDownstairsScreen> {
                     label: 'Leave House',
                     onTap: () {
                       context.read<PlayerProfileController>().completeObjective('Leave the house');
-                      Navigator.pushNamed(context, AppRoutes.palletTown);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const RouteBattleScreen(locationId: 'pallet_town')),
+                      );
                     },
                   ),
                 ),

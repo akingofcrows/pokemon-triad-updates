@@ -128,7 +128,7 @@ class _StoryModeScreenState extends State<StoryModeScreen> with TickerProviderSt
       opponentPortrait: 'assets/trainers/intro/introOak.png',
       opponentVictoryQuote: 'Excellent! You have real talent!',
       opponentDefeatQuote: 'Don\'t worry — that was just practice.',
-      onMatchComplete: (won) {
+      onMatchComplete: (won, {capturedCardIds}) {
         _tutorialWon = won;
       },
       onContinue: () {
@@ -183,7 +183,6 @@ class _StoryModeScreenState extends State<StoryModeScreen> with TickerProviderSt
     }
     await _travel(name);
     if (!mounted) return;
-    if (id == 'pallet_town') { Navigator.pushNamed(context, AppRoutes.palletTown); return; }
     Navigator.push(context, MaterialPageRoute(builder: (_) => RouteBattleScreen(locationId: id)));
   }
 

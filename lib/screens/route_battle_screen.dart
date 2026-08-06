@@ -238,7 +238,10 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
       case StoryNodeType.story:
         if (node.id.contains('pokemart')) return 'Poké Mart';
         if (node.id.contains('center')) return 'Pokémon Center';
-        if (node.id.contains('route')) return 'Route 2';
+        if (node.id.contains('oaks_lab') || node.id.contains('lab')) return "Oak's Lab";
+        if (node.id.contains('missions')) return 'Missions';
+        if (node.id.contains('house')) return 'My House';
+        if (node.id.contains('route')) return 'Next Route';
         return 'Item Discovery';
       case StoryNodeType.wildBoss:
         return 'Final Encounter';
@@ -355,6 +358,9 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
       case StoryNodeType.story:
         if (node.id.contains('pokemart')) return Icons.store;
         if (node.id.contains('center')) return Icons.local_hospital;
+        if (node.id.contains('oaks_lab') || node.id.contains('lab')) return Icons.science;
+        if (node.id.contains('missions')) return Icons.assignment;
+        if (node.id.contains('house')) return Icons.home;
         if (node.id.contains('route')) return Icons.map;
         return Icons.place;
       case StoryNodeType.wildBoss: return Icons.warning;
@@ -377,7 +383,10 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
       case StoryNodeType.story:
         if (node.id.contains('pokemart')) return 'Poké Mart';
         if (node.id.contains('center')) return 'Pokémon Center';
-        if (node.id.contains('route')) return 'Next Route';
+        if (node.id.contains('oaks_lab') || node.id.contains('lab')) return "Professor Oak's Laboratory";
+        if (node.id.contains('missions')) return 'Quests & Missions';
+        if (node.id.contains('house')) return 'Your home';
+        if (node.id.contains('route')) return 'Travel to next area';
         return null;
       case StoryNodeType.wildBoss: return null;
     }
@@ -459,7 +468,7 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
                   opponentVictoryQuote: null,
                   opponentDefeatQuote: null,
                   playerGoesFirst: playerGoesFirst,
-                  onMatchComplete: (won) {
+                  onMatchComplete: (won, {capturedCardIds}) {
                     if (won) ctrl.completeNode(_location.id, node.id);
                   },
                   onContinue: () {
@@ -505,7 +514,7 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
                   opponentVictoryQuote: npc.victoryQuote,
                   opponentDefeatQuote: npc.defeatQuote,
                   playerGoesFirst: playerGoesFirst,
-                  onMatchComplete: (won) {
+                  onMatchComplete: (won, {capturedCardIds}) {
                     if (won) ctrl.completeNode(_location.id, node.id);
                   },
                 ),
@@ -524,6 +533,19 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
 
     if (node.id == 'pallet_missions') {
       _showOakParcelQuest(ctrl, node, profileCtrl);
+    } else if (node.id == 'pallet_oaks_lab') {
+      profileCtrl.completeObjective('Visit Professor Oak at his lab');
+      ctrl.completeNode(_location.id, node.id);
+      Navigator.pushNamed(context, AppRoutes.oaksLab);
+    } else if (node.id == 'pallet_house') {
+      ctrl.completeNode(_location.id, node.id);
+      Navigator.pushNamed(context, AppRoutes.houseDownstairs);
+    } else if (node.id == 'pallet_route1') {
+      ctrl.completeNode(_location.id, node.id);
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const RouteBattleScreen(locationId: 'route_1')),
+      );
     } else if (node.id == 'viridian_pokemart') {
       if (node.isCompleted) {
         _showPokeMartShop(ctrl, node);
@@ -631,7 +653,7 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
   }
 
   Widget _buildBoosterPack(int money) {
-    final canAfford = money >= 500;
+    final canAfford = money >= 800;
     return Material(
       color: Colors.amber.withValues(alpha: 0.08),
       borderRadius: BorderRadius.circular(10),
@@ -658,7 +680,7 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
               Text('Field Trip Booster', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
               Text('5 random cards, chance for rare!', style: TextStyle(color: Colors.white38, fontSize: 11)),
             ])),
-            Text('₽ 500', style: TextStyle(color: canAfford ? const Color(0xFFC9A44C) : Colors.grey, fontSize: 14, fontWeight: FontWeight.bold)),
+            Text('₽ 800', style: TextStyle(color: canAfford ? const Color(0xFFC9A44C) : Colors.grey, fontSize: 14, fontWeight: FontWeight.bold)),
           ]),
         ),
       ),

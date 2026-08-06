@@ -27,7 +27,9 @@ import '../models/triad_card.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../services/card_repository.dart';
+import '../services/content_update_manager.dart';
 import '../services/update_service.dart';
+import '../widgets/optional_content_sheet.dart';
 import '../widgets/trainer_sprite_stack.dart';
 import '../widgets/triad_card_view.dart';
 import '../widgets/update_dialog.dart';
@@ -121,7 +123,21 @@ class _HomeScreenState extends State<HomeScreen>
     _connectWebSocket();
     // Collapse chat and defocus when returning to home
     _chatOpen = false;
-    WidgetsBinding.instance.addPostFrameCallback((_) => _chatFocus.unfocus());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _chatFocus.unfocus();
+      _maybeShowOptionalContent();
+    });
+  }
+
+  /// Shows the non-blocking optional-content download banner if the
+  /// session loader queued any changed optional bundles for us.
+  void _maybeShowOptionalContent() {
+    final diffs = ContentUpdateManager.pendingOptionalDiffs;
+    final baseUrl = ContentUpdateManager.pendingOptionalBaseUrl;
+    ContentUpdateManager.pendingOptionalDiffs = null;
+    ContentUpdateManager.pendingOptionalBaseUrl = null;
+    if (diffs == null || baseUrl == null || !mounted) return;
+    showOptionalContentSheetIfNeeded(context, diffs: diffs, baseUrl: baseUrl);
   }
 
   Future<void> _loadChat() async {
