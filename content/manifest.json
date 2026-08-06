@@ -1,0 +1,79 @@
+{
+    "minimumAppVersion":  "1.0.70",
+    "contentVersion":  9,
+    "manifestVersion":  1,
+    "bundles":  [
+                    {
+                        "id":  "game_data",
+                        "version":  1,
+                        "sha256":  "9214bc0c5baba77db79ed15e3e3ec0c953b02b94ab6f2a2e22e2c095bb3382de",
+                        "sizeBytes":  26516,
+                        "required":  true,
+                        "url":  "/api/content/bundles/game_data_v1.zip"
+                    },
+                    {
+                        "id":  "pokemon_art",
+                        "version":  1,
+                        "sha256":  "1f03e071212feeff0978f888ff96abcb97d856edf84c87f6e3041b1840cdfe98",
+                        "sizeBytes":  637679,
+                        "required":  false,
+                        "url":  "/api/content/bundles/pokemon_art_v1.zip"
+                    },
+                    {
+                        "id":  "pokemon_shiny_art",
+                        "version":  1,
+                        "sha256":  "991c61b3a089fbdc3b7955e803bf96220bd8865b153154f030cb7a3a55765530",
+                        "sizeBytes":  599526,
+                        "required":  false,
+                        "url":  "/api/content/bundles/pokemon_shiny_art_v1.zip"
+                    },
+                    {
+                        "id":  "trainer_art",
+                        "version":  1,
+                        "sha256":  "608515fceaeb0fea8ec98f4dee6c2d13b4db1300c8cb32bc23627c3edb4d59e4",
+                        "sizeBytes":  639557,
+                        "required":  false,
+                        "url":  "/api/content/bundles/trainer_art_v1.zip"
+                    },
+                    {
+                        "id":  "ui_art",
+                        "version":  1,
+                        "sha256":  "c8d673dc81c80ffab49d1db8569f3d15dbee20b48019fdfc544b6a9c6456aee2",
+                        "sizeBytes":  1696810,
+                        "required":  false,
+                        "url":  "/api/content/bundles/ui_art_v1.zip"
+                    },
+                    {
+                        "id":  "locations_art",
+                        "version":  1,
+                        "sha256":  "7d02e4912c6f806387cc279eb4d1838a42e0b9685e8293963b55f9cf6af65fd3",
+                        "sizeBytes":  48004512,
+                        "required":  false,
+                        "url":  "/api/content/bundles/locations_art_v1.zip"
+                    },
+                    {
+                        "id":  "sprites_art",
+                        "version":  1,
+                        "sha256":  "57a88ca14d8cec89560e551efdb4f029c44365a3e5446052158a51065e938f46",
+                        "sizeBytes":  8753259,
+                        "required":  false,
+                        "url":  "/api/content/bundles/sprites_art_v1.zip"
+                    },
+                    {
+                        "id":  "booster_pack_art",
+                        "version":  1,
+                        "sha256":  "1df08fd228be4473c2225f067a4f127fdb873991cb6b609595f3ecfa3d89e5d3",
+                        "sizeBytes":  250860,
+                        "required":  false,
+                        "url":  "/api/content/bundles/booster_pack_art_v1.zip"
+                    },
+                    {
+                        "id":  "icons_art",
+                        "version":  1,
+                        "sha256":  "ac8cdc7da8c4959420a091fbbd52cd682b2d0287bf6f949e70a834c65576f955",
+                        "sizeBytes":  2899376,
+                        "required":  false,
+                        "url":  "/api/content/bundles/icons_art_v1.zip"
+                    }
+                ]
+}

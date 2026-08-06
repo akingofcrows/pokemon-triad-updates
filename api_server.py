@@ -768,9 +768,13 @@ def post_match():
         if level > 1 and level <= len(XP_CURVE):
             xp_start = XP_CURVE[level - 1]
         cur.execute(
-            "INSERT INTO triad_cards (user_id, card_id, xp, level, is_shiny, source) "
-            "VALUES (%s, %s, %s, %s, 1, 'wild capture')",
-            (user["id"], card_id, xp_start, level),
+            """INSERT INTO triad_cards (user_id, card_id, xp, level,
+               bonus_north, bonus_south, bonus_east, bonus_west, is_shiny, source)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+            (user["id"], card_id, xp_start, level,
+             c.get("bonusNorth", 0), c.get("bonusSouth", 0),
+             c.get("bonusEast", 0), c.get("bonusWest", 0),
+             1 if c.get("shiny") else 0, 'wild capture'),
         )
         new_inst_id = cur.lastrowid
         growth.append({
@@ -1743,6 +1747,27 @@ def asset_manifest():
 def serve_asset(filepath):
     """Serve individual asset files from the assets directory."""
     return send_from_directory(ASSETS_DIR, filepath)
+
+
+# ── Content delivery (bundle-based, phase 1) ────────────────────────────
+# Separate from the legacy /api/assets/* flat sync above — deploy.ps1 writes
+# CONTENT_DIR/manifest.json with authored per-bundle version/required/sha256
+# fields (not hashed on-the-fly, since "required" can't be inferred).
+CONTENT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "content")
+
+@app.route("/api/content/manifest", methods=["GET"])
+def content_manifest():
+    """Returns the bundle manifest authored by scripts/deploy.ps1."""
+    manifest_path = os.path.join(CONTENT_DIR, "manifest.json")
+    if not os.path.exists(manifest_path):
+        return jsonify({"error": "no content manifest"}), 404
+    with open(manifest_path, "r") as f:
+        return jsonify(json.load(f))
+
+@app.route("/api/content/bundles/<path:filename>", methods=["GET"])
+def serve_content_bundle(filename):
+    """Serve a versioned content bundle zip."""
+    return send_from_directory(os.path.join(CONTENT_DIR, "bundles"), filename)
 
 # ── Admin Dashboard ─────────────────────────────────────────────────────
 

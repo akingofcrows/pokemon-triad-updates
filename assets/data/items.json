@@ -1,0 +1,38 @@
+[
+  {
+    "id": "pokeball",
+    "name": "Poké Ball",
+    "description": "A standard ball used to catch wild Pokémon.",
+    "type": "pokeball",
+    "imageAsset": "assets/images/items/pokeball.png",
+    "catchMultiplier": 1.0,
+    "sellPrice": 50
+  },
+  {
+    "id": "great_ball",
+    "name": "Great Ball",
+    "description": "A better ball with improved catch rate.",
+    "type": "pokeball",
+    "imageAsset": "assets/images/items/great_ball.png",
+    "catchMultiplier": 1.5,
+    "sellPrice": 150
+  },
+  {
+    "id": "ultra_ball",
+    "name": "Ultra Ball",
+    "description": "A premium ball with very high catch rate.",
+    "type": "pokeball",
+    "imageAsset": "assets/images/items/ultra_ball.png",
+    "catchMultiplier": 2.5,
+    "sellPrice": 400
+  },
+  {
+    "id": "master_ball",
+    "name": "Master Ball",
+    "description": "The ultimate ball — guaranteed catch!",
+    "type": "pokeball",
+    "imageAsset": "assets/images/items/master_ball.png",
+    "catchMultiplier": 999.0,
+    "sellPrice": 5000
+  }
+]
