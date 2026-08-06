@@ -126,7 +126,7 @@ class ContentUpdateManager {
     try {
       final response = await http
           .get(
-            Uri.parse('$baseUrl/api/content/manifest'),
+            Uri.parse('${_apiOrigin(baseUrl)}/api/content/manifest'),
             headers: {'ngrok-skip-browser-warning': 'true'},
           )
           .timeout(const Duration(seconds: 10));
@@ -204,7 +204,7 @@ class ContentUpdateManager {
 
     try {
       final dio = Dio();
-      final url = '$baseUrl${remote.url}';
+      final url = '${_apiOrigin(baseUrl)}${remote.url}';
       final sink = partFile.openWrite(mode: startByte > 0 ? FileMode.append : FileMode.write);
       var received = startByte;
       try {
@@ -252,7 +252,12 @@ class ContentUpdateManager {
       final archive = ZipDecoder().decodeBytes(bytes);
       var extractedCount = 0;
       for (final file in archive.files) {
-        final name = file.name;
+        // archive's ZipDecoder returns entry names with backslash
+        // separators for zips flagged as DOS/Windows-origin (which
+        // PowerShell's Compress-Archive always produces) — normalize
+        // before treating it as a path, or it extracts as one file with a
+        // literal backslash in its name instead of a nested directory.
+        final name = file.name.replaceAll('\\', '/');
         if (!file.isFile || name.contains('__MACOSX') || name.split('/').last.startsWith('.')) {
           continue;
         }
@@ -348,6 +353,13 @@ class ContentUpdateManager {
     return file.existsSync() ? file.path : null;
   }
 }
+
+/// [ApiClient.baseUrlProvider] returns an origin already suffixed with
+/// `/api` (e.g. `https://api.playfablewood.com/api`), but the content-system
+/// routes and the manifest's own bundle `url` fields are full paths that
+/// already start with `/api/...` too — so building requests as
+/// `$baseUrl/api/...` would double up. Strip the suffix first.
+String _apiOrigin(String baseUrl) => baseUrl.endsWith('/api') ? baseUrl.substring(0, baseUrl.length - 4) : baseUrl;
 
 /// Compares two "X.Y.Z" (pre-release/build suffixes ignored) version
 /// strings. Returns >0 if [a] > [b], <0 if [a] < [b], 0 if equal.
