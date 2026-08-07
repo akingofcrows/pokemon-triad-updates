@@ -1,9 +1,9 @@
 {
     "minimumAppVersion":  "1.0.70",
     "changeNotes":  [
-                        "Content update system enabled, missing asset folders added (sound, sprites, booster pack art), trainer XP + location progression now server-synced"
+                        "Update service now checks all releases by semver; added Town Map and items/ asset paths"
                     ],
-    "contentVersion":  16,
+    "contentVersion":  17,
     "manifestVersion":  1,
     "bundles":  [
                     {
@@ -32,11 +32,11 @@
                     },
                     {
                         "id":  "trainer_art",
-                        "version":  3,
-                        "sha256":  "a5be9d4fe28ff458340ce9ab6073d91e99593d3aa851ac87f4cba14f2a1e0cbb",
+                        "version":  4,
+                        "sha256":  "1e3295df8553dc00e83307e020b12a4f22150ac6e7c5faf00870aa314fb62aaa",
                         "sizeBytes":  642699,
                         "required":  false,
-                        "url":  "/api/content/bundles/trainer_art_v3.zip"
+                        "url":  "/api/content/bundles/trainer_art_v4.zip"
                     },
                     {
                         "id":  "ui_art",
