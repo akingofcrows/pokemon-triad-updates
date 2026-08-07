@@ -1,9 +1,9 @@
 {
     "minimumAppVersion":  "1.0.70",
     "changeNotes":  [
-                        "Lots of under the hood work, locations, etc"
+                        "Content update system enabled, missing asset folders added (sound, sprites, booster pack art), trainer XP + location progression now server-synced"
                     ],
-    "contentVersion":  15,
+    "contentVersion":  16,
     "manifestVersion":  1,
     "bundles":  [
                     {
@@ -32,11 +32,11 @@
                     },
                     {
                         "id":  "trainer_art",
-                        "version":  2,
-                        "sha256":  "52e3f8c1ea0b216de8bf59d90c9f8f88944f8deac6ed62d4ff92c592fa1a6803",
+                        "version":  3,
+                        "sha256":  "a5be9d4fe28ff458340ce9ab6073d91e99593d3aa851ac87f4cba14f2a1e0cbb",
                         "sizeBytes":  642699,
                         "required":  false,
-                        "url":  "/api/content/bundles/trainer_art_v2.zip"
+                        "url":  "/api/content/bundles/trainer_art_v3.zip"
                     },
                     {
                         "id":  "ui_art",
@@ -47,12 +47,20 @@
                         "url":  "/api/content/bundles/ui_art_v2.zip"
                     },
                     {
-                        "id":  "locations_art",
-                        "version":  2,
+                        "id":  "locations_settlements_art",
+                        "version":  1,
                         "sha256":  "18f3fb93fea30c68fab2c37fefa22d2e6cdf859a5ae6afae686f47be19abd1fa",
                         "sizeBytes":  70312345,
                         "required":  false,
-                        "url":  "/api/content/bundles/locations_art_v2.zip"
+                        "url":  "/api/content/bundles/locations_settlements_art_v1.zip"
+                    },
+                    {
+                        "id":  "locations_routes_art",
+                        "version":  1,
+                        "sha256":  "e6eeafef1582f61eb2bb27502ed2d47e2fddac78f4c7bdce5cb2f6aa2dac1180",
+                        "sizeBytes":  27654046,
+                        "required":  false,
+                        "url":  "/api/content/bundles/locations_routes_art_v1.zip"
                     },
                     {
                         "id":  "sprites_art",

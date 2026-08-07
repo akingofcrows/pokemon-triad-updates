@@ -207,6 +207,11 @@ def init_db():
         cur.execute("ALTER TABLE triad_characters ADD COLUMN seen_card_ids TEXT")
     except:
         pass
+    # Migration: add trainer_xp column to triad_characters
+    try:
+        cur.execute("ALTER TABLE triad_characters ADD COLUMN trainer_xp INT DEFAULT 0")
+    except:
+        pass
     # Drop deprecated profile_json column if it exists
     try:
         cur.execute("ALTER TABLE triad_users DROP COLUMN profile_json")
@@ -241,6 +246,7 @@ def _get_character(user_id, db):
         "losses": row.get("losses"),
         "draws": row.get("draws"),
         "seenCardIds": row.get("seen_card_ids"),
+        "trainerXp": row.get("trainer_xp", 0),
     }
 
 def _ensure_character(user_id, db):
@@ -280,6 +286,7 @@ def _char_col(key):
         "hatPath": "hat_path", "friendCode": "friend_code", "location": "location",
         "money": "money", "wins": "wins", "losses": "losses", "draws": "draws",
         "seenCardIds": "seen_card_ids",
+        "trainerXp": "trainer_xp",
     }.get(key)
 
 
@@ -438,7 +445,28 @@ def get_me():
         "favorites": fav_ids,
         "giftCount": gift_count,
         "seenCardIds": _parse_json_list(char.get("seenCardIds", "[]")),
+        "trainerXp": char.get("trainerXp", 0),
     })
+
+
+@app.route("/api/me/trainer-xp", methods=["PUT"])
+def put_trainer_xp():
+    """Sync the player's trainer XP to the server."""
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+    xp = data.get("trainerXp", 0)
+    if not isinstance(xp, int) or xp < 0:
+        return jsonify({"error": "trainerXp must be a non-negative integer."}), 400
+
+    db = get_db()
+    _ensure_character(user["id"], db)
+    _save_character(user["id"], {"trainerXp": xp}, db)
+    db.close()
+
+    return jsonify({"ok": True, "trainerXp": xp})
 
 
 @app.route("/api/me/character", methods=["PUT"])
