@@ -10,6 +10,10 @@
       },
       "nodes": [
         {
+          "id": "pallet_house",
+          "type": "story"
+        },
+        {
           "id": "pallet_oaks_lab",
           "type": "story"
         },

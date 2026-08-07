@@ -1,55 +1,58 @@
 {
     "minimumAppVersion":  "1.0.70",
-    "contentVersion":  9,
+    "changeNotes":  [
+                        "Lots of under the hood work, locations, etc"
+                    ],
+    "contentVersion":  15,
     "manifestVersion":  1,
     "bundles":  [
                     {
                         "id":  "game_data",
-                        "version":  1,
-                        "sha256":  "9214bc0c5baba77db79ed15e3e3ec0c953b02b94ab6f2a2e22e2c095bb3382de",
-                        "sizeBytes":  26516,
+                        "version":  2,
+                        "sha256":  "e6061a5808327760c04a491e993dec52f20e3840c38df0414ab6e094fede98fa",
+                        "sizeBytes":  26686,
                         "required":  true,
-                        "url":  "/api/content/bundles/game_data_v1.zip"
+                        "url":  "/api/content/bundles/game_data_v2.zip"
                     },
                     {
                         "id":  "pokemon_art",
-                        "version":  1,
-                        "sha256":  "1f03e071212feeff0978f888ff96abcb97d856edf84c87f6e3041b1840cdfe98",
-                        "sizeBytes":  637679,
+                        "version":  2,
+                        "sha256":  "92424b246e91995a179ef4a0fc853d4b6f48b6e9b5a845634668a85fb09d67cf",
+                        "sizeBytes":  637597,
                         "required":  false,
-                        "url":  "/api/content/bundles/pokemon_art_v1.zip"
+                        "url":  "/api/content/bundles/pokemon_art_v2.zip"
                     },
                     {
                         "id":  "pokemon_shiny_art",
-                        "version":  1,
-                        "sha256":  "991c61b3a089fbdc3b7955e803bf96220bd8865b153154f030cb7a3a55765530",
-                        "sizeBytes":  599526,
+                        "version":  2,
+                        "sha256":  "02d3daf98e1fce836fd0fbb6595393374ae6201947afc8db18eb775aa7e055f0",
+                        "sizeBytes":  599448,
                         "required":  false,
-                        "url":  "/api/content/bundles/pokemon_shiny_art_v1.zip"
+                        "url":  "/api/content/bundles/pokemon_shiny_art_v2.zip"
                     },
                     {
                         "id":  "trainer_art",
-                        "version":  1,
-                        "sha256":  "608515fceaeb0fea8ec98f4dee6c2d13b4db1300c8cb32bc23627c3edb4d59e4",
-                        "sizeBytes":  639557,
+                        "version":  2,
+                        "sha256":  "52e3f8c1ea0b216de8bf59d90c9f8f88944f8deac6ed62d4ff92c592fa1a6803",
+                        "sizeBytes":  642699,
                         "required":  false,
-                        "url":  "/api/content/bundles/trainer_art_v1.zip"
+                        "url":  "/api/content/bundles/trainer_art_v2.zip"
                     },
                     {
                         "id":  "ui_art",
-                        "version":  1,
-                        "sha256":  "c8d673dc81c80ffab49d1db8569f3d15dbee20b48019fdfc544b6a9c6456aee2",
-                        "sizeBytes":  1696810,
+                        "version":  2,
+                        "sha256":  "2601596dd2847320df8579430e79f081e92582a9a8d6da39ed6ecbfacec1acc1",
+                        "sizeBytes":  7951662,
                         "required":  false,
-                        "url":  "/api/content/bundles/ui_art_v1.zip"
+                        "url":  "/api/content/bundles/ui_art_v2.zip"
                     },
                     {
                         "id":  "locations_art",
-                        "version":  1,
-                        "sha256":  "7d02e4912c6f806387cc279eb4d1838a42e0b9685e8293963b55f9cf6af65fd3",
-                        "sizeBytes":  48004512,
+                        "version":  2,
+                        "sha256":  "18f3fb93fea30c68fab2c37fefa22d2e6cdf859a5ae6afae686f47be19abd1fa",
+                        "sizeBytes":  70312345,
                         "required":  false,
-                        "url":  "/api/content/bundles/locations_art_v1.zip"
+                        "url":  "/api/content/bundles/locations_art_v2.zip"
                     },
                     {
                         "id":  "sprites_art",
