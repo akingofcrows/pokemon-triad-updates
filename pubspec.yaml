@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.85-alpha+85
+version: 1.0.86-alpha+86
 
 environment:
   sdk: ^3.10.4
@@ -46,7 +46,7 @@ dependencies:
   package_info_plus: ^10.2.1
   wakelock_plus: ^1.2.8
   socket_io_client: ^3.0.2
-  crypto: ^3.0.3
+  audioplayers: ^6.7.1
 
 dev_dependencies:
   flutter_test:
@@ -76,6 +76,7 @@ flutter:
     - assets/pokemon/
     - assets/pokemon_shiny/
     - assets/ui/
+    - assets/ui/Town Map/
     - assets/ui/types/
     - assets/sprite_bundle.zip
     - assets/trainers/intro/
@@ -92,10 +93,13 @@ flutter:
     - assets/trainers/female/hats/
     - assets/trainers/npc/
     - assets/locations/
-    - assets/images/icons/
-    - assets/images/Booster Pack/
+    - assets/sound/
+    - assets/sounds/
     - assets/sprites/front/
     - assets/sprites/front_shiny/
+    - assets/images/icons/
+    - assets/images/icons/items/
+    - assets/images/Booster Pack/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -132,6 +136,3 @@ flutter:
     - family: PowerGreen
       fonts:
         - asset: assets/fonts/PowerGreen.ttf
-    - family: Tiny5
-      fonts:
-        - asset: assets/fonts/Tiny5-Regular.ttf
