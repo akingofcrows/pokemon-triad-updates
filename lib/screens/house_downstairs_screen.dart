@@ -36,10 +36,10 @@ class _HouseDownstairsScreenState extends State<HouseDownstairsScreen> {
     final talked = _momTalkStep > 0;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1A0E0A),
+      backgroundColor: const Color(0xFF2D2E35),
       appBar: AppBar(
         title: const Text("Mom's Kitchen"),
-        backgroundColor: const Color(0xFF1A0E0A),
+        backgroundColor: const Color(0xFF2D2E35),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),

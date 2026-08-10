@@ -110,7 +110,7 @@ class _CardDexScreenState extends State<CardDexScreen> with SingleTickerProvider
         : repository.cardsForIds(selectedSet.cardIds);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D1A),
+      backgroundColor: const Color(0xFF2D2E35),
       appBar: AppBar(
         title: const Text('Card Dex'),
         actions: [
@@ -299,7 +299,7 @@ class _CardDexScreenState extends State<CardDexScreen> with SingleTickerProvider
       showDialog(
         context: context,
         builder: (ctx) => Dialog(
-          backgroundColor: const Color(0xFF1A1A2E),
+          backgroundColor: const Color(0xFF33343C),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: Padding(
             padding: const EdgeInsets.all(32),
@@ -356,7 +356,7 @@ class _CardDexScreenState extends State<CardDexScreen> with SingleTickerProvider
       showDialog(
         context: context,
         builder: (ctx) => Dialog(
-          backgroundColor: const Color(0xFF1A1A2E),
+          backgroundColor: const Color(0xFF33343C),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(20),
@@ -614,13 +614,15 @@ class _PokedexEntry extends StatefulWidget {
 }
 
 class _PokedexEntryState extends State<_PokedexEntry> {
+  /// Simple in-memory cache keyed by species name.
+  static final Map<String, _PokedexCache> _cache = {};
+
   String? _flavorText;
   String? _genus;
   String? _habitat;
   String? _height;
   String? _weight;
   bool _loading = true;
-  String? _error;
 
   @override
   void initState() {
@@ -629,8 +631,21 @@ class _PokedexEntryState extends State<_PokedexEntry> {
   }
 
   Future<void> _fetch() async {
+    final key = widget.speciesId.toLowerCase();
+    // Check cache first
+    if (_cache.containsKey(key)) {
+      final cached = _cache[key]!;
+      _flavorText = cached.flavorText;
+      _genus = cached.genus;
+      _habitat = cached.habitat;
+      _height = cached.height;
+      _weight = cached.weight;
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
+
     try {
-      final species = widget.speciesId.toLowerCase().replaceAll(' ', '-');
+      final species = key.replaceAll(' ', '-');
       final results = await Future.wait([
         http.get(Uri.parse('https://pokeapi.co/api/v2/pokemon-species/$species')),
         http.get(Uri.parse('https://pokeapi.co/api/v2/pokemon/$species')),
@@ -673,7 +688,17 @@ class _PokedexEntryState extends State<_PokedexEntry> {
         _weight = '${(w / 10).toStringAsFixed(1)} kg';
       }
     } catch (e) {
-      _error = e.toString();
+      // Silently ignore fetch failures
+    }
+    // Save to cache
+    if (_flavorText != null || _genus != null) {
+      _cache[key] = _PokedexCache(
+        flavorText: _flavorText,
+        genus: _genus,
+        habitat: _habitat,
+        height: _height,
+        weight: _weight,
+      );
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -748,4 +773,19 @@ class _PokedexEntryState extends State<_PokedexEntry> {
 
   String _capitalizeFirst(String s) =>
       s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}';
+}
+
+class _PokedexCache {
+  final String? flavorText;
+  final String? genus;
+  final String? habitat;
+  final String? height;
+  final String? weight;
+  const _PokedexCache({
+    this.flavorText,
+    this.genus,
+    this.habitat,
+    this.height,
+    this.weight,
+  });
 }

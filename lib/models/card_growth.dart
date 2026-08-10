@@ -1,4 +1,5 @@
 import 'card_values.dart';
+import 'condition.dart';
 
 /// XP awarded per opponent card captured — kept in sync with the server's
 /// XP_PER_CAPTURE constant (`playerRoutes.ts`); used client-side only for
@@ -23,6 +24,8 @@ class CardGrowth {
     this.source,
     this.shiny = false,
     this.instanceId,
+    this.condition = kMaxCondition,
+    this.reverseHolo = false,
   });
 
   final String cardId;
@@ -35,6 +38,13 @@ class CardGrowth {
   final bool shiny;
   final String? source;
   final int? instanceId;
+  final bool reverseHolo;
+
+  /// 0-100 wear value for this owned card instance. See
+  /// pokemon_triad_condition_system.md.
+  final int condition;
+
+  ConditionTier get conditionTier => tierForCondition(condition);
 
   /// A human-readable "how obtained" string for the card detail dialog.
   String get humanizedSource {
@@ -74,6 +84,8 @@ class CardGrowth {
       source: json['source'] as String?,
       shiny: json['shiny'] == 1 || json['shiny'] == true,
       instanceId: json['instanceId'] as int?,
+      condition: json['condition'] as int? ?? kMaxCondition,
+      reverseHolo: json['reverseHolo'] == 1 || json['reverseHolo'] == true,
     );
   }
 }

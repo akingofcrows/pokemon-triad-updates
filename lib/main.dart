@@ -8,6 +8,9 @@ import 'screens/loading_screen.dart';
 import 'services/api_client.dart';
 import 'services/auth_service.dart';
 import 'services/card_repository.dart';
+import 'services/dialogue_repository.dart';
+import 'services/item_repository.dart';
+import 'models/quest.dart';
 import 'services/sprite_downloader.dart';
 import 'services/trainer_parts_repository.dart';
 
@@ -79,6 +82,15 @@ class _AppShellState extends State<_AppShell> {
     await CardRepository.instance.load();
 
     if (!mounted) return;
+    setState(() => _message = 'Loading dialogue…');
+    await DialogueRepository.instance.load();
+    await QuestData.load();
+
+    if (!mounted) return;
+    setState(() => _message = 'Stocking the Poké Mart…');
+    await ItemRepository().load();
+
+    if (!mounted) return;
     setState(() => _message = 'Preparing your adventure…');
     await TrainerPartsRepository.instance.load();
 
@@ -86,27 +98,7 @@ class _AppShellState extends State<_AppShell> {
     late final AuthService authService;
     final apiClient = ApiClient(
       tokenProvider: () => authService.currentToken,
-      baseUrlProvider: () async {
-        // Try Cloudflare Tunnel first (works from any network, rarely blocked
-        // by ISPs since it rides on Cloudflare's shared edge IPs), then fall
-        // back to ngrok, then to Tailscale (same LAN / VPN only).
-        const cloudflareUrl = 'https://api.playfablewood.com/api';
-        const ngrokUrl = 'https://unaggravated-dispersively-grayce.ngrok-free.dev/api';
-        const tailscaleUrl = 'http://100.65.103.71:3001/api';
-        try {
-          final r = await http
-              .get(Uri.parse('$cloudflareUrl/me'))
-              .timeout(const Duration(seconds: 3));
-          if (r.statusCode == 200 || r.statusCode == 401) return cloudflareUrl;
-        } catch (_) {}
-        try {
-          final r = await http.get(Uri.parse('$ngrokUrl/me'),
-            headers: {'ngrok-skip-browser-warning': 'true'},
-          ).timeout(const Duration(seconds: 3));
-          if (r.statusCode == 200 || r.statusCode == 401) return ngrokUrl;
-        } catch (_) {}
-        return tailscaleUrl;
-      },
+      baseUrlProvider: () async => 'https://api.playfablewood.com/api',
     );
     authService = AuthService(apiClient);
 

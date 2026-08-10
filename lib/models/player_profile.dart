@@ -24,9 +24,11 @@ class PlayerProfile {
     Set<String>? seenCardIds,
     Set<String>? everOwnedCardIds,
     Set<String>? everOwnedShinyCardIds,
+    Set<String>? unlockedDeckBoxes,
   })  : seenCardIds = seenCardIds ?? {},
         everOwnedCardIds = everOwnedCardIds ?? {},
-        everOwnedShinyCardIds = everOwnedShinyCardIds ?? {};
+        everOwnedShinyCardIds = everOwnedShinyCardIds ?? {},
+        unlockedDeckBoxes = unlockedDeckBoxes ?? {'field_deck'};
 
   String playerName;
   Set<String> ownedCardIds;
@@ -39,6 +41,7 @@ class PlayerProfile {
   /// Cards the player has ever owned as *shiny* variants (persisted locally).
   /// Survives evolution — once a shiny was owned, it stays in the Shiny Dex.
   Set<String> everOwnedShinyCardIds;
+  Set<String> unlockedDeckBoxes;
   List<Deck> decks;
   String? defaultDeckId;
   int wins;
@@ -64,6 +67,8 @@ class PlayerProfile {
   String? friendCode;
   String? location;
   int giftCount = 0;
+  final Set<String> _badges = {};
+  Set<String> get badges => _badges;
 
   bool get hasCharacter => trainerName != null;
 
@@ -100,6 +105,7 @@ class PlayerProfile {
     'draws': draws,
     'money': money,
     'joinedAt': joinedAt,
+    'unlockedDeckBoxes': unlockedDeckBoxes.toList(),
   };
 
   factory PlayerProfile.fromJson(Map<String, dynamic> json) {
@@ -118,6 +124,9 @@ class PlayerProfile {
       draws: json['draws'] as int? ?? 0,
       money: json['money'] as int? ?? 0,
       joinedAt: json['joinedAt'] as String?,
+      unlockedDeckBoxes: json['unlockedDeckBoxes'] != null
+          ? (json['unlockedDeckBoxes'] as List<dynamic>).cast<String>().toSet()
+          : null,
     );
   }
 }

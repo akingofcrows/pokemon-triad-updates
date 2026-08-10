@@ -5,5 +5,5 @@
 ///   flutter run --dart-define=USE_CONTENT_MANAGER=true
 const bool kUseContentUpdateManager = bool.fromEnvironment(
   'USE_CONTENT_MANAGER',
-  defaultValue: false,
+  defaultValue: true,
 );

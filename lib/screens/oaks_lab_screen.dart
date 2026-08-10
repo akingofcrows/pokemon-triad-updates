@@ -6,8 +6,15 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../app/player_profile_controller.dart';
+import '../app/story_progress_controller.dart';
+import '../models/quest.dart';
 import '../models/triad_card.dart';
 import '../services/card_repository.dart';
+import '../services/dialogue_repository.dart';
+import '../widgets/obtained_banner.dart';
+import '../widgets/parchment_dialog.dart';
+import '../widgets/quest_rewards_dialog.dart';
+import '../widgets/toast.dart';
 import '../widgets/triad_card_view.dart';
 
 class OaksLabScreen extends StatefulWidget {
@@ -19,11 +26,13 @@ class OaksLabScreen extends StatefulWidget {
 class _OaksLabScreenState extends State<OaksLabScreen> {
   bool _claimed = false;
   int _tab = 0;
+  bool _parcelTurnInStarted = false;
 
   @override
   void initState() {
     super.initState();
     _checkDaily();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkParcelTurnIn());
   }
 
   Future<void> _checkDaily() async {
@@ -44,6 +53,177 @@ class _OaksLabScreenState extends State<OaksLabScreen> {
     ctrl.notifyListeners();
     if (mounted) ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Received $amt PokéDollars!'), backgroundColor: const Color(0xFF4CAF50)));
+  }
+
+  void _checkParcelTurnIn() {
+    if (_parcelTurnInStarted || !mounted) return;
+    final pc = context.read<PlayerProfileController>();
+    if (!pc.isQuestActive('oaks_parcel')) return;
+    if (pc.itemCount('oaks_parcel') <= 0) return;
+    if (pc.isQuestCompleted('oaks_parcel')) return;
+    _parcelTurnInStarted = true;
+    _showProgressCompleteDialog();
+  }
+
+  Future<void> _showProgressCompleteDialog() async {
+    final d = DialogueRepository.instance.npcVariant('professor_oak', 'oaks_parcel', 'progress_complete');
+    final pages = d['pages'] as List<String>?;
+    final dialogue = d['dialogue'] as String? ?? '';
+    await showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.85),
+      builder: (ctx) => Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: ParchmentDialog(
+            portrait: Image.asset('assets/trainers/npc/professor_oak.png', height: 180, fit: BoxFit.contain),
+            dialogue: pages == null ? dialogue : '',
+            pages: pages,
+            speaker: d['speaker'] as String? ?? 'Professor Oak',
+            actionLabel: d['actionLabel'] as String? ?? 'Got it!',
+            actionColor: d['actionColor'] as Color? ?? const Color(0xFF4CAF50),
+            onAction: () {
+              Navigator.pop(ctx);
+              final pc = context.read<PlayerProfileController>();
+              pc.useConsumable('oaks_parcel');
+              // Mark objective locally but defer full completion + rewards to Claim Rewards
+              final quest = pc.activeQuests.firstWhere((q) => q.id == 'oaks_parcel');
+              for (final obj in quest.objectives) {
+                if (obj.description == 'Return the parcel to Professor Oak') {
+                  obj.completed = true;
+                }
+              }
+              pc.notifyListeners();
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  Toast.show(context, text: "Oak's Parcel removed!", imagePath: 'assets/images/icons/items/item527.png', duration: const Duration(milliseconds: 3000));
+                }
+              });
+              _showCompletionDialogue();
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showCompletionDialogue() async {
+    final cd = QuestData.completionDialogue('oaks_parcel');
+    if (cd == null || !mounted) return;
+    await showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.85),
+      builder: (ctx) => Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: ParchmentDialog(
+            portrait: Image.asset('assets/trainers/npc/${cd.portrait}', height: 180, fit: BoxFit.contain),
+            pages: cd.pages,
+            speaker: cd.speaker,
+            actionLabel: 'Finish',
+            actionColor: const Color(0xFFFFCA28),
+            onAction: () {
+              Navigator.pop(ctx);
+              _showRewardsAndDeliver();
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showRewardsAndDeliver() {
+    final pc = context.read<PlayerProfileController>();
+    final detail = QuestData.questDetail('oaks_parcel');
+    final items = detail?['rewardItems'] as List? ?? [];
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.85),
+      builder: (_) => QuestRewardsDialog(
+        questId: 'oaks_parcel',
+        onClaim: () => _deliverCardRewards(pc, items),
+      ),
+    );
+  }
+
+  void _deliverCardRewards(PlayerProfileController pc, List items) {
+    // Complete the quest — gives money + pokeballs
+    pc.forceCompleteQuest('oaks_parcel');
+    // Deliver card rewards from quests.json
+    for (final item in items) {
+      final itemMap = item as Map<String, dynamic>;
+      final id = itemMap['id'] as String? ?? '';
+      if (!id.startsWith('card_')) continue;
+      final qty = itemMap['quantity'] as int? ?? 1;
+      for (var i = 0; i < qty; i++) {
+        pc.profile.ownedCardIds.add(id);
+        pc.profile.seenCardIds.add(id);
+        pc.profile.everOwnedCardIds.add(id);
+      }
+    }
+    pc.notifyListeners();
+    if (mounted) {
+      // Build stacked toast items
+      final detail = QuestData.questDetail('oaks_parcel');
+      final toastItems = <Map<String, dynamic>>[];
+      final money = detail?['rewardMoney'] as int? ?? 0;
+      if (money > 0) {
+        toastItems.add({'text': '₽$money Obtained!', 'imagePath': '__money__'});
+      }
+      final rewardItems = detail?['rewardItems'] as List? ?? [];
+      for (final r in rewardItems) {
+        final rm = r as Map<String, dynamic>;
+        final rid = rm['id'] as String? ?? '';
+        final rqty = rm['quantity'] as int? ?? 1;
+        if (rid.startsWith('card_')) {
+          final card = CardRepository.instance.cardById(rid);
+          toastItems.add({
+            'text': '${rqty}× ${card?.name ?? rid} Card Obtained!',
+            'icon': card != null ? TriadCardView(card: card, size: 44, showCondition: false) : null,
+          });
+        } else {
+          switch (rid) {
+            case 'pokeball': toastItems.add({'text': '$rqty× Poké Ball Obtained!', 'imagePath': 'assets/images/icons/items/item267.png'}); break;
+            case 'great_ball': toastItems.add({'text': '$rqty× Great Ball Obtained!', 'imagePath': 'assets/images/icons/items/item266.png'}); break;
+            default: toastItems.add({'text': '$rqty× $rid Obtained!', 'imagePath': null}); break;
+          }
+        }
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Toast.showStacked(context, items: toastItems);
+        Future.delayed(const Duration(milliseconds: 800), () {
+          _showRewardDialogue();
+        });
+      });
+    }
+  }
+
+  Future<void> _showRewardDialogue() async {
+    final d = DialogueRepository.instance.npcVariant('professor_oak', 'oaks_parcel', 'reward_received');
+    final pages = d['pages'] as List<String>?;
+    final dialogue = d['dialogue'] as String? ?? '';
+    if (!mounted) return;
+    await showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.85),
+      builder: (ctx) => Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: ParchmentDialog(
+            portrait: Image.asset('assets/trainers/npc/professor_oak.png', height: 180, fit: BoxFit.contain),
+            dialogue: pages == null ? dialogue : '',
+            pages: pages,
+            speaker: d['speaker'] as String? ?? 'Professor Oak',
+            actionLabel: d['actionLabel'] as String? ?? 'I won\'t let you down!',
+            actionColor: d['actionColor'] as Color? ?? const Color(0xFF4CAF50),
+            onAction: () {
+              Navigator.pop(ctx);
+            },
+          ),
+        ),
+      ),
+    );
   }
 
   @override

@@ -591,7 +591,7 @@
     {
       "id": "card_nidoran_f_1",
       "speciesId": "nidoran_f",
-      "name": "Nidoran_F",
+      "name": "Nidoran \u2640",
       "cardType": "pokemon",
       "rarity": "common",
       "affinity": "poison",
@@ -654,7 +654,7 @@
     {
       "id": "card_nidoran_m_1",
       "speciesId": "nidoran_m",
-      "name": "Nidoran_M",
+      "name": "Nidoran \u2642",
       "cardType": "pokemon",
       "rarity": "common",
       "affinity": "poison",
@@ -5244,7 +5244,7 @@
       },
       "worth": 1000,
       "cardNumber": "250",
-      "image": "assets/pokemon/HOOH.png",
+      "image": "assets/pokemon/HO-OH.png",
       "isStarter": false,
       "holo": false,
       "evolvesTo": null,

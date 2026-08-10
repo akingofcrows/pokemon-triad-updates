@@ -98,11 +98,8 @@ class _SessionLoaderScreenState extends State<SessionLoaderScreen>
       // Initialize quests for new players
       controller.initNewPlayerQuests();
 
-      // Sync game assets in background
-      final assetMgr = AssetManager.instance;
+      // Content update system handles asset delivery (see content_update_manager.dart)
       final baseUrl = await context.read<ApiClient>().baseUrlProvider();
-      await assetMgr.init(baseUrl: baseUrl);
-      assetMgr.syncIfNeeded(baseUrl: baseUrl); // fire and forget
 
       // Phase-1 hybrid content/asset update system — gated behind a
       // compile-time flag until proven on a real device. See
@@ -136,14 +133,12 @@ class _SessionLoaderScreenState extends State<SessionLoaderScreen>
               );
             }
 
-            // Optional bundles are handed off to Home, which shows the
-            // non-blocking OptionalContentSheet once it has a
-            // post-navigation context (spec §10) and kicks off the actual
-            // downloads from there.
-            final optional = diffs.where((d) => !d.isRequired && d.isChanged).toList();
-            if (optional.isNotEmpty) {
-              ContentUpdateManager.pendingOptionalDiffs = optional;
-              ContentUpdateManager.pendingOptionalBaseUrl = baseUrl;
+            // Optional bundles download silently in the background — no UI,
+            // same fire-and-forget style as the legacy AssetManager sync.
+            for (final d in diffs) {
+              if (!d.isRequired && d.isChanged) {
+                contentMgr.downloadAndActivate(d, baseUrl: baseUrl).drain<void>();
+              }
             }
           }
         }
@@ -214,7 +209,7 @@ class _SessionLoaderScreenState extends State<SessionLoaderScreen>
 
     // Loading: trainer sprite + orbiting cards
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D1A),
+      backgroundColor: const Color(0xFF2D2E35),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

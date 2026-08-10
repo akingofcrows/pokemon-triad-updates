@@ -481,6 +481,7 @@ class _CardFacePainter extends CustomPainter {
     // Draw card background first
     paintTriadCardFace(canvas, size, card: card,
       cardBg: cache.peek(kCardBgAsset),
+      ownerFrame: null,
     );
 
     // Regular holo: on top of bg, below artwork

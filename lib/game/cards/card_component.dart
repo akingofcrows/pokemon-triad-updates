@@ -1,11 +1,15 @@
-import 'dart:math' show min;
+import 'dart:math' show min, sin;
 import 'dart:ui';
 
 import 'package:flame/cache.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 
+import '../../models/card_owner.dart';
+import '../../models/condition.dart';
 import '../../models/triad_card.dart';
+import '../../widgets/card_damage_overlay.dart';
+import '../../widgets/condition_badge.dart';
 import 'card_visuals.dart';
 
 /// Renders one [TriadCard], whether sitting in a hand or placed on the
@@ -51,6 +55,8 @@ class CardComponent extends PositionComponent with TapCallbacks, DragCallbacks {
   void Function(CardComponent card)? onTapped;
   void Function(CardComponent card)? onDragStarted;
   void Function(CardComponent card, Vector2 dropWorldPosition)? onDropped;
+  /// Called when this card is tapped in targeting mode.
+  void Function(CardComponent card)? onTargeted;
 
   TriadCard _card;
   TriadCard get card => _card;
@@ -61,8 +67,10 @@ class CardComponent extends PositionComponent with TapCallbacks, DragCallbacks {
   Image? _eliteBg;
   Image? _numbers;
   Image? _artwork;
+  Image? get artworkImage => _artwork;  // exposed for pokéball animation
   Image? _typeIcon;
   Image? _rarityFrame;
+  Image? _ownerFrame;
   Image? _shinyBg;
   Image? _sparkleImage;
   double _sparkleTime = 0;
@@ -78,6 +86,21 @@ class CardComponent extends PositionComponent with TapCallbacks, DragCallbacks {
   double _flipScaleX = 1;
   TriadCard? _pendingCard;
 
+  /// When true, the card was captured via pokéball — renders dark/greyed and
+  /// cannot be flipped again in battle.
+  bool pokeballCaptured = false;
+
+  /// When > 0, the artwork sprite is hidden (used during pokéball animation).
+  /// 0 = fully visible, 1 = fully hidden.
+  double _spriteHide = 0;
+  double get spriteHide => _spriteHide;
+  set spriteHide(double v) => _spriteHide = v.clamp(0.0, 1.0);
+
+  /// Glow intensity for the card during pokéball capture animation.
+  double _glowAmount = 0;
+  double get glowAmount => _glowAmount;
+  set glowAmount(double v) => _glowAmount = v.clamp(0.0, 1.0);
+
   void _loadSprites() {
     _cardBg = images.fromCache(flameImageKey(kCardBgAsset));
     final trainerBg = trainerBgAsset(_card.id);
@@ -91,6 +114,11 @@ class CardComponent extends PositionComponent with TapCallbacks, DragCallbacks {
     _artwork = images.fromCache(flameImageKey(artPath));
     _typeIcon = images.fromCache(flameImageKey(typeIconAsset(_card.affinity)));
     _rarityFrame = images.fromCache(flameImageKey(cardFrameAsset(_card)));
+    _ownerFrame = _card.owner == CardOwner.player
+        ? images.fromCache(flameImageKey('ui/playerframe.png'))
+        : _card.owner == CardOwner.opponent
+            ? images.fromCache(flameImageKey('ui/opponentframe.png'))
+            : null;
     if (_card.shiny) {
       _shinyBg = images.fromCache(flameImageKey(kShinyBgAsset));
       _sparkleImage = images.fromCache(flameImageKey(kSparkleAsset));
@@ -119,6 +147,13 @@ class CardComponent extends PositionComponent with TapCallbacks, DragCallbacks {
       _sparkleImage = newCard.shiny
           ? images.fromCache(flameImageKey(kSparkleAsset))
           : null;
+    }
+    if (newCard.owner != oldCard.owner) {
+      _ownerFrame = newCard.owner == CardOwner.player
+          ? images.fromCache(flameImageKey('ui/playerframe.png'))
+          : newCard.owner == CardOwner.opponent
+              ? images.fromCache(flameImageKey('ui/opponentframe.png'))
+              : null;
     }
     if (eliteChanged) {
       final tb = trainerBgAsset(newCard.id);
@@ -165,10 +200,23 @@ class CardComponent extends PositionComponent with TapCallbacks, DragCallbacks {
     targetScale = value ? kSelectedScaleBoost : 1.0;
   }
 
+  /// When true, the card pulses with a highlight border to indicate it can
+  /// be targeted by an item (pokéball).
+  bool _targetable = false;
+  double _targetablePulse = 0;
+
+  void setTargetable(bool value) {
+    _targetable = value;
+    _targetablePulse = 0;
+  }
+
+  bool get isTargetable => _targetable;
+
   @override
   void update(double dt) {
     super.update(dt);
     _sparkleTime += dt;
+    _targetablePulse += dt;
     final t = min(1.0, dt * 14);
     if (!_dragging) {
       position.setFrom(position + (targetPosition - position) * t);
@@ -197,9 +245,37 @@ class CardComponent extends PositionComponent with TapCallbacks, DragCallbacks {
 
   @override
   void render(Canvas canvas) {
+    final cardSize = Size(size.x, size.y);
+    final tier = tierForCondition(_card.condition);
+    final desaturation = desaturationForTier(tier);
+    final seed = stableCardSeed(_card.id, null);
+    final scratchCount = scratchCountForTier(tier, seed);
+    final (tearCount, burnCount) = damageHoleCountsForTier(tier, seed);
+    final wear = (kMaxCondition - _card.condition) / kMaxCondition;
+    final holes = (tearCount > 0 || burnCount > 0)
+        ? computeDamageHoles(size: cardSize, seed: seed, tearCount: tearCount, burnCount: burnCount, wear: wear)
+        : const <TornHole>[];
+
+    final isUnusable = tier == ConditionTier.unusable;
+    // Same dimming TriadCardView applies (Collection/Deck Builder): a
+    // worn-out card doesn't just desaturate, it looks a little washed out.
+    final layerOpacity = isUnusable ? 0.5 : (tier == ConditionTier.heavilyPlayed ? 0.8 : 1.0);
+
+    canvas.save();
+    if (holes.isNotEmpty) {
+      canvas.clipPath(buildCardFaceClipPath(cardSize, holes));
+    }
+    if (desaturation > 0 || layerOpacity < 1.0) {
+      canvas.saveLayer(
+        Offset.zero & cardSize,
+        Paint()
+          ..colorFilter = ColorFilter.matrix(desaturationMatrix(desaturation))
+          ..color = const Color(0xFFFFFFFF).withValues(alpha: layerOpacity),
+      );
+    }
     paintTriadCardFace(
       canvas,
-      Size(size.x, size.y),
+      cardSize,
       card: _card,
       cardBg: _cardBg,
       eliteBg: _eliteBg,
@@ -207,19 +283,130 @@ class CardComponent extends PositionComponent with TapCallbacks, DragCallbacks {
       artwork: _artwork,
       typeIcon: _typeIcon,
       rarityFrame: _rarityFrame,
+      ownerFrame: _ownerFrame,
       shinyBg: _shinyBg,
       sparkleImage: _sparkleImage,
       tick: _tick,
       borderColor: ownerBorderColor(_card.owner),
       borderWidth: size.x * (selected ? 0.05 : 0.03),
+      drawColoredBorder: false,
       owner: _card.owner,
       isShiny: _card.shiny,
       drawNumberShadow: false,
+      bonusNorth: 0,
+      bonusSouth: 0,
+      bonusEast: 0,
+      bonusWest: 0,
+      typeBonusNorth: 0,
+      typeBonusSouth: 0,
+      typeBonusEast: 0,
+      typeBonusWest: 0,
+      conditionPenaltyNorth: _card.conditionPenaltyNorth,
+      conditionPenaltySouth: _card.conditionPenaltySouth,
+      conditionPenaltyEast: _card.conditionPenaltyEast,
+      conditionPenaltyWest: _card.conditionPenaltyWest,
+      hideArtwork: _spriteHide > 0.5,
     );
+    if (desaturation > 0 || layerOpacity < 1.0) {
+      canvas.restore(); // pop the desaturation/dimming saveLayer
+    }
+    canvas.restore(); // pop the hole clip
+
+    // Damage overlay (GDD §24) — scratches confined to the art/background
+    // window, torn/burned rims framing the holes just cut out of the face
+    // above. Drawn on top, same as the Collection/Deck Builder card view.
+    if (holes.isNotEmpty) {
+      paintFrameDamage(canvas, cardSize, seed: seed, holes: holes, opacity: (0.35 + wear * 0.5).clamp(0.0, 0.85));
+    }
+    if (scratchCount > 0) {
+      final inset = cardSize.width * CardDamageOverlay.frameInset;
+      canvas.save();
+      canvas.translate(inset, inset);
+      paintScratches(
+        canvas,
+        Size(cardSize.width - inset * 2, cardSize.height - inset * 2),
+        seed: seed,
+        count: scratchCount,
+        opacity: (0.24 + wear * 0.28).clamp(0.0, 0.52),
+      );
+      canvas.restore();
+    }
+
+    // Condition badge / Unusable label / warning icon — same tier gating
+    // and corner positions as TriadCardView, so a card reads identically
+    // whether it's in the Collection grid or sitting on the board.
+    if (tier != ConditionTier.mint) {
+      if (isUnusable) {
+        final fontSize = (cardSize.width * 0.1).clamp(7.0, 11.0);
+        paintUnusableLabel(
+          canvas,
+          Offset(cardSize.width * 0.04, cardSize.height - cardSize.height * 0.04 - fontSize * 1.5),
+          cardSize: cardSize.width,
+        );
+      } else {
+        final fontSize = (cardSize.width * 0.11).clamp(8.0, 12.0);
+        paintConditionBadge(
+          canvas,
+          Offset(cardSize.width * 0.04, cardSize.height - cardSize.height * 0.04 - fontSize * 1.5),
+          condition: _card.condition,
+          fontSize: fontSize,
+        );
+      }
+    }
+    if (tier == ConditionTier.worn || tier == ConditionTier.heavilyPlayed) {
+      final iconSize = (cardSize.width * 0.18).clamp(12.0, 20.0);
+      paintConditionWarningIcon(
+        canvas,
+        Offset(cardSize.width - cardSize.width * 0.04 - iconSize / 2, cardSize.height * 0.04 + iconSize / 2),
+        tier: tier,
+        size: iconSize,
+      );
+    }
+
+    // Glow overlay (pokéball capture animation)
+    if (_glowAmount > 0) {
+      canvas.drawRect(
+        Offset.zero & Size(size.x, size.y),
+        Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: 0.45 * _glowAmount),
+      );
+    }
+
+    // Sprite fade-out overlay for remaining card elements
+    if (_spriteHide > 0) {
+      canvas.drawRect(
+        Offset.zero & Size(size.x, size.y),
+        Paint()..color = const Color(0xFF1A1A1A).withValues(alpha: _spriteHide * 0.3),
+      );
+    }
+
+    // Pokéball-captured dark overlay
+    if (pokeballCaptured) {
+      canvas.drawRect(
+        Offset.zero & Size(size.x, size.y),
+        Paint()..color = const Color(0x88000000),
+      );
+    }
+
+    // Targetable highlight pulse — draws at card bounds (0,0 to size)
+    if (_targetable) {
+      final pulse = (0.5 + 0.5 * sin(_targetablePulse * 4)).clamp(0.0, 1.0);
+      final paint = Paint()
+        ..color = const Color(0xFFFFCA28).withValues(alpha: 0.6 + 0.4 * pulse)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = size.x * 0.08;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(Offset.zero & Size(size.x, size.y), Radius.circular(size.x * 0.06)),
+        paint,
+      );
+    }
   }
 
   @override
   void onTapUp(TapUpEvent event) {
+    if (_targetable && onTargeted != null) {
+      onTargeted!.call(this);
+      return;
+    }
     if (!interactive) return;
     onTapped?.call(this);
   }

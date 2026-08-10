@@ -16,7 +16,7 @@ class ScoredMove {
 /// corners/edges (fewer exposed sides), and penalizes leaving a weak value
 /// facing an open cell where the opponent could attack it next turn.
 class MoveEvaluator {
-  static List<ScoredMove> scoreAllMoves(MatchState state, List<TriadCard> hand) {
+  static List<ScoredMove> scoreAllMoves(MatchState state, List<TriadCard> hand, {RuleSet rules = RuleSet.basic}) {
     final owner = state.turn;
     final board = state.cells.map((c) => c.card).toList(growable: false);
     final positions = CaptureSystem.emptyPositions(state);
@@ -28,7 +28,7 @@ class MoveEvaluator {
           ScoredMove(
             position: position,
             card: card,
-            score: _scoreMove(board, position, card, owner),
+            score: _scoreMove(board, position, card, owner, rules: rules),
           ),
         );
       }
@@ -36,8 +36,8 @@ class MoveEvaluator {
     return moves;
   }
 
-  static ScoredMove? bestMove(MatchState state, List<TriadCard> hand) {
-    final moves = scoreAllMoves(state, hand);
+  static ScoredMove? bestMove(MatchState state, List<TriadCard> hand, {RuleSet rules = RuleSet.basic}) {
+    final moves = scoreAllMoves(state, hand, rules: rules);
     if (moves.isEmpty) return null;
     moves.sort((a, b) => b.score.compareTo(a.score));
     return moves.first;
@@ -47,10 +47,11 @@ class MoveEvaluator {
     List<TriadCard?> board,
     BoardPosition position,
     TriadCard card,
-    CardOwner owner,
-  ) {
+    CardOwner owner, {
+    RuleSet rules = RuleSet.basic,
+  }) {
     final placedCard = card.owner == owner ? card : card.copyWith(owner: owner);
-    final captured = CaptureSystem.resolveCaptures(board, position, placedCard);
+    final captured = CaptureSystem.resolveCaptures(board, position, placedCard, rules: rules);
 
     double score = captured.length * 10;
     score += (4 - _exposedSideCount(position)) * 1.5;

@@ -7,18 +7,28 @@ import 'package:provider/provider.dart';
 import '../app/player_profile_controller.dart';
 import '../app/routes.dart';
 import '../app/story_progress_controller.dart';
+import '../models/card_growth.dart';
 import '../models/card_values.dart';
+import '../models/condition.dart';
 import '../models/deck.dart';
 import '../models/npc_trainer.dart';
 import '../models/quest.dart';
 import '../models/story_location.dart';
 import '../models/triad_card.dart';
 import '../services/card_repository.dart';
+import '../services/dialogue_repository.dart';
 import '../services/api_client.dart';
+import '../services/audio_service.dart';
 import '../widgets/triad_card_view.dart';
+import '../widgets/obtained_banner.dart';
+import '../widgets/parchment_dialog.dart';
+import '../widgets/quest_detail_dialog.dart';
 import 'battle_screen.dart';
 import 'booster_pack_screen.dart';
-import 'janken_screen.dart';
+import 'coin_flip_screen.dart';
+import 'pokemon_center_screen.dart';
+import 'shop_screen.dart';
+import 'poke_mart_screen.dart';
 
 /// Displays the battle path for a specific story location.
 ///
@@ -35,6 +45,7 @@ class RouteBattleScreen extends StatefulWidget {
 
 class _RouteBattleScreenState extends State<RouteBattleScreen> {
   late StoryLocation _location;
+  bool _shopDialogShown = false;
 
   @override
   void didChangeDependencies() {
@@ -42,6 +53,17 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
     final ctrl = context.read<StoryProgressController>();
     _location = ctrl.locations.firstWhere((l) => l.id == widget.locationId);
     context.read<ApiClient>().updateLocation(_location.name);
+    // Auto-show shopkeeper when entering Viridian City
+    if (_location.id == 'viridian_city' && !_shopDialogShown) {
+      _shopDialogShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final node = _location.nodes.firstWhere((n) => n.id == 'viridian_pokemart',
+              orElse: () => _location.nodes.first);
+          _showShopkeeperDialog(ctrl, node);
+        }
+      });
+    }
   }
 
   @override
@@ -66,7 +88,7 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
             child: ImageFiltered(
               imageFilter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
               child: Image.asset(
-                'assets/locations/${_location.id.replaceAll('_', '')}.png',
+                _locationBg(_location.name),
                 fit: BoxFit.cover,
                 color: Colors.black.withValues(alpha: 0.35),
                 colorBlendMode: BlendMode.darken,
@@ -98,6 +120,34 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
     );
   }
 
+  /// Resolves a location name to its background art asset path.
+  static String _locationBg(String location) {
+    const named = <String, String>{
+      'Your Bedroom': 'assets/locations/playerhouse1.png',
+      "Player's House": 'assets/locations/playerhouse2.png',
+      "Oak's Lab": 'assets/locations/oakslab.png',
+      'Pallet Town': 'assets/locations/pallet.png',
+      'Viridian City': 'assets/locations/viridian.png',
+      'Viridian Forest': 'assets/locations/viridianforest.png',
+      'Pewter City': 'assets/locations/pewter.png',
+      'Mt. Moon': 'assets/locations/mtmoon.png',
+      'Cerulean City': 'assets/locations/cerulean.png',
+      'Vermilion City': 'assets/locations/vermillion.png',
+      'Lavender Town': 'assets/locations/lavender.png',
+      'Celadon City': 'assets/locations/celadon.png',
+      'Fuchsia City': 'assets/locations/fuschia.png',
+      'Saffron City': 'assets/locations/saffron.png',
+      'Cinnabar Island': 'assets/locations/cinnabar.png',
+      'Indigo Plateau': 'assets/locations/oakslab.png',
+      'Rock Tunnel': 'assets/locations/rocktunnel.png',
+      'Seafoam Islands': 'assets/locations/seafoam.png',
+      'Pokémon Mansion': 'assets/locations/mansion.png',
+      'Victory Road': 'assets/locations/victoryroad.png',
+    };
+    if (named.containsKey(location)) return named[location]!;
+    return 'assets/locations/kanto.png';
+  }
+
   /// Shows either a city hub (all nodes as buttons) or a route path.
   Widget _buildFocusedPath(StoryProgressController ctrl) {
     final isCity = _location.wildLevelRange.min == 0 && _location.wildLevelRange.max == 0;
@@ -112,7 +162,7 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
       orElse: () => _location.nodes.first,
     );
     final currentIdx = _location.nodes.indexOf(current);
-    final allDone = _location.isFullyComplete;
+    final allDone = _location.isFullyComplete(ctrl.getCompletionCount(_location.id));
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 80, 20, 40),
@@ -245,10 +295,33 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
         return 'Item Discovery';
       case StoryNodeType.wildBoss:
         return 'Final Encounter';
+      case StoryNodeType.npcTrainer:
+        final npc = CardRepository.instance.npcs.firstWhere(
+          (n) => n.id == node.npcId,
+          orElse: () => CardRepository.instance.npcs.first,
+        );
+        return npc.name;
+      case StoryNodeType.item:
+        return 'Item Pickup';
+      case StoryNodeType.puzzle:
+        return 'Puzzle';
+      case StoryNodeType.catchChallenge:
+        return 'Catch Challenge';
     }
   }
 
   Widget _buildCityHub(StoryProgressController ctrl) {
+    // Auto-trigger shopkeeper dialog when entering Viridian City
+    if (_location.id == 'viridian_city' && !_shopDialogShown) {
+      _shopDialogShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final node = _location.nodes.firstWhere((n) => n.id == 'viridian_pokemart');
+          _showShopkeeperDialog(ctrl, node);
+        }
+      });
+    }
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 80, 20, 40),
       children: [
@@ -364,6 +437,10 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
         if (node.id.contains('route')) return Icons.map;
         return Icons.place;
       case StoryNodeType.wildBoss: return Icons.warning;
+      case StoryNodeType.npcTrainer: return Icons.person;
+      case StoryNodeType.item: return Icons.card_giftcard;
+      case StoryNodeType.puzzle: return Icons.extension;
+      case StoryNodeType.catchChallenge: return Icons.catching_pokemon;
     }
   }
 
@@ -373,6 +450,10 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
       case StoryNodeType.trainer: return const Color(0xFFEF5350);
       case StoryNodeType.story: return const Color(0xFF42A5F5);
       case StoryNodeType.wildBoss: return const Color(0xFFEF5350);
+      case StoryNodeType.npcTrainer: return const Color(0xFFFF7043);
+      case StoryNodeType.item: return const Color(0xFFFFCA28);
+      case StoryNodeType.puzzle: return const Color(0xFFAB47BC);
+      case StoryNodeType.catchChallenge: return const Color(0xFF26A69A);
     }
   }
 
@@ -389,10 +470,32 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
         if (node.id.contains('route')) return 'Travel to next area';
         return null;
       case StoryNodeType.wildBoss: return null;
+      case StoryNodeType.npcTrainer: return 'Trainer Battle';
+      case StoryNodeType.item: return node.itemId ?? 'Find an item';
+      case StoryNodeType.puzzle: return 'Solve the puzzle';
+      case StoryNodeType.catchChallenge: return 'Catch a Pokémon';
     }
   }
 
   void _onNodeTapped(StoryProgressController ctrl, StoryNode node) {
+    // Only check before battle-type nodes
+    final isBattleNode = node.type == StoryNodeType.wild ||
+        node.type == StoryNodeType.wildBoss ||
+        node.type == StoryNodeType.trainer ||
+        node.type == StoryNodeType.npcTrainer ||
+        node.type == StoryNodeType.catchChallenge;
+
+    if (isBattleNode) {
+      final unusable = _getUnusableCardNames();
+      if (unusable.isNotEmpty) {
+        _showUnusableCardsWarning(unusable, () => _startNodeBattle(ctrl, node));
+        return;
+      }
+    }
+    _startNodeBattle(ctrl, node);
+  }
+
+  void _startNodeBattle(StoryProgressController ctrl, StoryNode node) {
     switch (node.type) {
       case StoryNodeType.wild:
       case StoryNodeType.wildBoss:
@@ -403,6 +506,18 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
         break;
       case StoryNodeType.story:
         _showStoryScene(ctrl, node);
+        break;
+      case StoryNodeType.npcTrainer:
+        _startNpcTrainerBattle(ctrl, node);
+        break;
+      case StoryNodeType.item:
+        _pickUpItem(ctrl, node);
+        break;
+      case StoryNodeType.puzzle:
+        _showPuzzle(ctrl, node);
+        break;
+      case StoryNodeType.catchChallenge:
+        _startCatchChallenge(ctrl, node);
         break;
     }
   }
@@ -438,6 +553,7 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
         values: card.values.plusBonus(bonus),
         shiny: isShiny || card.shiny,
         baseLevel: level,
+        condition: rollWildCondition(rng), // GDD §19 — not every encounter is Mint
       ));
     }
 
@@ -451,12 +567,12 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => JankenScreen(
+        builder: (_) => CoinFlipScreen(
           opponentName: 'Wild ${card.name}',
-          opponentPortrait: 'pokeball.png',
-          opponentCardImage: card.image,
-          rules: const ['Rock', 'Paper', 'Scissors'],
-          onComplete: ({required player, required opponent, required playerGoesFirst}) {
+          opponentPortrait: card.image,
+          background: 'assets/ui/bg_wildgrass.png',
+          onComplete: ({required playerGoesFirst}) {
+            AudioService().playBgm('sound/battle_wild.ogg', volume: 0.05);
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -498,11 +614,10 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => JankenScreen(
+        builder: (_) => CoinFlipScreen(
           opponentName: npc.name,
           opponentPortrait: npc.portraitAsset,
-          rules: const ['Rock', 'Paper', 'Scissors'],
-          onComplete: ({required player, required opponent, required playerGoesFirst}) {
+          onComplete: ({required playerGoesFirst}) {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -515,7 +630,14 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
                   opponentDefeatQuote: npc.defeatQuote,
                   playerGoesFirst: playerGoesFirst,
                   onMatchComplete: (won, {capturedCardIds}) {
-                    if (won) ctrl.completeNode(_location.id, node.id);
+                    if (won) {
+                      ctrl.completeNode(_location.id, node.id);
+                      // Award the gym badge
+                      final badgeId = _badgeForNpc(node.npcId);
+                      if (badgeId != null) {
+                        context.read<PlayerProfileController>().awardBadge(badgeId);
+                      }
+                    }
                   },
                 ),
               ),
@@ -526,7 +648,23 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
     );
   }
 
+  /// Maps gym leader NPC IDs to badge IDs.
+  static String? _badgeForNpc(String? npcId) {
+    switch (npcId) {
+      case 'npc_brock': return 'boulder_badge';
+      case 'npc_misty': return 'cascade_badge';
+      case 'npc_lt_surge': return 'thunder_badge';
+      case 'npc_erika': return 'rainbow_badge';
+      case 'npc_koga': return 'soul_badge';
+      case 'npc_sabrina': return 'marsh_badge';
+      case 'npc_blaine': return 'volcano_badge';
+      case 'npc_giovanni': return 'earth_badge';
+      default: return null;
+    }
+  }
+
   void _showStoryScene(StoryProgressController ctrl, StoryNode node) {
+    debugPrint('[STORY] _showStoryScene called: loc=${_location.id} node=${node.id} isCompleted=${node.isCompleted} type=${node.type}');
     final isPallet = _location.id == 'pallet_town';
     final isViridian = _location.id == 'viridian_city';
     final profileCtrl = context.read<PlayerProfileController>();
@@ -535,7 +673,42 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
       _showOakParcelQuest(ctrl, node, profileCtrl);
     } else if (node.id == 'pallet_oaks_lab') {
       profileCtrl.completeObjective('Visit Professor Oak at his lab');
+      final hasParcel = profileCtrl.itemCount('oaks_parcel') > 0;
+      final wasAlreadyComplete = profileCtrl.isQuestCompleted('oaks_parcel');
+      if (hasParcel) {
+        profileCtrl.useConsumable('oaks_parcel');
+        profileCtrl.completeObjective('Return the parcel to Professor Oak');
+      }
       ctrl.completeNode(_location.id, node.id);
+
+      // Show quest-completion dialogue if quest just finished.
+      final justCompleted = !wasAlreadyComplete && profileCtrl.isQuestCompleted('oaks_parcel');
+      if (justCompleted) {
+        final cd = QuestData.completionDialogue('oaks_parcel');
+        if (cd != null && mounted) {
+          showDialog(
+            context: context,
+            barrierColor: Colors.black.withValues(alpha: 0.85),
+            builder: (ctx) => Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: ParchmentDialog(
+                  portrait: Image.asset('assets/trainers/npc/${cd.portrait}', height: 180, fit: BoxFit.contain),
+                  pages: cd.pages,
+                  speaker: cd.speaker,
+                  actionLabel: cd.actionLabel,
+                  actionColor: const Color(0xFF4CAF50),
+                  onAction: () {
+                    Navigator.pop(ctx);
+                    Navigator.pushNamed(context, AppRoutes.oaksLab);
+                  },
+                ),
+              ),
+            ),
+          );
+          return;
+        }
+      }
       Navigator.pushNamed(context, AppRoutes.oaksLab);
     } else if (node.id == 'pallet_house') {
       ctrl.completeNode(_location.id, node.id);
@@ -547,30 +720,31 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
         MaterialPageRoute(builder: (_) => const RouteBattleScreen(locationId: 'route_1')),
       );
     } else if (node.id == 'viridian_pokemart') {
-      if (node.isCompleted) {
-        _showPokeMartShop(ctrl, node);
-      } else {
-        _showShopkeeperDialog(ctrl, node);
-      }
+      _showShopkeeperDialog(ctrl, node);
     } else if (node.id == 'viridian_center') {
+      final s = DialogueRepository.instance.storyScene('viridian_center');
       _showDialog(ctrl, node,
-        title: '🏥 POKÉMON CENTER',
-        content: 'A warm, welcoming place to rest and heal your Pokémon.\n\n'
-            'Nurse Joy smiles as you enter.\n\n'
-            '"We\'re not fully staffed yet, but come back anytime!"',
-        button: 'Look around');
+        title: s['title'] as String? ?? '🏥 POKÉMON CENTER',
+        content: s['content'] as String? ?? '',
+        button: s['button'] as String? ?? 'Heal my team',
+        onButtonTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const PokemonCenterScreen()),
+        ));
     } else if (node.id == 'viridian_route2') {
+      final s = DialogueRepository.instance.storyScene('viridian_route2');
       _showDialog(ctrl, node,
-        title: '🛣️ ROUTE 2',
-        content: 'The path north leads toward Viridian Forest and Pewter City.\n\n'
-            'Best to finish your business in town before heading out.',
-        button: 'Not yet');
+        title: s['title'] as String? ?? '🛣️ ROUTE 2',
+        content: s['content'] as String? ?? '',
+        button: s['button'] as String? ?? 'Not yet');
+    } else if (node.id.contains('pokemart')) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => PokeMartScreen(locationName: _location.name)));
     } else {
+      final s = DialogueRepository.instance.storyScene('item_found_generic');
       _showDialog(ctrl, node,
-        title: '📦 Item Found!',
-        content: 'You found a Poké Ball along the path!\n\n'
-            'It might come in handy for catching wild Pokémon.',
-        button: 'Take it');
+        title: s['title'] as String? ?? '📦 Item Found!',
+        content: s['content'] as String? ?? '',
+        button: s['button'] as String? ?? 'Take it');
     }
   }
 
@@ -688,6 +862,15 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
   }
 
   void _showShopkeeperDialog(StoryProgressController ctrl, StoryNode node) {
+    debugPrint('=== _showShopkeeperDialog called ===');
+    final d = DialogueRepository.instance.npcScene('pokemart_clerk', 'oaks_parcel_delivery');
+    debugPrint('dialogue data: ${d['dialogue']}');
+    final portraitPath = d['portrait'] as String? ?? 'professor_oak.png';
+    final speaker = d['speaker'] as String? ?? 'POKÉ MART CLERK';
+    final dialogue = d['dialogue'] as String? ?? '';
+    final actionLabel = d['actionLabel'] as String? ?? 'Take Parcel';
+    final actionColor = d['actionColor'] as Color? ?? const Color(0xFF4CAF50);
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -704,18 +887,15 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               // Oak-style trainer sprite
-              Image.asset('assets/trainers/npc/professor_oak.png', height: 120, width: 120),
+              Image.asset('assets/trainers/npc/$portraitPath', height: 120, width: 120),
               const SizedBox(height: 12),
-              const Text('POKÉ MART CLERK',
-                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 2)),
+              Text(speaker,
+                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 2)),
               const SizedBox(height: 12),
-              const Text(
-                '"Oh, are you from Pallet Town?"\n\n'
-                'The shopkeeper pulls out a small package.\n\n'
-                '"This parcel came for Professor Oak. Would you mind\n'
-                'delivering it? It\'s been sitting here for weeks!"',
+              Text(
+                dialogue,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white70, height: 1.5, fontSize: 14),
+                style: const TextStyle(color: Colors.white70, height: 1.5, fontSize: 14),
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -724,19 +904,18 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
                   onPressed: () {
                     Navigator.pop(ctx);
                     ctrl.completeNode(_location.id, node.id);
-                    // Mark "Visit the PokéMart in Viridian City" quest objective
-                    context.read<PlayerProfileController>()
-                        .completeObjective('Visit the PokéMart in Viridian City');
-                    // Also mark "Travel to Viridian City" if not already done
-                    context.read<PlayerProfileController>()
-                        .completeObjective('Travel to Viridian City');
+                    final pc = context.read<PlayerProfileController>();
+                    pc.addConsumable('oaks_parcel');
+                    pc.completeObjective('Pick up the parcel at Viridian PokéMart');
+                    pc.completeObjective('Travel to Viridian City');
+                    ObtainedBanner.show(ctx, title: "You've Obtained", itemName: "Oak's Parcel", icon: Image.asset('assets/images/icons/items/item527.png', height: 64, width: 64));
                   },
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50),
+                    backgroundColor: actionColor,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  child: const Text('Take the parcel',
-                      style: TextStyle(fontSize: 16)),
+                  child: Text(actionLabel,
+                      style: const TextStyle(fontSize: 16)),
                 ),
               ),
             ],
@@ -746,13 +925,10 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
     );
   }
 
-  void _showOakParcelQuest(StoryProgressController ctrl, StoryNode node, PlayerProfileController profileCtrl) {
-    final quest = profileCtrl.activeQuest;
-    final questActive = quest?.id == 'oaks_parcel';
-
-    if (!questActive) {
-      // Start the quest
-      showDialog(
+  void _showOakParcelQuest(StoryProgressController ctrl, StoryNode node, PlayerProfileController profileCtrl) async {
+    if (!node.isCompleted) {
+      // Step 1 — show Oak's dialogue first
+      final ok = await showDialog<bool>(
         context: context,
         barrierDismissible: false,
         builder: (ctx) => Dialog(
@@ -782,11 +958,7 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      profileCtrl.startQuest(QuestData.oaksParcel);
-                      ctrl.completeNode(_location.id, node.id);
-                    },
+                    onPressed: () => Navigator.pop(ctx, true),
                     style: FilledButton.styleFrom(
                       backgroundColor: const Color(0xFF4CAF50),
                       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -799,71 +971,123 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
           ),
         ),
       );
-    } else if (quest!.completed) {
-      // Quest already completed
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: const Color(0xFF1A3A14),
-          title: const Text('✅ Quest Complete!', style: TextStyle(color: Colors.white)),
-          content: const Text('You already delivered Oak\'s parcel.\n\nHe thanks you for your help!',
-              style: TextStyle(color: Colors.white70)),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx),
-                child: const Text('OK', style: TextStyle(color: Colors.greenAccent))),
-          ],
-        ),
-      );
-    } else {
-      // Quest in progress — show status
-      final objCount = quest.doneCount;
-      final totalObj = quest.objectives.length;
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: const Color(0xFF1A3A14),
-          title: const Text('📋 Oak\'s Parcel', style: TextStyle(color: Colors.white)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Progress: $objCount/$totalObj', style: const TextStyle(color: Colors.amber)),
-              const SizedBox(height: 8),
-              for (final obj in quest.objectives)
-                Row(children: [
-                  Icon(obj.completed ? Icons.check_circle : Icons.radio_button_unchecked,
-                      color: obj.completed ? Colors.greenAccent : Colors.white38, size: 16),
-                  const SizedBox(width: 8),
-                  Text(obj.description,
-                      style: TextStyle(color: obj.completed ? Colors.white54 : Colors.white70, fontSize: 13)),
-                ]),
-              if (quest.allObjectivesDone) ...[
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      profileCtrl.completeObjective('Return the parcel to Professor Oak');
-                    },
-                    style: FilledButton.styleFrom(backgroundColor: const Color(0xFF4CAF50)),
-                    child: const Text('Deliver Parcel to Oak'),
-                  ),
-                ),
-              ],
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx),
-                child: const Text('Close', style: TextStyle(color: Colors.white54))),
-          ],
-        ),
-      );
+      if (ok != true || !mounted) return;
+
+      // Step 2 — show quest detail with objectives & rewards
+      if (!mounted) return;
+      final accepted = await QuestDetailDialog.show(context, questId: 'oaks_parcel');
+      if (accepted != true || !mounted) return;
+
+      // Start the quest
+      profileCtrl.startQuest(QuestData.oaksParcel);
+      ctrl.completeNode(_location.id, node.id);
+      if (mounted) ObtainedBanner.showQuestAccepted(context, questName: "Oak's Parcel");
     }
   }
 
+  void _startNpcTrainerBattle(StoryProgressController ctrl, StoryNode node) {
+    final npc = CardRepository.instance.npcs.firstWhere(
+      (n) => n.id == node.npcId,
+      orElse: () => CardRepository.instance.npcs.first,
+    );
+
+    final opponentDeck = Deck(
+      id: 'npc_${npc.id}_${node.id}',
+      name: npc.name,
+      cardIds: npc.cardIds,
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CoinFlipScreen(
+          opponentName: npc.name,
+          opponentPortrait: npc.portraitAsset,
+          onComplete: ({required playerGoesFirst}) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BattleScreen(
+                  playerDeck: _playerDeck,
+                  opponentDeck: opponentDeck,
+                  opponentName: npc.name,
+                  opponentPortrait: npc.portraitAsset,
+                  opponentVictoryQuote: npc.victoryQuote,
+                  opponentDefeatQuote: npc.defeatQuote,
+                  playerGoesFirst: playerGoesFirst,
+                  onMatchComplete: (won, {capturedCardIds}) {
+                    if (won) ctrl.completeNode(_location.id, node.id);
+                  },
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  void _pickUpItem(StoryProgressController ctrl, StoryNode node) {
+    if (node.itemId == null) return;
+
+    _showDialog(ctrl, node,
+      title: 'Item Found!',
+      content: 'You found an item!',
+      button: 'Take');
+  }
+
+  void _showPuzzle(StoryProgressController ctrl, StoryNode node) {
+    final lines = node.dialogLines ?? ['Something mysterious is here...'];
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A2A3A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(children: [
+          const Icon(Icons.extension, color: Color(0xFFAB47BC), size: 24),
+          const SizedBox(width: 10),
+          const Text('Puzzle', style: TextStyle(color: Colors.white, fontSize: 18)),
+        ]),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final line in lines)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(line, style: const TextStyle(color: Colors.white70, height: 1.5, fontSize: 14)),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              ctrl.completeNode(_location.id, node.id);
+            },
+            child: const Text('Continue', style: TextStyle(color: Color(0xFFAB47BC))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _startCatchChallenge(StoryProgressController ctrl, StoryNode node) {
+    if (node.targetCardId == null) return;
+    final targetCard = CardRepository.instance.cardById(node.targetCardId!);
+    if (targetCard == null) return;
+
+    final s = DialogueRepository.instance.storyScene('catch_challenge');
+    _showDialog(ctrl, node,
+      title: s['title'] as String? ?? 'Catch Challenge',
+      content: (s['content'] as String? ?? 'A rare {cardName} has been spotted here!')
+          .replaceAll('{cardName}', targetCard.name),
+      button: s['button'] as String? ?? 'Hunt it');
+  }
+
   void _showDialog(StoryProgressController ctrl, StoryNode node,
-      {required String title, required String content, required String button}) {
+      {required String title, required String content, required String button, VoidCallback? onButtonTap}) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -880,6 +1104,7 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
             onPressed: () {
               Navigator.pop(ctx);
               ctrl.completeNode(_location.id, node.id);
+              onButtonTap?.call();
             },
             child: Text(button,
                 style: const TextStyle(color: Colors.greenAccent)),
@@ -893,14 +1118,17 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
   TriadCard _rollWildEncounter(StoryNode node) {
     final table = node.encounterTable ?? [];
     if (table.isEmpty) {
-      // Fallback: return a common Pokémon
       return CardRepository.instance.cardById('pidgey') ??
           TriadCard.fallback();
     }
 
-    final totalWeight = table.fold<int>(0, (sum, e) => sum + e.weight);
+    // Filter by time of day
+    final available = table.where((e) => isAvailableNow(e)).toList();
+    final effective = available.isNotEmpty ? available : table;
+
+    final totalWeight = effective.fold<int>(0, (sum, e) => sum + e.weight);
     var roll = Random().nextInt(totalWeight);
-    for (final entry in table) {
+    for (final entry in effective) {
       roll -= entry.weight;
       if (roll < 0) {
         final baseCard = CardRepository.instance.cardById(entry.cardId);
@@ -939,14 +1167,123 @@ class _RouteBattleScreenState extends State<RouteBattleScreen> {
 
   Deck get _playerDeck {
     final profile = context.read<PlayerProfileController>().profile;
-    // Use the player's active/default deck
     final deck = profile.defaultDeck;
     if (deck != null) return deck;
-
-    // Fallback: first valid deck
     return profile.decks.firstWhere(
       (d) => d.isValid,
       orElse: () => profile.decks.first,
+    );
+  }
+
+  /// Returns names of unusable cards in the player's active deck.
+  List<String> _getUnusableCardNames() {
+    final deck = _playerDeck;
+    final pCtrl = context.read<PlayerProfileController>();
+    final growth = pCtrl.cardGrowth;
+    final byInstance = pCtrl.cardGrowthByInstance;
+    final repo = CardRepository.instance;
+    final unusable = <String>[];
+    for (var i = 0; i < deck.cardIds.length; i++) {
+      final cardId = deck.cardIds[i];
+      final instId = deck.instanceIds != null && i < deck.instanceIds!.length ? deck.instanceIds![i] : null;
+      int? cond;
+      if (instId != null) cond = byInstance[instId]?.condition;
+      cond ??= growth[cardId]?.condition;
+      if (cond != null && cond <= 0) {
+        final card = repo.cardById(cardId);
+        unusable.add(card?.name ?? cardId);
+      }
+    }
+    return unusable;
+  }
+
+  /// Shows a dialog warning about unusable cards in the deck.
+  void _showUnusableCardsWarning(List<String> names, VoidCallback onContinue) {
+    final pCtrl = context.read<PlayerProfileController>();
+    final deck = _playerDeck;
+    final growth = pCtrl.cardGrowth;
+    final byInstance = pCtrl.cardGrowthByInstance;
+    final repo = CardRepository.instance;
+    final unusableCards = <TriadCard>[];
+    final unusableGrowths = <CardGrowth>[];
+    for (var i = 0; i < deck.cardIds.length; i++) {
+      final cardId = deck.cardIds[i];
+      final instId = deck.instanceIds != null && i < deck.instanceIds!.length ? deck.instanceIds![i] : null;
+      CardGrowth? instGrowth;
+      if (instId != null) instGrowth = byInstance[instId];
+      if (names.contains(repo.cardById(cardId)?.name ?? cardId)) {
+        final c = repo.cardById(cardId);
+        if (c != null) {
+          unusableCards.add(c);
+          unusableGrowths.add(instGrowth ?? growth[cardId]!);
+        }
+      }
+    }
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.85),
+      builder: (ctx) => Center(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+          decoration: BoxDecoration(
+            color: const Color(0xDD1F2027),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFFF9800).withValues(alpha: 0.25)),
+          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.warning_amber_rounded, color: Color(0xFFFF9800), size: 40),
+            const SizedBox(height: 12),
+            const Text('UNUSABLE POKÉMON', style: TextStyle(
+              fontFamily: 'PowerGreen',
+              color: Color(0xFFFF9800),
+              fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 2,
+              decoration: TextDecoration.none,
+            )),
+            const SizedBox(height: 16),
+            if (unusableCards.isNotEmpty)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(unusableCards.length, (i) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: TriadCardView(card: unusableCards[i], size: 64, showCondition: true, growth: unusableGrowths[i]),
+                )),
+              ),
+            const SizedBox(height: 16),
+            Text(
+              names.length == 1
+                  ? '${names.first} is too damaged to battle.'
+                  : '${names.length} cards are too damaged to battle.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600, decoration: TextDecoration.none),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Visit a Pokémon Center, use healing items, or replace them in your deck to proceed.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white54, fontSize: 12, decoration: TextDecoration.none),
+            ),
+            const SizedBox(height: 20),
+            GestureDetector(
+              onTap: () => Navigator.pop(ctx),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 11),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                ),
+                child: const Text('OK', textAlign: TextAlign.center, style: TextStyle(
+                  fontFamily: 'PowerGreen',
+                  color: Colors.white,
+                  fontSize: 14, fontWeight: FontWeight.w700, decoration: TextDecoration.none,
+                )),
+              ),
+            ),
+          ]),
+        ),
+      ),
     );
   }
 }
@@ -1046,6 +1383,14 @@ class _NodeCard extends StatelessWidget {
         return const Color(0xFFFFCA28);
       case StoryNodeType.wildBoss:
         return const Color(0xFFEF5350);
+      case StoryNodeType.npcTrainer:
+        return const Color(0xFFFF7043);
+      case StoryNodeType.item:
+        return const Color(0xFFFFCA28);
+      case StoryNodeType.puzzle:
+        return const Color(0xFFAB47BC);
+      case StoryNodeType.catchChallenge:
+        return const Color(0xFF26A69A);
     }
   }
 
@@ -1059,6 +1404,14 @@ class _NodeCard extends StatelessWidget {
         return Icons.card_giftcard;
       case StoryNodeType.wildBoss:
         return Icons.warning;
+      case StoryNodeType.npcTrainer:
+        return Icons.person_outline;
+      case StoryNodeType.item:
+        return Icons.card_giftcard;
+      case StoryNodeType.puzzle:
+        return Icons.extension;
+      case StoryNodeType.catchChallenge:
+        return Icons.catching_pokemon;
     }
   }
 
@@ -1076,19 +1429,39 @@ class _NodeCard extends StatelessWidget {
         return 'Item Discovery';
       case StoryNodeType.wildBoss:
         return '⚠ Final Encounter';
+      case StoryNodeType.npcTrainer:
+        final npc2 = CardRepository.instance.npcs.firstWhere(
+          (n) => n.id == node.npcId,
+          orElse: () => CardRepository.instance.npcs.first,
+        );
+        return npc2.name;
+      case StoryNodeType.item:
+        return 'Item Pickup';
+      case StoryNodeType.puzzle:
+        return 'Puzzle';
+      case StoryNodeType.catchChallenge:
+        return 'Catch Challenge';
     }
   }
 
   String? get _nodeSubtitle {
     switch (node.type) {
       case StoryNodeType.wild:
-        return null; // Just "Wild Battle" — no level range
+        return null;
       case StoryNodeType.trainer:
         return 'Trainer Battle';
       case StoryNodeType.story:
         return 'Story Scene';
       case StoryNodeType.wildBoss:
         return 'Strong wild Pokémon';
+      case StoryNodeType.npcTrainer:
+        return 'Trainer Battle';
+      case StoryNodeType.item:
+        return 'Find an item';
+      case StoryNodeType.puzzle:
+        return 'Solve the puzzle';
+      case StoryNodeType.catchChallenge:
+        return 'Catch a rare Pokémon';
     }
   }
 }

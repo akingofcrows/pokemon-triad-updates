@@ -13,6 +13,8 @@ import '../services/card_repository.dart';
 import '../widgets/triad_card_view.dart';
 import 'battle_screen.dart';
 import 'wild_battle_screen.dart';
+import '../widgets/pressable_button.dart';
+import '../widgets/badge_icon.dart';
 
 // ── Battle menu content (embedded in home screen, keeps bottom nav) ──
 
@@ -37,72 +39,113 @@ class BattleMenuContent extends StatefulWidget {
 }
 
 class _BattleMenuContentState extends State<BattleMenuContent> with TickerProviderStateMixin {
+  static const _badgeIds = [
+    'boulder_badge', 'cascade_badge', 'thunder_badge', 'rainbow_badge',
+    'soul_badge', 'marsh_badge', 'volcano_badge', 'earth_badge',
+  ];
   bool _soloOpen = false;
-  bool _soloVisible = false; // true while animating in or fully visible
+  late final AnimationController _slideCtrl;
+  late final Animation<Offset> _slideAnim;
   late final AnimationController _soloCtrl;
   late final Animation<Offset> _soloSlide;
-
-  late final AnimationController _panelCtrl;
-  late final Animation<Offset> _panelSlide;
 
   @override
   void initState() {
     super.initState();
+    _slideCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 350));
+    _slideAnim = Tween<Offset>(begin: const Offset(0, 1.5), end: Offset.zero).animate(CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOutCubic));
     _soloCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 350));
-    _soloSlide = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(
-      CurvedAnimation(parent: _soloCtrl, curve: Curves.easeOutCubic),
-    );
-
-    _panelCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
-    _panelSlide = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-      CurvedAnimation(parent: _panelCtrl, curve: Curves.easeOutCubic),
-    );
-    _panelCtrl.addStatusListener((status) {
-      if (status == AnimationStatus.dismissed) {
+    _soloSlide = Tween<Offset>(begin: const Offset(0, 1.5), end: Offset.zero).animate(CurvedAnimation(parent: _soloCtrl, curve: Curves.easeOutCubic));
+    _slideCtrl.addStatusListener((status) {
+      if (status == AnimationStatus.dismissed && !widget.visible) {
         widget.onDismiss?.call();
       }
     });
-    if (widget.visible) _panelCtrl.forward();
+    if (widget.visible) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _slideCtrl.forward());
+    }
   }
 
   @override
   void didUpdateWidget(covariant BattleMenuContent oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.visible && !oldWidget.visible) {
-      _panelCtrl.forward();
-    } else if (!widget.visible && oldWidget.visible) {
-      _panelCtrl.reverse();
+    if (widget.soloVisible && !oldWidget.soloVisible) {
+      // Parent requested Solo → animate in (no callback needed, parent already knows)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _slideCtrl.reverse().then((_) {
+          if (!mounted) return;
+          setState(() => _soloOpen = true);
+          _soloCtrl.forward();
+        });
+      });
+    } else if (!widget.soloVisible && oldWidget.soloVisible) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _closeSoloToBattle();
+      });
     }
-    // Handle external solo toggle
-    if (widget.soloVisible != oldWidget.soloVisible) {
-      if (widget.soloVisible && !_soloOpen) {
-        setState(() { _soloOpen = true; _soloVisible = true; _soloCtrl.forward(); });
-      } else if (!widget.soloVisible && _soloOpen) {
-        setState(() => _soloOpen = false);
-        _panelCtrl.forward();
-        _soloCtrl.reverse();
+    if (widget.visible && !oldWidget.visible) {
+      _slideCtrl.forward();
+    } else if (!widget.visible && oldWidget.visible) {
+      if (_soloOpen) {
+        _dismiss();
+      } else {
+        _slideCtrl.reverse();
       }
     }
   }
 
   @override
   void dispose() {
+    _slideCtrl.dispose();
     _soloCtrl.dispose();
-    _panelCtrl.dispose();
     super.dispose();
   }
 
-  void _toggleSolo() {
-    setState(() {
-      _soloOpen = !_soloOpen;
-      if (_soloOpen) {
-        _soloVisible = true;
-        _soloCtrl.forward();
-      } else {
-        _soloCtrl.reverse();
-      }
+  void _dismiss() {
+    if (_soloOpen) {
+      _soloCtrl.reverse().then((_) {
+        if (!mounted) return;
+        setState(() => _soloOpen = false);
+        _slideCtrl.reverse().then((_) {
+          if (!mounted) return;
+          widget.onDismiss?.call();
+        });
+      });
+    } else {
+      _slideCtrl.reverse().then((_) {
+        if (!mounted) return;
+        widget.onDismiss?.call();
+      });
+    }
+  }
+
+  void _closeSoloToBattle() {
+    if (!_soloOpen) return;
+    _soloCtrl.reverse().then((_) {
+      if (!mounted) return;
+      setState(() => _soloOpen = false);
+      _slideCtrl.forward();
     });
-    widget.onSoloStateChanged?.call(_soloOpen);
+  }
+
+  void _toggleSolo() {
+    if (_soloOpen) {
+      // Solo → Battle: slide Solo down, slide Battle up
+      setState(() => _soloOpen = false);
+      widget.onSoloStateChanged?.call(false);
+      _soloCtrl.reverse();
+      _slideCtrl.forward();
+    } else {
+      // Battle → Solo: slide Battle down, slide Solo up
+      _slideCtrl.reverse().then((_) {
+        if (!mounted) return;
+        setState(() => _soloOpen = true);
+        widget.onSoloStateChanged?.call(true);
+        _soloCtrl.forward();
+      });
+    }
   }
 
   void _comingSoon() {
@@ -113,40 +156,38 @@ class _BattleMenuContentState extends State<BattleMenuContent> with TickerProvid
 
   @override
   Widget build(BuildContext context) {
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
     return Stack(
       children: [
-        // ── Tappable translucent overlay dims background; tap dismisses panels ──
-        if (widget.visible || !_panelCtrl.isDismissed)
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: widget.onBackgroundTap,
-              child: Container(color: Colors.black.withValues(alpha: 0.15)),
-            ),
+        // Backdrop — fades in/out
+        if (widget.visible || _slideCtrl.isAnimating)
+          AnimatedBuilder(
+            animation: _slideCtrl,
+            builder: (_, child) {
+              final opacity = _slideCtrl.value * 0.15;
+              return Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: widget.visible ? _dismiss : null,
+                  child: Container(color: Colors.black.withValues(alpha: opacity)),
+                ),
+              );
+            },
           ),
 
-        // ── Main panel slides up from bottom (hidden when Solo is open) ──
-        if (widget.visible)
+        // Battle panel — slides up
+        if (widget.visible || _slideCtrl.isAnimating)
           Positioned(
-            left: 0,
-            right: 0,
-            bottom: bottomPadding,
+            left: 0, right: 0, bottom: 47,
             child: SlideTransition(
-              position: _panelSlide,
-              child: Opacity(
-                opacity: _soloOpen ? 0.0 : 1.0,
-                child: _buildMainPanel(),
-              ),
+              position: _slideAnim,
+              child: _buildMainPanel(),
             ),
           ),
 
-        // ── Solo slide-up panel (over main panel) ──
-        if (_soloVisible)
+        // Solo panel — slides up over battle panel
+        if (_soloOpen || _soloCtrl.isAnimating)
           Positioned(
-            left: 0,
-            right: 0,
-            bottom: bottomPadding,
+            left: 0, right: 0, bottom: 47,
             child: SlideTransition(
               position: _soloSlide,
               child: _buildSoloPanel(),
@@ -157,73 +198,74 @@ class _BattleMenuContentState extends State<BattleMenuContent> with TickerProvid
   }
 
   Widget _buildSoloPanel() {
+    final pCtrl = context.watch<PlayerProfileController>();
+    final badges = pCtrl.badges;
+    final kantoDone = badges.contains('earth_badge');
+
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF1E1E1E), Color(0xFF141414)],
-            ),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border(top: BorderSide(color: Color(0xFF444444))),
+        padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF1E1E1E), Color(0xFF141414)],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          border: Border(top: BorderSide(color: Color(0xFF1A1C20))),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
             children: [
               Container(width: 40, height: 4,
-                decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+                decoration: BoxDecoration(color: const Color(0xFF74777F), borderRadius: BorderRadius.circular(2))),
               const SizedBox(height: 24),
-              const Text('SOLO', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 6)),
+              const Text('SOLO', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 6, decoration: TextDecoration.none)),
               const SizedBox(height: 24),
-              _SoloOption(
-                icon: Icons.forest,
-                label: 'Wild Battle',
-                subtitle: 'Explore unlocked locations and capture Pokémon.',
+              _RegionTile(
+                region: 'Kanto',
+                subtitle: '${badges.length}/8 badges',
                 color: const Color(0xFF4CAF50),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const WildBattleLocationScreen()),
+                locked: false,
+                iconAsset: 'assets/images/Booster Pack/kantoicon.png',
+                extra: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    for (int i = 0; i < 8; i++)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 4),
+                        child: BadgeIcon(spriteIndex: i, size: 24, earned: badges.contains(_badgeIds[i]) || i < 2), // TODO: remove || i < 2
+                      ),
+                  ],
                 ),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WildBattleLocationScreen())),
               ),
               const SizedBox(height: 10),
-              _SoloOption(
-                icon: Icons.sports_mma,
-                label: 'Trainer Battle',
-                subtitle: 'Challenge NPC decks and earn Pokédollars.',
+              _RegionTile(
+                region: 'Johto',
+                subtitle: kantoDone ? 'New adventure awaits' : 'Complete Kanto first',
                 color: const Color(0xFF42A5F5),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const RandomBattleRanksScreen()),
-                ),
+                locked: !kantoDone,
+                iconAsset: 'assets/images/Booster Pack/johtoicon.png',
+                onTap: kantoDone ? () {} : null,
               ),
               const SizedBox(height: 10),
-              _SoloOption(
-                icon: Icons.emoji_events,
-                label: 'Challenge Battle',
-                subtitle: 'Complete special battle objectives.',
-                color: const Color(0xFFFFCA28),
-                onTap: () => _comingSoon(),
+              _RegionTile(
+                region: 'Hoenn',
+                subtitle: 'Coming later',
+                color: const Color(0xFFFF7043),
+                locked: true,
+                onTap: null,
               ),
               const SizedBox(height: 10),
-              _SoloOption(
-                icon: Icons.school,
-                label: 'Practice',
-                subtitle: 'Test decks with no consumables or normal rewards.',
+              _RegionTile(
+                region: 'Sinnoh',
+                subtitle: 'Coming later',
                 color: const Color(0xFFAB47BC),
-                onTap: () => _comingSoon(),
-              ),
-              const SizedBox(height: 10),
-              _SoloOption(
-                icon: Icons.calendar_month,
-                label: 'Limited Events',
-                subtitle: 'Seasonal Pokémon and themed opponents.',
-                color: const Color(0xFFEF5350),
-                onTap: () => _comingSoon(),
+                locked: true,
+                onTap: null,
               ),
         ],
       ),
@@ -232,7 +274,6 @@ class _BattleMenuContentState extends State<BattleMenuContent> with TickerProvid
 );
 
   }
-
   // ── Main panel with Solo / Versus buttons ──
 
   Widget _buildMainPanel() {
@@ -249,38 +290,38 @@ class _BattleMenuContentState extends State<BattleMenuContent> with TickerProvid
               colors: [Color(0xFF1E1E1E), Color(0xFF141414)],
             ),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border(top: BorderSide(color: Color(0xFF444444))),
+            border: Border(top: BorderSide(color: Color(0xFF1A1C20))),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(width: 40, height: 4,
-                decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+                decoration: BoxDecoration(color: const Color(0xFF74777F), borderRadius: BorderRadius.circular(2))),
               const SizedBox(height: 24),
-              const Text('BATTLE', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 6)),
+              const Text('BATTLE', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 6, decoration: TextDecoration.none)),
               const SizedBox(height: 24),
               Row(
                 children: [
                   Expanded(
                     child: SizedBox(
                       height: 56,
-                      child: FilledButton(
-                        onPressed: _toggleSolo,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Colors.white.withValues(alpha: 0.12),
-                          shape: RoundedRectangleBorder(
+                      child: PressableButton(
+                        onTap: _toggleSolo,
+                        child: Container(
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(14),
-                            side: BorderSide(color: Colors.white.withValues(alpha: 0.25)),
+                            color: const Color(0xFF3A3C44),
+                            border: Border.all(color: const Color(0xFF74777F)),
                           ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Image.asset('assets/ui/solo.png', width: 24, height: 24),
-                            const SizedBox(width: 10),
-                            const Text('SOLO',
-                              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 6)),
-                          ],
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Image.asset('assets/ui/solo.png', width: 24, height: 24),
+                              const SizedBox(width: 10),
+                              const Text('SOLO', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 6, decoration: TextDecoration.none)),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -289,30 +330,26 @@ class _BattleMenuContentState extends State<BattleMenuContent> with TickerProvid
                   Expanded(
                     child: SizedBox(
                       height: 56,
-                      child: FilledButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Coming soon!'), duration: Duration(seconds: 1)),
-                          );
-                        },
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Colors.white.withValues(alpha: 0.05),
-                          shape: RoundedRectangleBorder(
+                      child: PressableButton(
+                        onTap: () => _comingSoon(),
+                        child: Container(
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(14),
-                            side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                            color: const Color(0xFF282A30),
+                            border: Border.all(color: const Color(0xFF1A1C20)),
                           ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            ColorFiltered(
-                              colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
-                              child: Image.asset('assets/ui/versus.png', width: 24, height: 24),
-                            ),
-                            const SizedBox(width: 10),
-                            Text('VERSUS',
-                              style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 6)),
-                          ],
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ColorFiltered(
+                                colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
+                                child: Image.asset('assets/ui/versus.png', width: 24, height: 24),
+                              ),
+                              const SizedBox(width: 10),
+                              Text('VERSUS', style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 6, decoration: TextDecoration.none)),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -323,6 +360,58 @@ class _BattleMenuContentState extends State<BattleMenuContent> with TickerProvid
           ),
         ),
       ),
+    );
+  }
+}
+
+class _RegionTile extends StatelessWidget {
+  const _RegionTile({super.key, required this.region, required this.subtitle, required this.color, required this.locked, this.onTap, this.iconAsset, this.extra});
+  final String region, subtitle;
+  final Color color;
+  final bool locked;
+  final VoidCallback? onTap;
+  final String? iconAsset;
+  final Widget? extra;
+
+  @override
+  Widget build(BuildContext context) {
+    return PressableButton(
+      onTap: onTap ?? () {},
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF3A3C44),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: locked ? Colors.white.withValues(alpha: 0.06) : const Color(0xFF74777F)),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Row(
+            children: [
+              Container(
+                width: 44, height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: locked ? 0.04 : 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: iconAsset != null
+                    ? Padding(padding: const EdgeInsets.all(10), child: Image.asset(iconAsset!, width: 24, height: 24))
+                    : Icon(locked ? Icons.lock : Icons.map, color: locked ? Colors.white24 : Colors.white54, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(region, style: TextStyle(color: locked ? Colors.white38 : Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 2),
+                    Text(subtitle, style: TextStyle(color: locked ? Colors.white.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.45), fontSize: 12)),
+                    if (extra != null) ...[const SizedBox(height: 6), extra!],
+                  ],
+                ),
+              ),
+              if (!locked) Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.3)),
+            ],
+          ),
+        ),
     );
   }
 }

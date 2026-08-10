@@ -8,6 +8,7 @@ class NpcTrainer {
     required this.difficulty,
     required this.flavor,
     required this.cardIds,
+    this.deck,
     required this.portrait,
     this.victoryQuote,
     this.defeatQuote,
@@ -18,6 +19,7 @@ class NpcTrainer {
   final String difficulty;
   final String flavor;
   final List<String> cardIds;
+  final List<String>? deck;
   final String portrait;
   final String? victoryQuote;
   final String? defeatQuote;
@@ -31,6 +33,7 @@ class NpcTrainer {
       difficulty: json['difficulty'] as String,
       flavor: json['flavor'] as String,
       cardIds: (json['cards'] as List<dynamic>).cast<String>(),
+      deck: (json['deck'] as List<dynamic>?)?.cast<String>(),
       portrait: json['portrait'] as String,
       victoryQuote: json['victoryQuote'] as String?,
       defeatQuote: json['defeatQuote'] as String?,

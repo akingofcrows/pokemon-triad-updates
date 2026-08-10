@@ -39,7 +39,12 @@ class DeckService {
   }
 
   Future<void> setDefaultDeck(PlayerProfile profile, String deckId) async {
-    await _apiClient.activateDeck(deckId);
+    // Optimistic: set locally first so UI responds instantly
     profile.defaultDeckId = deckId;
+    try {
+      await _apiClient.activateDeck(deckId);
+    } catch (_) {
+      // Server sync failed — keep the local change, it'll reconcile next loadFromServer
+    }
   }
 }

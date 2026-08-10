@@ -33,7 +33,7 @@ Copy-Item "build\app\outputs\flutter-apk\app-release.apk" "server\app-release.ap
 # Generate asset manifest and sync to server
 Write-Output "=== Syncing assets to server ==="
 $assetDir = (Resolve-Path "$PSScriptRoot\..\assets").Path + "\"
-$serverAssetDir = "akingofcrows@192.168.0.162:~/assets"
+$serverAssetDir = "akingofcrows@100.65.103.71:~/assets"
 $manifestFile = "$PSScriptRoot\..\server\assets\manifest.json"
 
 # Create server assets directory locally
@@ -58,19 +58,18 @@ Write-Output "  Manifest: $($manifest.files.Count) files"
 $serverUp = $false
 try {
   $tcp = New-Object System.Net.Sockets.TcpClient
-  $tcp.ConnectAsync("192.168.0.162", 22).Wait(2000)
+  $tcp.ConnectAsync("100.65.103.71", 22).Wait(2000)
   $serverUp = $tcp.Connected
   $tcp.Close()
 } catch { $serverUp = $false }
 if ($serverUp) {
   try {
-    $scpOpts = "-o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no"
     # Copy manifest first
-    Start-Process scp -ArgumentList "$scpOpts $manifestFile akingofcrows@192.168.0.162:~/assets/manifest.json" -Wait -NoNewWindow -Timeout 15
+    scp $manifestFile akingofcrows@100.65.103.71:~/assets/manifest.json
     # Upload all assets zip
     $assetZip = "$PSScriptRoot\..\server\asset_sync.zip"
     Compress-Archive -Path "$PSScriptRoot\..\server\assets\*" -DestinationPath $assetZip -Force
-    Start-Process scp -ArgumentList "$scpOpts $assetZip akingofcrows@192.168.0.162:~/asset_sync.zip" -Wait -NoNewWindow -Timeout 30
+    scp $assetZip akingofcrows@100.65.103.71:~/asset_sync.zip
     Write-Output "  Assets uploaded to server"
   } catch {
     Write-Output "  Asset upload skipped (scp failed)"
@@ -102,7 +101,8 @@ $bundleDefs = @(
   @{ id = "pokemon_shiny_art"; required = $false; paths = @("assets\pokemon_shiny") }
   @{ id = "trainer_art";       required = $false; paths = @("assets\trainers") }
   @{ id = "ui_art";            required = $false; paths = @("assets\ui") }
-  @{ id = "locations_art";     required = $false; paths = @("assets\locations") }
+  @{ id = "locations_settlements_art"; required = $false; paths = @("assets\locations"); exclude = "route*.png" }
+  @{ id = "locations_routes_art";      required = $false; paths = @("assets\locations"); filter = "route*.png" }
   @{ id = "sprites_art";       required = $false; paths = @("assets\sprites") }
   @{ id = "booster_pack_art";  required = $false; paths = @("assets\images\Booster Pack") }
   @{ id = "icons_art";         required = $false; paths = @("assets\images\icons") }
@@ -120,7 +120,9 @@ foreach ($def in $bundleDefs) {
     $full = Join-Path $repoRoot $p
     if (-not (Test-Path $full)) { continue }
     if ($def.filter) {
-      $sourceItems += (Get-ChildItem $full -Filter $def.filter -File).FullName
+      $items = Get-ChildItem $full -Filter $def.filter -File
+      if ($def.exclude) { $items = $items | Where-Object { $_.Name -notlike $def.exclude } }
+      $sourceItems += $items.FullName
     } else {
       $sourceItems += $full
     }
@@ -180,9 +182,9 @@ Write-Output "  Content manifest: $($newBundles.Count) bundles, $($changedBundle
 
 if ($serverUp) {
   try {
-    Start-Process scp -ArgumentList "$scpOpts $prevManifestPath akingofcrows@192.168.0.162:~/content/manifest.json" -Wait -NoNewWindow -Timeout 15
+    scp $prevManifestPath akingofcrows@100.65.103.71:~/content/manifest.json
     foreach ($zipName in $changedBundleFiles) {
-      Start-Process scp -ArgumentList "$scpOpts `"$bundlesDir\$zipName`" akingofcrows@192.168.0.162:~/content/bundles/$zipName" -Wait -NoNewWindow -Timeout 60
+      scp "$bundlesDir\$zipName" akingofcrows@100.65.103.71:~/content/bundles/$zipName
     }
     Write-Output "  Content bundles uploaded to server"
   } catch {

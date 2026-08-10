@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../game/board/dashed_border_painter.dart';
 import '../game/cards/card_visuals.dart' show ownerBorderColor;
 import '../models/battle_log_entry.dart';
+import 'home_style_panel.dart';
 
-/// Scrolling chronological list of battle events, in a dashed-border panel
-/// matching the board's cell style.
+/// Scrolling chronological list of battle events, in the same rounded
+/// dark-card style used throughout the home screen.
 class BattleLogPanel extends StatefulWidget {
   const BattleLogPanel({super.key, required this.entries});
 
@@ -41,17 +41,11 @@ class _BattleLogPanelState extends State<BattleLogPanel> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return HomeStylePanel(
       height: 160,
       margin: const EdgeInsets.fromLTRB(12, 6, 12, 8),
-      decoration: BoxDecoration(
-        color: const Color(0xCC00001C),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0x3DFFFFFF)),
-      ),
-      child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Column(
+      padding: const EdgeInsets.all(10),
+      child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const _FlourishTitle(text: 'Battle Log'),
@@ -106,8 +100,7 @@ class _BattleLogPanelState extends State<BattleLogPanel> {
                       ),
               ),
             ],
-          ),
-        ),
+      ),
     );
   }
 }
@@ -130,22 +123,4 @@ class _FlourishTitle extends StatelessWidget {
       ],
     );
   }
-}
-
-class _DashedPanelPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rrect = RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(10));
-    drawDashedRRect(
-      canvas,
-      rrect,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5
-        ..color = Colors.white24,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _DashedPanelPainter oldDelegate) => false;
 }

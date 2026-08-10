@@ -305,7 +305,7 @@ class _StoryModeScreenState extends State<StoryModeScreen> with TickerProviderSt
               child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
                 Container(
                   width: double.infinity, padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(color: const Color(0xFF1A1A2E), borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
+                  decoration: BoxDecoration(color: const Color(0xFF33343C), borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
                   child: Column(children: [
                     Image.asset('assets/trainers/intro/introOak.png', height: 64),
                     const SizedBox(height: 12),
@@ -348,10 +348,16 @@ class _StoryModeScreenState extends State<StoryModeScreen> with TickerProviderSt
                 onTap: () => _onLocTap('pallet_town', 'Pallet Town')),
               for (final loc in ctrl.locations)
                 _LocCard(name: loc.name.toUpperCase(), sub: loc.nodes.isEmpty ? 'City' : '${loc.nodes.length} encounters',
-                  unlocked: ctrl.isLocationUnlocked(loc.id), complete: ctrl.isLocationComplete(loc.id),
+                  unlocked: ctrl.isLocationUnlocked(loc.id) ||
+                      ((loc.id == 'route_22' || loc.id == 'route_2') && pCtrl.isQuestCompleted('oaks_parcel') && cur == 'Viridian City'),
+                  complete: ctrl.isLocationComplete(loc.id),
                   completionPct: ctrl.completionFor(loc.id), hasObj: _hasObj(loc.name, q), isCur: cur == loc.name,
-                  unlockReq: ctrl.isLocationUnlocked(loc.id) ? null : 'Complete ${_prev(ctrl, loc)}',
-                  onTap: ctrl.isLocationUnlocked(loc.id) ? () => _onLocTap(loc.id, loc.name) : null),
+                  unlockReq: ctrl.isLocationUnlocked(loc.id) ? null :
+                      ((loc.id == 'route_22' || loc.id == 'route_2') && pCtrl.isQuestCompleted('oaks_parcel') && cur == 'Viridian City') ? null :
+                      _unlockHint(loc.id, ctrl, loc),
+                  onTap: (ctrl.isLocationUnlocked(loc.id) ||
+                      ((loc.id == 'route_22' || loc.id == 'route_2') && pCtrl.isQuestCompleted('oaks_parcel') && cur == 'Viridian City'))
+                      ? () => _onLocTap(loc.id, loc.name) : null),
             ]);
           })),
 
@@ -372,7 +378,7 @@ class _StoryModeScreenState extends State<StoryModeScreen> with TickerProviderSt
 
   Widget _chapterHeader(Quest? q, int done, int total) {
     final pct = total > 0 ? (done / total * 100).round() : 0;
-    return Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: const Color(0xFF1A1A2E), borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.white.withValues(alpha: 0.08))),
+    return Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: const Color(0xFF33343C), borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.white.withValues(alpha: 0.08))),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [const Icon(Icons.explore, color: Color(0xFFC9A44C), size: 20), const SizedBox(width: 8),
           Text(done == 0 ? "Chapter 1: Oak's Parcel" : done >= total ? 'Journey Complete' : 'Chapter 1: Oak\'s Parcel', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700))]),
@@ -380,13 +386,25 @@ class _StoryModeScreenState extends State<StoryModeScreen> with TickerProviderSt
         if (q != null) ...[Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFFC9A44C).withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFC9A44C).withValues(alpha: 0.2))),
             child: Row(children: [const Icon(Icons.assignment, color: Color(0xFFC9A44C), size: 16), const SizedBox(width: 8), Expanded(child: Text(q.name, style: const TextStyle(color: Color(0xFFC9A44C), fontSize: 13, fontWeight: FontWeight.w600))), Text('${q.doneCount}/${q.objectives.length}', style: const TextStyle(color: Colors.white54, fontSize: 12))])),
           const SizedBox(height: 10)],
-        Row(children: [Text('Region Progress: $pct%', style: const TextStyle(color: Colors.white38, fontSize: 11)), const Spacer(), Text('Badges: 0 / 8', style: const TextStyle(color: Colors.white38, fontSize: 11))]),
+        Row(children: [Text('Region Progress: $pct%', style: const TextStyle(color: Colors.white38, fontSize: 11)), const Spacer(), Text('Badges: ${context.watch<PlayerProfileController>().badges.length} / 8', style: const TextStyle(color: Colors.white38, fontSize: 11))]),
         const SizedBox(height: 6),
         ClipRRect(borderRadius: BorderRadius.circular(4), child: LinearProgressIndicator(value: pct / 100, backgroundColor: Colors.white.withValues(alpha: 0.08), color: const Color(0xFF4CAF50), minHeight: 4)),
       ]));
   }
 
   String _prev(StoryProgressController c, StoryLocation l) { final i = c.locations.indexOf(l); return i > 0 ? c.locations[i-1].name : 'previous area'; }
+
+  String _unlockHint(String locId, StoryProgressController c, StoryLocation l) {
+    switch (locId) {
+      case 'route_22': case 'route_2': return "Deliver Oak's Parcel in Pallet Town";
+      case 'viridian_forest': return 'Complete Route 2';
+      case 'pewter_city': return 'Complete Viridian Forest';
+      case 'mt_moon': return 'Defeat Brock in Pewter City';
+      case 'cerulean_city': return 'Complete Mt. Moon';
+      case 'vermilion_city': return 'Complete Route 6';
+      default: return 'Complete ${_prev(c, l)}';
+    }
+  }
 
   TrainerAppearance _buildAppearance(PlayerProfile profile) {
     return TrainerAppearance(
@@ -450,7 +468,7 @@ class _LocCardState extends State<_LocCard> with SingleTickerProviderStateMixin 
 
 class _OakDialog extends StatelessWidget {
   const _OakDialog({required this.name}); final String name;
-  @override Widget build(BuildContext c) => AlertDialog(backgroundColor: const Color(0xFF1A1A2E), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+  @override Widget build(BuildContext c) => AlertDialog(backgroundColor: const Color(0xFF33343C), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     content: Column(mainAxisSize: MainAxisSize.min, children: [
       Image.asset('assets/trainers/intro/introOak.png', height: 80), const SizedBox(height: 12),
       Text('Professor Oak', style: TextStyle(color: Colors.amber.shade300, fontSize: 16, fontWeight: FontWeight.bold)), const SizedBox(height: 8),

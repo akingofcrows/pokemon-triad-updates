@@ -348,7 +348,7 @@ class _CharacterCreatorScreenState extends State<CharacterCreatorScreen> {
   /// still allowing normal top-anchored scrolling if content overflows.
   Widget _centeredScaffold({required List<Widget> children}) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D1A),
+      backgroundColor: const Color(0xFF2D2E35),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {

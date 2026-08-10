@@ -61,7 +61,7 @@ class _BedroomScreenState extends State<BedroomScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Your Bedroom', style: TextStyle(fontSize: 16)),
-        backgroundColor: const Color(0xFF1A0E0A),
+        backgroundColor: const Color(0xFF2D2E35),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),

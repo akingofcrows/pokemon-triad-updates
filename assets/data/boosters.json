@@ -4,7 +4,7 @@
       "id": "field_trip",
       "name": "Field Trip Booster",
       "setId": "field_trip",
-      "price": 500,
+      "price": 800,
       "cardCount": 5,
       "description": "5 random Pokémon from the Field Trip Set — bugs, grass-types, and forest friends!",
       "dropRates": {
@@ -21,7 +21,7 @@
       "id": "safari_tour",
       "name": "Safari Tour Booster",
       "setId": "safari_tour",
-      "price": 500,
+      "price": 800,
       "cardCount": 5,
       "description": "5 random Pokémon from the Safari Tour Set — exotic safari zone and grassland Pokémon!",
       "dropRates": {
@@ -38,7 +38,7 @@
       "id": "urban_life",
       "name": "Urban Life Booster",
       "setId": "urban_life",
-      "price": 500,
+      "price": 800,
       "cardCount": 5,
       "description": "5 random Pokémon from the Urban Life Set — city-dwelling and town Pokémon!",
       "dropRates": {
@@ -50,6 +50,23 @@
       },
       "levelRange": { "min": 1, "max": 5 },
       "shinyChance": 64
+    },
+    {
+      "id": "kanto",
+      "name": "Kanto Collection",
+      "setId": "base",
+      "price": 1200,
+      "cardCount": 5,
+      "description": "5 random Pokémon from the Kanto Region — all 151 original Pokémon!",
+      "dropRates": {
+        "common": 55,
+        "uncommon": 30,
+        "rare": 10,
+        "epic": 3,
+        "legendary": 2
+      },
+      "levelRange": { "min": 2, "max": 8 },
+      "shinyChance": 48
     }
   ]
 }

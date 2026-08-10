@@ -2,6 +2,7 @@ import 'dart:math';
 
 import '../models/card_growth.dart';
 import '../models/card_owner.dart';
+import '../models/condition.dart';
 import '../models/deck.dart';
 import '../models/match_state.dart';
 import '../models/triad_card.dart';
@@ -39,8 +40,23 @@ class MatchService {
           ..sort((a, b) => b.level.compareTo(a.level));
         growth = matches.isNotEmpty ? matches.first : null;
       }
-      final values = growth == null ? card.values : card.values.plusBonus(growth.bonusValues);
-      final tc = card.copyWith(owner: CardOwner.player, values: values, shiny: growth?.shiny == true);
+      final baseValues = growth == null ? card.values : card.values.plusBonus(growth.bonusValues);
+      // Condition penalty is fixed for the whole battle at placement time
+      // (GDD §3 "Selecting the affected side"), so it's applied once here
+      // rather than recomputed live during the match.
+      final values = growth == null ? baseValues : applyConditionPenalty(baseValues, growth.condition);
+      final tc = card.copyWith(
+        owner: CardOwner.player,
+        values: values,
+        shiny: growth?.shiny == true,
+        condition: growth?.condition,
+        // Kept alongside the already-penalized `values` so the battle
+        // board can still highlight which sides took the hit.
+        conditionPenaltyNorth: baseValues.north - values.north,
+        conditionPenaltySouth: baseValues.south - values.south,
+        conditionPenaltyEast: baseValues.east - values.east,
+        conditionPenaltyWest: baseValues.west - values.west,
+      );
       playerHand.add(tc);
       // Track the resolved instance ID so capture XP routes to the right instance,
       // regardless of whether the deck had explicit instanceIds.

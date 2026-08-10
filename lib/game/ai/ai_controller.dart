@@ -15,19 +15,19 @@ class AiController {
     Duration thinkDelay = const Duration(milliseconds: 600),
     void Function(BoardPosition position, TriadCard card, List<BoardPosition> captured)?
         onPlaced,
+    RuleSet rules = RuleSet.basic,
   }) async {
     if (state.turn != CardOwner.opponent || state.isComplete) return;
     await Future.delayed(thinkDelay);
 
     final hand = state.opponentHand;
-    final best = MoveEvaluator.bestMove(state, hand);
+    final best = MoveEvaluator.bestMove(state, hand, rules: rules);
     if (best == null) return;
 
     hand.removeWhere((c) => identical(c, best.card));
-    final captured = CaptureSystem.applyPlacement(state, best.position, best.card);
+    final captured = CaptureSystem.applyPlacement(state, best.position, best.card, rules: rules);
     TurnSystem.endTurn(state);
     onPlaced?.call(best.position, best.card, captured);
-    // Wait for the placement animation to finish before the next turn
     await Future<void>.delayed(const Duration(milliseconds: 600));
   }
 }

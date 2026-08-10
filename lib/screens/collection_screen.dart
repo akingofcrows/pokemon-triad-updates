@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -8,15 +9,23 @@ import '../app/player_profile_controller.dart';
 import '../game/cards/card_visuals.dart';
 import '../models/card_growth.dart';
 import '../models/card_set.dart';
+import '../models/card_values.dart';
+import '../models/condition.dart';
 import '../models/evolution_chain.dart';
 import '../models/pokemon_leveling.dart';
 import '../models/triad_card.dart';
 import '../services/card_repository.dart';
+import '../services/audio_service.dart';
 import '../services/sprite_downloader.dart';
+import '../widgets/card_damage_overlay.dart';
+import '../widgets/condition_badge.dart';
 import '../widgets/evolution_animation.dart';
+import '../widgets/mint_shimmer.dart';
+import '../widgets/tilt_card.dart';
+import '../widgets/toast.dart';
 import '../widgets/triad_card_view.dart';
 
-enum _SortMode { number, rarity, type, level, name }
+enum _SortMode { number, rarity, type, level, name, condition }
 
 const _affinities = [
   'normal',
@@ -80,6 +89,8 @@ class _CollectionScreenState extends State<CollectionScreen> {
     var owned = selectedSet.id == 'all'
         ? instances.toList()
         : instances.where((i) => selectedSet.cardIds.contains(i.cardId)).toList();
+    // Remove instances with missing card data
+    owned = owned.where((i) => repository.cardById(i.cardId) != null).toList();
     // Apply type/rarity filters
     if (_typeFilter != null) {
       owned = owned.where((i) {
@@ -117,6 +128,12 @@ class _CollectionScreenState extends State<CollectionScreen> {
           (a, b) =>
               asc ? a.level.compareTo(b.level) : b.level.compareTo(a.level),
         );
+      case _SortMode.condition:
+        owned.sort(
+          (a, b) => asc
+              ? a.condition.compareTo(b.condition)
+              : b.condition.compareTo(a.condition),
+        );
       case _SortMode.rarity:
         owned.sort((a, b) {
           final ca = repository.cardById(a.cardId);
@@ -131,9 +148,11 @@ class _CollectionScreenState extends State<CollectionScreen> {
           final ca = repository.cardById(a.cardId);
           final cb = repository.cardById(b.cardId);
           if (ca == null || cb == null) return 0;
-          return asc
+          final cmp = asc
               ? ca.affinity.compareTo(cb.affinity)
               : cb.affinity.compareTo(ca.affinity);
+          if (cmp != 0) return cmp;
+          return asc ? ca.name.compareTo(cb.name) : cb.name.compareTo(ca.name);
         });
     }
 
@@ -144,14 +163,14 @@ class _CollectionScreenState extends State<CollectionScreen> {
         } else {
           _sortMode = mode;
           _sortAscending = defaultAsc;
-          if (mode != _SortMode.rarity) _rarityFilter = null;
-          if (mode != _SortMode.type) _typeFilter = null;
         }
       });
     }
 
     return Scaffold(
+      backgroundColor: const Color(0xFF2D2E35),
       appBar: AppBar(
+        backgroundColor: const Color(0xFF282A30),
         title: _selectMode
             ? Text('${_selectedInstanceIds.length} selected')
             : const Text('Collection'),
@@ -180,45 +199,6 @@ class _CollectionScreenState extends State<CollectionScreen> {
                 child: const Text('Select All', style: TextStyle(color: Colors.white70)),
               ),
           ] else ...[
-            _SortChip(
-              label: 'Name',
-              active: _sortMode == _SortMode.name,
-              ascending: _sortMode == _SortMode.name ? _sortAscending : null,
-              onTap: () => selectSort(_SortMode.name),
-            ),
-            _SortChip(
-              label: 'Num',
-              active: _sortMode == _SortMode.number,
-              ascending: _sortMode == _SortMode.number ? _sortAscending : null,
-              onTap: () => selectSort(_SortMode.number),
-            ),
-            _SortChip(
-              label: 'Lv',
-              active: _sortMode == _SortMode.level,
-              ascending: _sortMode == _SortMode.level ? _sortAscending : null,
-              onTap: () => selectSort(_SortMode.level, defaultAsc: false),
-            ),
-            _SortChip(
-              label: _rarityFilter != null
-                  ? _capitalize(_rarityFilter!.name)
-                  : 'Rarity',
-              active: _sortMode == _SortMode.rarity || _rarityFilter != null,
-              onTap: () => _showRarityModal(),
-            ),
-            _SortChip(
-              label: _typeFilter != null ? _capitalize(_typeFilter!) : 'Type',
-              icon: _typeFilter != null
-                  ? Image.asset(
-                      typeIconAsset(_typeFilter!),
-                      width: 16,
-                      height: 16,
-                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                    )
-                  : null,
-              active: _sortMode == _SortMode.type || _typeFilter != null,
-              onTap: () => _showTypeModal(),
-            ),
-            const SizedBox(width: 4),
           ],
         ],
       ),
@@ -233,30 +213,41 @@ class _CollectionScreenState extends State<CollectionScreen> {
                     ? (_) {} // no-op in select mode
                     : (id) => setState(() => _selectedSetId = id),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '${owned.length} cards',
-                    style: Theme.of(context).textTheme.bodySmall,
+              const SizedBox(height: 8),
+              if (!_selectMode)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(children: [
+                            _SortChip(label: 'Name', active: _sortMode == _SortMode.name, ascending: _sortMode == _SortMode.name ? _sortAscending : null, onTap: () => selectSort(_SortMode.name)),
+                            _SortChip(label: 'Num', active: _sortMode == _SortMode.number, ascending: _sortMode == _SortMode.number ? _sortAscending : null, onTap: () => selectSort(_SortMode.number)),
+                            _SortChip(label: 'Lv', active: _sortMode == _SortMode.level, ascending: _sortMode == _SortMode.level ? _sortAscending : null, onTap: () => selectSort(_SortMode.level, defaultAsc: false)),
+                            _SortChip(label: 'Cnd', active: _sortMode == _SortMode.condition, ascending: _sortMode == _SortMode.condition ? _sortAscending : null, onTap: () => selectSort(_SortMode.condition)),
+                            _SortChip(label: _rarityFilter != null ? _capitalize(_rarityFilter!.name) : 'Rarity', active: _sortMode == _SortMode.rarity || _rarityFilter != null, onTap: () => _showRarityModal()),
+                            _SortChip(label: _typeFilter != null ? _capitalize(_typeFilter!) : 'Type', icon: _typeFilter != null ? Image.asset(typeIconAsset(_typeFilter!), width: 14, height: 14) : null, active: _sortMode == _SortMode.type || _typeFilter != null, onTap: () => _showTypeModal()),
+                          ]),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text('${owned.length} cards', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12)),
+                    ],
                   ),
                 ),
-              ),
+              const SizedBox(height: 4),
               Expanded(
                 child: GridView.builder(
+                  shrinkWrap: true,
                   padding: EdgeInsets.fromLTRB(
                     12,
                     12,
                     12,
                     (_selectMode ? 80 : 12) + MediaQuery.of(context).padding.bottom,
                   ),
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 110,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: 1,
-                  ),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4, mainAxisSpacing: 0, crossAxisSpacing: 3, childAspectRatio: 0.72),
                   itemCount: owned.length,
                   itemBuilder: (context, index) {
                     final instance = owned[index];
@@ -268,9 +259,10 @@ class _CollectionScreenState extends State<CollectionScreen> {
                     if (card == null) return const SizedBox.shrink();
                     final instId = instance.instanceId;
                     final isSelected = instId != null && _selectedInstanceIds.contains(instId);
-                    return GestureDetector(
+                    return _CardTile(
                       key: ValueKey(instance.instanceId),
                       onTap: () {
+                        AudioService().playSfx('sound/pop-ui.mp3');
                         if (_selectMode) {
                           _toggleSelection(instId);
                         } else {
@@ -282,15 +274,18 @@ class _CollectionScreenState extends State<CollectionScreen> {
                           _enterSelectMode(instId);
                         }
                       },
-                      child: Stack(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
+                          Stack(
+                            children: [
                           if (pending != null)
                             _CardFlipTile(
                               key: ValueKey('flip_${instance.instanceId}'),
                               fromCard: pending.from,
                               toCard: pending.to,
                               growth: instance,
-                              size: 100,
+                              size: 85,
                               dataReady: pending.dataReady,
                               onDone: () {
                                 if (mounted)
@@ -302,37 +297,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
                               },
                             )
                           else
-                            TriadCardView(card: card, size: 100, growth: instance),
-                          if (card.cardType == TriadCardType.pokemon)
-                            Positioned(
-                              right: 4,
-                              bottom: 4,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 5,
-                                  vertical: 1,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.black54,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  'Lv.${instance.level}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black87,
-                                        blurRadius: 2,
-                                        offset: Offset(1, 1),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
+                            TriadCardView(card: card, size: 85, growth: instance, showNewBadge: instance.instanceId != null && context.read<PlayerProfileController>().isNewInstance(instance.instanceId!),),
                           // Selection overlay
                           if (_selectMode)
                             Positioned.fill(
@@ -363,6 +328,16 @@ class _CollectionScreenState extends State<CollectionScreen> {
                                 ),
                               ),
                             ),
+                        ],
+                      ),
+                          const SizedBox(height: 1),
+                          Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                              decoration: BoxDecoration(color: const Color(0x60000000), borderRadius: BorderRadius.circular(4)),
+                              child: Text('${card.name} Lv.${instance.level}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 9, fontWeight: FontWeight.w800, fontFamily: 'PowerGreen')),
+                            ),
+                          ),
                         ],
                       ),
                     );
@@ -416,7 +391,8 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
   int _sellPrice(CardGrowth growth, TriadCard card) {
     final shinyMult = (growth.shiny == true) ? 3 : 1;
-    return card.worth * shinyMult;
+    final conditionMult = sellValueMultiplierForTier(growth.conditionTier);
+    return (card.worth * shinyMult * conditionMult).round();
   }
 
   Widget _buildBatchSellBar(PlayerProfileController ctrl, List<CardGrowth> owned) {
@@ -499,12 +475,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
     }
     _exitSelectMode();
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Sold $soldCount cards for ₽$totalPrice!'),
-          backgroundColor: Colors.green.shade800,
-        ),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Toast.show(context, text: '₽$totalPrice Obtained!', imagePath: '__money__');
+      });
     }
   }
 
@@ -533,7 +506,16 @@ class _CollectionScreenState extends State<CollectionScreen> {
       case _SortMode.rarity:
         sorted.sort((a, b) => a.rarity.index.compareTo(b.rarity.index));
       case _SortMode.type:
-        sorted.sort((a, b) => a.affinity.compareTo(b.affinity));
+        sorted.sort((a, b) {
+          final cmp = a.affinity.compareTo(b.affinity);
+          return cmp != 0 ? cmp : a.name.compareTo(b.name);
+        });
+      case _SortMode.condition:
+        sorted.sort((a, b) {
+          final cA = cardGrowth[a.id]?.condition ?? 100;
+          final cB = cardGrowth[b.id]?.condition ?? 100;
+          return cA.compareTo(cB); // worst condition first
+        });
     }
     return sorted;
   }
@@ -725,357 +707,402 @@ class _CollectionScreenState extends State<CollectionScreen> {
         .profile
         .trainerName;
     final ctrl = context.read<PlayerProfileController>();
+    final isShiny = growth?.shiny == true;
 
     showDialog<void>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (ctx, setDialogState) => Dialog(
-          backgroundColor: Colors.black87,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: Colors.white.withValues(alpha: 0.2),
-              width: 1.5,
-            ),
-          ),
-          insetPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 40,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Title
-                  Center(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '${card.name} (Lv.$level) - #${card.cardNumber}',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () {
-                            final instanceId = growth?.instanceId;
-                            if (instanceId == null) return;
-                            final added = ctrl.toggleFavorite(instanceId);
-                            setDialogState(() {});
-                            ScaffoldMessenger.of(dialogContext).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  added
-                                      ? 'Added to favorites!'
-                                      : 'Removed from favorites',
-                                ),
-                                duration: const Duration(seconds: 1),
-                              ),
-                            );
-                          },
-                          child: Builder(
-                            builder: (ctx) {
-                              final iid = growth?.instanceId;
-                              final fav = iid != null && ctrl.isFavorite(iid);
-                              return Icon(
-                                fav ? Icons.star : Icons.star_border,
-                                color: fav
-                                    ? const Color(0xFFC9A44C)
-                                    : Colors.white38,
-                                size: 24,
-                              );
-                            },
-                          ),
-                        ),
-                      ],
+        builder: (ctx, setDialogState) {
+          var detailTilt = Offset.zero;
+          return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
+          child: _detailFrame(affinity: card.affinity, child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                // ── Header row ──
+                Row(children: [
+                  // Card number badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A1C20),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                     ),
+                    child: Text('#${card.cardNumber}', style: const TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1)),
                   ),
-                  const SizedBox(height: 12),
-                  // Shiny indicator
-                  if (growth?.shiny == true)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.star, color: Colors.red, size: 18),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Shiny',
-                            style: TextStyle(
-                              color: Colors.red.shade300,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1,
-                            ),
-                          ),
-                        ],
+                  const Spacer(),
+                  // Shiny badge
+                  if (isShiny)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [Color(0xFFD4AF37), Color(0xFF8B6914)]),
+                        borderRadius: BorderRadius.circular(6),
                       ),
+                      child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                        Text('✨', style: TextStyle(fontSize: 11)),
+                        SizedBox(width: 3),
+                        Text('SHINY', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1)),
+                      ]),
                     ),
-                  // Card image
-                  Center(
-                    child: TriadCardView(card: card, size: 140, growth: growth),
+                  // Favorite
+                  GestureDetector(
+                    onTap: () {
+                      final iid = growth?.instanceId;
+                      if (iid == null) return;
+                      ctrl.toggleFavorite(iid);
+                      setDialogState(() {});
+                    },
+                    child: Builder(builder: (_) {
+                      final iid = growth?.instanceId;
+                      final fav = iid != null && ctrl.isFavorite(iid);
+                      return Icon(fav ? Icons.star : Icons.star_border, color: fav ? const Color(0xFFC9A44C) : Colors.white24, size: 22);
+                    }),
                   ),
-                  const SizedBox(height: 12),
-                  // Type icon + name → right
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                ]),
+                const SizedBox(height: 12),
+                // ── Card image ──
+                Center(
+                  child: Stack(
+                    clipBehavior: Clip.none,
                     children: [
-                      Text(
-                        _capitalize(card.affinity),
-                        style: const TextStyle(color: Colors.white70),
+                      TiltCard(
+                        onTiltChanged: (o) => setDialogState(() => detailTilt = o),
+                        damage: growth == null ? 0.0 : (kMaxCondition - growth.condition) / kMaxCondition,
+                        child: Builder(
+                          builder: (ctx) {
+                            Widget cardStack = Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                TriadCardView(card: card, size: 150, growth: growth, holoTilt: detailTilt),
+                                if (growth != null && growth.conditionTier == ConditionTier.mint)
+                                  const Positioned.fill(child: MintShimmer()),
+                              ],
+                            );
+                            // Clip the whole card stack around damage holes so shimmer
+                            // doesn't bleed through torn/burned areas.
+                            if (growth != null && growth.conditionTier != ConditionTier.mint) {
+                              final seed = stableCardSeed(card.id, growth.instanceId);
+                              final (tearCount, burnCount) = damageHoleCountsForTier(growth.conditionTier, seed);
+                              if (tearCount > 0 || burnCount > 0) {
+                                final holes = computeDamageHoles(
+                                  size: const Size.square(150),
+                                  seed: seed,
+                                  tearCount: tearCount,
+                                  burnCount: burnCount,
+                                  wear: (kMaxCondition - growth.condition) / kMaxCondition,
+                                );
+                                if (holes.isNotEmpty) {
+                                  cardStack = ClipPath(clipper: CardFaceHoleClipper(holes: holes), child: cardStack);
+                                }
+                              }
+                            }
+                            return cardStack;
+                          },
+                        ),
                       ),
-                      const SizedBox(width: 6),
-                      Image.asset(
-                        typeIconAsset(card.affinity),
-                        width: 20,
-                        height: 20,
-                      ),
+                      if (growth != null)
+                        Positioned(left: -88, top: 48, child: _conditionStamp(growth.conditionTier)),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  // Rarity display
-                  Row(children: [_buildRarityDisplay(card.rarity)]),
-                  const SizedBox(height: 6),
-                  // XP bar (Pokémon only)
-                  if (card.cardType == TriadCardType.pokemon) ...[
-                    const SizedBox(height: 10),
-                    ..._buildXpBar(growth),
-                  ],
+                ),
+                const SizedBox(height: 8),
+                // ── Name + level ──
+                Text('${card.name}  Lv.$level', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800, decoration: TextDecoration.none), textAlign: TextAlign.center),
+                const SizedBox(height: 10),
+                // ── Type + Rarity row ──
+                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  _rarityBadge(card.rarity, holo: card.holo),
+                  const SizedBox(width: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(color: const Color(0xFF1A1C20), borderRadius: BorderRadius.circular(8)),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Image.asset(typeIconAsset(card.affinity), width: 18, height: 18),
+                      const SizedBox(width: 6),
+                      Text(_capitalize(card.affinity), style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600, decoration: TextDecoration.none)),
+                    ]),
+                  ),
+                ]),
+                // ── XP bar ──
+                if (card.cardType == TriadCardType.pokemon) ...[
                   const SizedBox(height: 14),
-                  // NSEW — bold letters, numbers centered below, bonuses in green
-                  Center(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _statColumn(
-                          'N',
-                          effectiveValues.north,
-                          bonus: growth?.bonusNorth ?? 0,
-                        ),
-                        const SizedBox(width: 24),
-                        _statColumn(
-                          'S',
-                          effectiveValues.south,
-                          bonus: growth?.bonusSouth ?? 0,
-                        ),
-                        const SizedBox(width: 24),
-                        _statColumn(
-                          'E',
-                          effectiveValues.east,
-                          bonus: growth?.bonusEast ?? 0,
-                        ),
-                        const SizedBox(width: 24),
-                        _statColumn(
-                          'W',
-                          effectiveValues.west,
-                          bonus: growth?.bonusWest ?? 0,
-                        ),
-                      ],
-                    ),
-                  ),
+                  ..._buildXpBar(growth),
+                ],
+                // ── Condition ──
+                if (growth != null && growth.condition < kMaxCondition) ...[
                   const SizedBox(height: 12),
-                  // Evolution line — always at bottom, centered
-                  if (card.cardType == TriadCardType.pokemon)
-                    _buildEvolutionChain(
-                      card,
-                      context.read<PlayerProfileController>().cardGrowth,
-                      isShiny: growth?.shiny == true,
-                    ),
-                  if (card.cardType == TriadCardType.pokemon)
-                    const SizedBox(height: 8),
-                  // OT / Obtained
-                  Text(
-                    'OT: ${trainerName ?? '—'}',
-                    style: const TextStyle(color: Colors.white54),
-                  ),
-                  Text(
-                    'Obtained: ${growth?.humanizedSource ?? '—'}',
-                    style: const TextStyle(color: Colors.white54),
-                  ),
-                  // Evolve buttons
-                  for (final evo in evolutions)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: FilledButton(
-                        onPressed: () async {
-                          final toCard = CardRepository.instance.cardById(
-                            evo.to,
-                          );
-                          debugPrint(
-                            '[EVOLVE] collection: cardId=${card.id} toId=${evo.to} instanceId=${growth?.instanceId}',
-                          );
-
-                          // Confirm dialog to prevent evolving the wrong instance
-                          final shinyLabel = (growth?.shiny == true)
-                              ? ' ✨Shiny'
-                              : '';
-                          final confirm = await showDialog<bool>(
-                            context: dialogContext,
-                            builder: (ctx) => AlertDialog(
-                              title: const Text('Confirm Evolution'),
-                              content: Text(
-                                'Evolve ${card.name}$shinyLabel (Lv.${growth?.level ?? 1}) '
-                                'into ${toCard?.name ?? evo.to}?',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  child: const Text('Cancel'),
-                                ),
-                                FilledButton(
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  child: const Text('Evolve!'),
-                                ),
-                              ],
-                            ),
-                          );
-                          if (confirm != true) return;
-
-                          Navigator.pop(dialogContext);
-                          if (toCard == null) {
-                            context.read<PlayerProfileController>().evolveCard(
-                              card.id,
-                              evo.to,
-                              instanceId: growth?.instanceId,
-                            );
-                            return;
-                          }
-                          // Kick the real evolve off now, in parallel with
-                          // the animation — it needs the whole ~5s
-                          // strobe/flash/slam runway anyway before the
-                          // evolved card's real (post-loss) bonus is ever
-                          // shown, and the collection grid's flip tile
-                          // waits on this same future before handing back
-                          // to the plain grid view.
-                          final evolveFuture = context
-                              .read<PlayerProfileController>()
-                              .evolveCard(
-                                card.id,
-                                evo.to,
-                                instanceId: growth?.instanceId,
+                  ConditionDetail(condition: growth.condition, effectSummary: conditionEffectSummary(effectiveValues, growth.condition)),
+                ],
+                const SizedBox(height: 16),
+                // ── NSEW stats ──
+                _detailStatsRow(effectiveValues, growth, card.affinity),
+                const SizedBox(height: 14),
+                // ── Evolution chain ──
+                if (card.cardType == TriadCardType.pokemon)
+                  _buildEvolutionChain(card, context.read<PlayerProfileController>().cardGrowth, isShiny: isShiny),
+                if (card.cardType == TriadCardType.pokemon) const SizedBox(height: 8),
+                // ── OT / Obtained ──
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: const Color(0xFF1A1C20), borderRadius: BorderRadius.circular(8)),
+                  child: Column(children: [
+                    Text('OT: ${trainerName ?? '—'}', style: const TextStyle(color: Colors.white54, fontSize: 12, decoration: TextDecoration.none)),
+                    Text('Obtained: ${growth?.humanizedSource ?? '—'}', style: const TextStyle(color: Colors.white54, fontSize: 12, decoration: TextDecoration.none)),
+                  ]),
+                ),
+                const SizedBox(height: 12),
+                // ── Evolve buttons ──
+                for (final evo in evolutions) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _detailButton(
+                      label: 'Evolve → ${CardRepository.instance.cardById(evo.to)?.name ?? evo.to}',
+                      color: const Color(0xFF4CAF50),
+                      onTap: () async {
+                        final toCard = CardRepository.instance.cardById(evo.to);
+                        final confirm = await showDialog<bool>(
+                          context: dialogContext,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Confirm Evolution'),
+                            content: Text('Evolve ${card.name}${isShiny ? ' ✨Shiny' : ''} (Lv.${growth?.level ?? 1}) into ${toCard?.name ?? evo.to}?'),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                              FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Evolve!')),
+                            ],
+                          ),
+                        );
+                        if (confirm != true) return;
+                        Navigator.pop(dialogContext);
+                        if (toCard == null) {
+                          context.read<PlayerProfileController>().evolveCard(card.id, evo.to, instanceId: growth?.instanceId);
+                          return;
+                        }
+                        final evolveFuture = context.read<PlayerProfileController>().evolveCard(card.id, evo.to, instanceId: growth?.instanceId);
+                        if (!context.mounted) return;
+                        Navigator.push(context, MaterialPageRoute(
+                          fullscreenDialog: true,
+                          builder: (_) => EvolutionAnimation(
+                            fromCard: card.copyWith(shiny: isShiny),
+                            toCard: toCard.copyWith(shiny: isShiny),
+                            fromBonuses: growth?.bonusValues,
+                            toBonusesFuture: evolveFuture,
+                            onComplete: () => Navigator.pop(context),
+                          ),
+                        )).then((_) {
+                          if (!context.mounted) return;
+                          final instId = growth?.instanceId;
+                          if (instId != null) {
+                            setState(() {
+                              _flippingInstances[instId] = _PendingFlip(
+                                from: card.copyWith(shiny: isShiny),
+                                to: toCard.copyWith(shiny: isShiny),
+                                dataReady: evolveFuture,
                               );
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              fullscreenDialog: true,
-                              builder: (ctx) => EvolutionAnimation(
-                                fromCard: card.copyWith(
-                                  shiny: growth?.shiny == true,
-                                ),
-                                toCard: toCard.copyWith(
-                                  shiny: growth?.shiny == true,
-                                ),
-                                fromBonuses: growth?.bonusValues,
-                                toBonusesFuture: evolveFuture,
-                                onComplete: () => Navigator.pop(ctx),
-                              ),
-                            ),
-                          ).then((_) {
-                            if (!context.mounted) return;
-                            final instId = growth?.instanceId;
-                            if (instId != null) {
-                              setState(() {
-                                _flippingInstances[instId] = _PendingFlip(
-                                  from: card.copyWith(
-                                    shiny: growth?.shiny == true,
-                                  ),
-                                  to: toCard.copyWith(
-                                    shiny: growth?.shiny == true,
-                                  ),
-                                  dataReady: evolveFuture,
-                                );
-                              });
-                            }
-                          });
-                        },
-                        child: Text(
-                          'Evolve into ${CardRepository.instance.cardById(evo.to)?.name ?? evo.to}',
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 12),
-                  // Sell button
-                  if (growth != null)
-                    Center(
-                      child: SizedBox(
-                        width: 160,
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () async {
-                              final instId = growth.instanceId;
-                              if (instId == null) return;
-                              final shinyMult = (growth.shiny == true) ? 3 : 1;
-                              final price = card.worth * shinyMult;
-                              final sold = await ctrl.sellCardInstance(instId, price);
-                              if (sold && dialogContext.mounted) {
-                                Navigator.pop(dialogContext);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Sold ${card.name} for ₽$price!')),
-                                );
-                              }
-                            },
-                            borderRadius: BorderRadius.circular(14),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(14),
-                                color: const Color(0xFFC9A44C).withValues(alpha: 0.2),
-                                border: Border.all(color: const Color(0xFFC9A44C).withValues(alpha: 0.4), width: 1.2),
-                              ),
-                              child: Text('Sell for ₽${card.worth * ((growth?.shiny == true) ? 3 : 1)}', style: const TextStyle(color: Color(0xFFC9A44C), fontSize: 14)),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 8),
-                  Center(
-                    child: SizedBox(
-                      width: 160,
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => Navigator.pop(dialogContext),
-                          borderRadius: BorderRadius.circular(14),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(14),
-                              color: Colors.white.withValues(alpha: 0.12),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.18),
-                                width: 1.2,
-                              ),
-                            ),
-                            child: const Text(
-                              'Close',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                            });
+                          }
+                        });
+                      },
                     ),
                   ),
                 ],
-              ),
+                // ── Sell + Close ──
+                Row(children: [
+                  if (growth != null)
+                    Expanded(child: _detailButton(
+                      label: 'Sell ₽${_sellPrice(growth, card)}',
+                      color: const Color(0xFFC9A44C),
+                      onTap: () async {
+                        final instId = growth.instanceId;
+                        if (instId == null) return;
+                        final price = _sellPrice(growth, card);
+                        final sold = await ctrl.sellCardInstance(instId, price);
+                        if (sold && dialogContext.mounted) {
+                          Navigator.pop(dialogContext);
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            Toast.showStacked(context, items: [
+                              {'text': '1× ${card.name} Card Sold!', 'icon': TriadCardView(card: card, size: 44, showCondition: false)},
+                              {'text': '₽$price Obtained!', 'imagePath': '__money__'},
+                            ]);
+                          });
+                        }
+                      },
+                    )),
+                  if (growth != null) const SizedBox(width: 10),
+                  Expanded(child: _detailButton(
+                    label: 'Close',
+                    onTap: () => Navigator.pop(dialogContext),
+                  )),
+                ]),
+              ]),
             ),
+          )),
+      );
+  },
+  ),
+);
+  }
+
+  Widget _detailButton({required String label, Color? color, required VoidCallback onTap}) {
+    final c = color ?? Colors.white24;
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 11),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: c.withValues(alpha: 0.15),
+            border: Border.all(color: c.withValues(alpha: 0.35)),
           ),
+          child: Text(label, style: TextStyle(color: c, fontSize: 13, fontWeight: FontWeight.w700, decoration: TextDecoration.none)),
         ),
       ),
     );
+  }
+
+  Widget _detailStatsRow(CardValues values, CardGrowth? growth, String affinity) {
+    final accent = _detailAccent(affinity);
+    return Row(children: [
+      _detailStat('N', values.north, bonus: growth?.bonusNorth ?? 0, accent: accent),
+      _detailStat('S', values.south, bonus: growth?.bonusSouth ?? 0, accent: accent),
+      _detailStat('E', values.east, bonus: growth?.bonusEast ?? 0, accent: accent),
+      _detailStat('W', values.west, bonus: growth?.bonusWest ?? 0, accent: accent),
+    ]);
+  }
+
+  Widget _detailStat(String label, int value, {int bonus = 0, required Color accent}) {
+    final hasBonus = bonus > 0;
+    return Expanded(child: Container(
+      margin: const EdgeInsets.symmetric(horizontal: 3),
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1C20),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: accent.withValues(alpha: 0.15)),
+      ),
+      child: Column(children: [
+        Text(label, style: TextStyle(color: accent, fontSize: 14, fontWeight: FontWeight.w800, decoration: TextDecoration.none)),
+        const SizedBox(height: 2),
+        Text('$value', style: TextStyle(color: hasBonus ? Colors.greenAccent : Colors.white, fontSize: 18, fontWeight: FontWeight.w700, decoration: TextDecoration.none)),
+        if (hasBonus)
+          Text('+$bonus', style: const TextStyle(color: Colors.greenAccent, fontSize: 10, fontWeight: FontWeight.w600, decoration: TextDecoration.none)),
+      ]),
+    ));
+  }
+
+  Color _detailAccent(String affinity) {
+    switch (affinity.toLowerCase()) {
+      case 'fire': return const Color(0xFFF44B1A);
+      case 'water': return const Color(0xFF3DA5E0);
+      case 'grass': return const Color(0xFF5CBF60);
+      case 'electric': return const Color(0xFFF0D830);
+      case 'psychic': return const Color(0xFFE83A88);
+      case 'ice': return const Color(0xFF5CE8F0);
+      case 'dragon': return const Color(0xFF9050E0);
+      case 'dark': return const Color(0xFF705080);
+      case 'fairy': return const Color(0xFFF090D0);
+      case 'fighting': return const Color(0xFFE07030);
+      case 'flying': return const Color(0xFFA0B8F0);
+      case 'ghost': return const Color(0xFF9060C0);
+      case 'ground': return const Color(0xFFE0A830);
+      case 'poison': return const Color(0xFFC060E0);
+      case 'rock': return const Color(0xFFC0A858);
+      case 'bug': return const Color(0xFFA0D050);
+      case 'steel': return const Color(0xFFB8B8C8);
+      default: return const Color(0xFFC8C0A0);
+    }
+  }
+
+  List<Color> _detailGradient(String affinity) {
+    const bg = Color(0xFF282A30);
+    return [bg, _detailAccent(affinity)];
+  }
+
+  Widget _detailFrame({required Widget child, String? affinity}) {
+    final grad = _detailGradient(affinity ?? '');
+    final typeIconPath = affinity != null ? typeIconAsset(affinity) : null;
+    final inner = Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF282A30),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF1A1C20)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(children: [
+        Positioned.fill(child: ClipPath(
+          clipper: _DiagonalTopClipper(),
+          child: Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.topRight, colors: grad))),
+        )),
+        if (typeIconPath != null)
+          Positioned(top: 0, left: 4, child: IgnorePointer(child: Opacity(opacity: 0.12, child: Image.asset(typeIconPath, width: 80, height: 80, errorBuilder: (_, __, ___) => const SizedBox.shrink())))),
+        Positioned.fill(child: IgnorePointer(child: CustomPaint(painter: _DetailShadowPainter()))),
+        child,
+      ]),
+    );
+    return Stack(clipBehavior: Clip.none, children: [
+      Positioned(left: -4, right: -4, top: -4, bottom: -4, child: ImageFiltered(imageFilter: ImageFilter.blur(sigmaX: 2, sigmaY: 2), child: Container(decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF2D2E35), Color(0xFF1F2027)]))))),
+      inner,
+    ]);
+  }
+
+  /// Rubber-stamp showing a card's actual Condition tier (GDD §2), replacing
+  /// the old hardcoded "MINT" — the label and color now track whatever
+  /// tier the card is really in.
+  Widget _conditionStamp(ConditionTier tier) {
+    final color = colorForConditionTier(tier);
+    return Transform.rotate(
+      angle: -0.15,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          border: Border.all(color: color.withValues(alpha: 0.8), width: 1.5),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          tier.label.toUpperCase(),
+          style: TextStyle(color: color.withValues(alpha: 0.8), fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 2, decoration: TextDecoration.none),
+        ),
+      ),
+    );
+  }
+
+  Widget _rarityBadge(CardRarity rarity, {bool holo = false}) {
+    const star = Icon(Icons.star, size: 16, color: Colors.white);
+    Widget stars;
+    switch (rarity) {
+      case CardRarity.common:
+        stars = star;
+      case CardRarity.uncommon:
+        stars = Row(mainAxisSize: MainAxisSize.min, children: [star, const SizedBox(width: 2), star]);
+      case CardRarity.rare:
+        stars = Column(mainAxisSize: MainAxisSize.min, children: [
+          star,
+          Row(mainAxisSize: MainAxisSize.min, children: [star, const SizedBox(width: 2), star]),
+        ]);
+      case CardRarity.epic:
+        stars = Column(mainAxisSize: MainAxisSize.min, children: [
+          Row(mainAxisSize: MainAxisSize.min, children: [star, const SizedBox(width: 2), star]),
+          Row(mainAxisSize: MainAxisSize.min, children: [star, const SizedBox(width: 2), star]),
+        ]);
+      case CardRarity.legendary:
+        stars = Row(mainAxisSize: MainAxisSize.min, children: [
+          const Icon(Icons.star, size: 18, color: Color(0xFFFFCA28)),
+          const SizedBox(width: 3),
+          const Text('L', style: TextStyle(color: Color(0xFFFFCA28), fontSize: 13, fontWeight: FontWeight.w900, decoration: TextDecoration.none)),
+        ]);
+    }
+    if (holo) return _HoloShimmer(child: stars);
+    return stars;
   }
 
   String _capitalize(String s) =>
@@ -1233,8 +1260,11 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
     Widget node(String cardId, {bool highlight = false}) {
       final c = repository.cardById(cardId);
-      // Use owned growth or create a synthetic shiny one for preview
+      // If viewing a non-shiny card, don't show shiny versions of relatives
       CardGrowth? effectiveGrowth = cardGrowth[cardId];
+      if (!isShiny && effectiveGrowth?.shiny == true) {
+        effectiveGrowth = null;
+      }
       if (isShiny &&
           (effectiveGrowth == null || effectiveGrowth.shiny != true)) {
         effectiveGrowth = CardGrowth(
@@ -1542,37 +1572,23 @@ class _SortChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: Material(
-        color: active
-            ? Colors.amber.withValues(alpha: 0.2)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(8),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (icon != null) ...[icon!, const SizedBox(width: 4)],
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: active ? Colors.amber : Colors.white70,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                ),
-                if (ascending != null)
-                  Icon(
-                    ascending! ? Icons.arrow_upward : Icons.arrow_downward,
-                    size: 14,
-                    color: active ? Colors.amber : Colors.white54,
-                  ),
-              ],
-            ),
+      padding: const EdgeInsets.only(right: 6),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: active ? const Color(0xFF3A3C44) : const Color(0xFF282A30),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: active ? const Color(0xFF74777F) : const Color(0xFF1A1C20)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[icon!, const SizedBox(width: 4)],
+              Text(label, style: TextStyle(color: active ? Colors.white : Colors.white.withValues(alpha: 0.6), fontWeight: FontWeight.w600, fontSize: 12)),
+              if (ascending != null) ...[const SizedBox(width: 2), Icon(ascending! ? Icons.arrow_upward : Icons.arrow_downward, size: 12, color: active ? Colors.white54 : Colors.white24)],
+            ],
           ),
         ),
       ),
@@ -1659,6 +1675,34 @@ class _RarityTile extends StatelessWidget {
   }
 }
 
+class _CardTile extends StatefulWidget {
+  const _CardTile({super.key, required this.onTap, this.onLongPress, required this.child});
+  final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  final Widget child;
+  @override State<_CardTile> createState() => _CardTileState();
+}
+class _CardTileState extends State<_CardTile> with SingleTickerProviderStateMixin {
+  late final _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 80));
+  late final _scale = Tween(begin: 1.0, end: 0.92).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+  @override void initState() { super.initState(); _ctrl.addStatusListener((s) { if (s == AnimationStatus.completed) _ctrl.reverse(); }); }
+  @override void dispose() { _ctrl.dispose(); super.dispose(); }
+  @override Widget build(BuildContext context) => GestureDetector(
+    onTapDown: (_) => _ctrl.forward(), onTapUp: (_) => Future.delayed(const Duration(milliseconds: 50), () { if (mounted) _ctrl.reverse(); }), onTapCancel: () => _ctrl.reverse(),
+    onTap: widget.onTap, onLongPress: widget.onLongPress,
+    child: AnimatedBuilder(animation: _scale, builder: (_, c) => Transform.scale(scale: _scale.value, child: c), child: widget.child),
+  );
+}
+
+String? _setIcon(String name) {
+  final lower = name.toLowerCase();
+  if (lower.contains('field')) return 'assets/images/Booster Pack/fieldicon.png';
+  if (lower.contains('safari')) return 'assets/images/Booster Pack/safariicon.png';
+  if (lower.contains('urban')) return 'assets/images/Booster Pack/urbanicon.png';
+  if (lower.contains('kanto')) return 'assets/images/Booster Pack/fieldicon.png';
+  return null;
+}
+
 class _SetSelector extends StatelessWidget {
   const _SetSelector({
     required this.sets,
@@ -1682,13 +1726,87 @@ class _SetSelector extends StatelessWidget {
         itemBuilder: (context, index) {
           final set = sets[index];
           final selected = set.id == selectedSetId;
-          return ChoiceChip(
-            label: Text(set.name),
-            selected: selected,
-            onSelected: (_) => onChanged(set.id),
+          final iconPath = _setIcon(set.name);
+          return GestureDetector(
+            onTap: () => onChanged(set.id),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: selected ? const Color(0xFF3A3C44) : const Color(0xFF282A30),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: selected ? const Color(0xFF74777F) : const Color(0xFF1A1C20)),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                if (iconPath != null) ...[
+                  Image.asset(iconPath, width: 20, height: 20),
+                  const SizedBox(width: 6),
+                ],
+                Text(set.name, style: TextStyle(color: selected ? Colors.white : Colors.white.withValues(alpha: 0.6), fontSize: 13, fontWeight: FontWeight.w600)),
+              ]),
+            ),
           );
         },
       ),
+    );
+  }
+}
+
+// ── Card detail painter helpers ──
+
+class _DiagonalTopClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.moveTo(0, size.height * 0.55);
+    path.lineTo(0, 0);
+    path.lineTo(size.width, 0);
+    path.lineTo(size.width, size.height * 0.22);
+    path.close();
+    return path;
+  }
+  @override bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+}
+
+class _DetailShadowPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final r = 14.0;
+    final glowPaint = Paint()
+      ..color = const Color(0x18FFFFFF)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+    canvas.drawLine(Offset(r, 0), Offset(size.width, 0), glowPaint);
+    canvas.drawArc(Rect.fromLTWH(0, 0, r * 2, r * 2), 3.14159, 1.5708, false, glowPaint);
+    canvas.drawLine(Offset(0, r), Offset(0, size.height), glowPaint);
+  }
+  @override bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _HoloShimmer extends StatefulWidget {
+  final Widget child;
+  const _HoloShimmer({required this.child});
+  @override State<_HoloShimmer> createState() => _HoloShimmerState();
+}
+
+class _HoloShimmerState extends State<_HoloShimmer> with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  @override void initState() { super.initState(); _ctrl = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat(); }
+  @override void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, __) {
+        final hue = (_ctrl.value * 360) % 360;
+        return ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(
+            colors: [HSLColor.fromAHSL(1, hue, 0.9, 0.6).toColor(), HSLColor.fromAHSL(1, (hue + 180) % 360, 0.9, 0.6).toColor()],
+          ).createShader(bounds),
+          child: widget.child,
+        );
+      },
     );
   }
 }

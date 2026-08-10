@@ -26,6 +26,7 @@ class MatchGrowthResult {
           .toList(),
       bonusXp: (json['bonusXp'] as Map<String, dynamic>?)
           ?.map((k, v) => MapEntry(k, (v as num).toInt())) ?? {},
+      trainerXpEarned: (json['trainerXpEarned'] as num?)?.toInt() ?? 0,
     );
   }
 }

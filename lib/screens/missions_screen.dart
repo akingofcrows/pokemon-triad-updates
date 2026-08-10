@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app/player_profile_controller.dart';
+import '../models/card_values.dart';
 import '../models/quest.dart';
+import '../services/card_repository.dart';
+import '../services/item_repository.dart';
+import '../widgets/triad_card_view.dart';
 
 class MissionsScreen extends StatelessWidget {
   const MissionsScreen({super.key});
@@ -13,7 +17,7 @@ class MissionsScreen extends StatelessWidget {
     final quest = ctrl.activeQuest;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D1A),
+      backgroundColor: const Color(0xFF2D2E35),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -94,6 +98,8 @@ class MissionsScreen extends StatelessWidget {
                               ),
                             ),
                           ],
+                          // Show reward items (cards, pokéballs, etc.)
+                          _buildRewardItems(quest.id),
                         ],
                       ),
                     ),
@@ -167,4 +173,47 @@ class MissionsScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+Widget _buildRewardItems(String questId) {
+  final detail = QuestData.questDetail(questId);
+  if (detail == null) return const SizedBox.shrink();
+  final items = detail['rewardItems'] as List? ?? [];
+  if (items.isEmpty) return const SizedBox.shrink();
+
+  return Padding(
+    padding: const EdgeInsets.only(top: 12),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const Text('Reward Items', style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
+      const SizedBox(height: 8),
+      ...items.map((item) {
+        final itemMap = item as Map<String, dynamic>;
+        final itemId = itemMap['id'] as String? ?? '';
+        final qty = itemMap['quantity'] as int? ?? 1;
+        final isCard = itemId.startsWith('card_');
+        if (isCard) {
+          final card = CardRepository.instance.cardById(itemId);
+          if (card == null) return const SizedBox.shrink();
+          final level = itemMap['level'] as int? ?? card.baseLevel ?? 1;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(children: [
+              SizedBox(width: 36, height: 36, child: TriadCardView(card: card, size: 36, showCondition: false)),
+              const SizedBox(width: 8),
+              Text('${card.name} Lv.$level - x $qty', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+            ]),
+          );
+        }
+        final imgPath = ItemRepository().itemById(itemId)?.imageAsset ?? '';
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Row(children: [
+            if (imgPath.isNotEmpty)
+              Padding(padding: const EdgeInsets.only(right: 8), child: Image.asset(imgPath, height: 24, width: 24)),
+            Text('x $qty', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+          ]),
+        );
+      }),
+    ]),
+  );
 }

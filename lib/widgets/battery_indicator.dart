@@ -48,12 +48,12 @@ class _BatteryIndicatorState extends State<BatteryIndicator> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _Shadowed(child: Icon(_icon, color: Colors.white, size: 18)),
+        _Shadowed(child: Icon(_icon, color: Colors.white.withValues(alpha: 0.4), size: 18)),
         const SizedBox(width: 4),
         _Shadowed(
           child: Text(
             '$_level%',
-            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12, fontWeight: FontWeight.w700),
           ),
         ),
       ],
@@ -61,7 +61,7 @@ class _BatteryIndicatorState extends State<BatteryIndicator> {
   }
 }
 
-/// Wraps [child] with a dark dropshadow offset by (2,2) for legibility
+/// Wraps [child] with a dark dropshadow offset right by 2px for legibility
 /// against light or animated backgrounds.
 class _Shadowed extends StatelessWidget {
   const _Shadowed({required this.child});
@@ -74,25 +74,18 @@ class _Shadowed extends StatelessWidget {
       children: [
         Positioned(
           left: 2,
-          top: 2,
-          child: _recolor(child, const Color(0xFF404040)),
+          top: 0,
+          child: child is Text
+              ? Text(
+                  (child as Text).data ?? '',
+                  style: ((child as Text).style ?? const TextStyle()).copyWith(color: const Color(0xFF242529)),
+                )
+              : child is Icon
+                  ? Icon((child as Icon).icon, size: (child as Icon).size, color: const Color(0xFF242529))
+                  : child,
         ),
         child,
       ],
     );
-  }
-
-  static Widget _recolor(Widget child, Color color) {
-    if (child is Icon) return Icon(child.icon, size: child.size, color: color);
-    if (child is Text) {
-      return DefaultTextStyle(
-        style: child.style ?? const TextStyle(),
-        child: Text(
-          child.data ?? '',
-          style: (child.style ?? const TextStyle()).copyWith(color: color),
-        ),
-      );
-    }
-    return child;
   }
 }

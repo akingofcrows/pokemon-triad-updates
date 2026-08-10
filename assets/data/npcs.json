@@ -46,7 +46,14 @@
       ],
       "portrait": "LEADER_Brock.png",
       "victoryQuote": "You're tougher than you look...\nI'll remember this battle!",
-      "defeatQuote": "Ha! Rock-solid defense wins again.\nTrain hard and come back!"
+      "defeatQuote": "Ha! Rock-solid defense wins again.\nTrain hard and come back!",
+      "deck": [
+        "card_geodude_1",
+        "card_onix_1",
+        "card_sandshrew_1",
+        "card_graveler_1",
+        "card_rhydon_1"
+      ]
     },
     {
       "id": "npc_misty",
@@ -62,7 +69,14 @@
       ],
       "portrait": "LEADER_Misty.png",
       "victoryQuote": "You really know how to make a splash!\nI'm impressed.",
-      "defeatQuote": "Water types flow around everything!\nBetter luck next time, Trainer."
+      "defeatQuote": "Water types flow around everything!\nBetter luck next time, Trainer.",
+      "deck": [
+        "card_staryu_1",
+        "card_starmie_1",
+        "card_goldeen_1",
+        "card_horsea_1",
+        "card_seaking_1"
+      ]
     },
     {
       "id": "npc_lt_surge",
@@ -78,7 +92,14 @@
       ],
       "portrait": "LEADER_Surge.png",
       "victoryQuote": "Zzzt! You short-circuited my strategy!\nOutstanding, soldier!",
-      "defeatQuote": "Ha ha! Electric types never lose their charge!\nYou'll need more training, rookie!"
+      "defeatQuote": "Ha ha! Electric types never lose their charge!\nYou'll need more training, rookie!",
+      "deck": [
+        "card_pikachu_1",
+        "card_raichu_1",
+        "card_magnemite_1",
+        "card_voltorb_1",
+        "card_electabuzz_1"
+      ]
     },
     {
       "id": "npc_erika",
@@ -94,7 +115,14 @@
       ],
       "portrait": "LEADER_Erika.png",
       "victoryQuote": "Oh my... your strategy pruned my team\nlike a master gardener!",
-      "defeatQuote": "Grass types grow stronger with every battle.\nNurture your team and try again."
+      "defeatQuote": "Grass types grow stronger with every battle.\nNurture your team and try again.",
+      "deck": [
+        "card_oddish_1",
+        "card_gloom_1",
+        "card_vileplume_1",
+        "card_bellsprout_1",
+        "card_tangela_1"
+      ]
     },
     {
       "id": "npc_koga",
@@ -108,7 +136,14 @@
         "card_zubat_1",
         "card_venomoth_1"
       ],
-      "portrait": "LEADER_Koga.png"
+      "portrait": "LEADER_Koga.png",
+      "deck": [
+        "card_koffing_1",
+        "card_weezing_1",
+        "card_grimer_1",
+        "card_muk_1",
+        "card_venomoth_1"
+      ]
     },
     {
       "id": "npc_sabrina",
@@ -122,7 +157,14 @@
         "card_kadabra_1",
         "card_alakazam_1"
       ],
-      "portrait": "LEADER_Sabrina.png"
+      "portrait": "LEADER_Sabrina.png",
+      "deck": [
+        "card_abra_1",
+        "card_kadabra_1",
+        "card_alakazam_1",
+        "card_mr_mime_1",
+        "card_slowpoke_1"
+      ]
     },
     {
       "id": "npc_blaine",
@@ -136,7 +178,14 @@
         "card_magmar_1",
         "card_arcanine_1"
       ],
-      "portrait": "LEADER_Blaine.png"
+      "portrait": "LEADER_Blaine.png",
+      "deck": [
+        "card_growlithe_1",
+        "card_ponyta_1",
+        "card_rapidash_1",
+        "card_vulpix_1",
+        "card_magmar_1"
+      ]
     },
     {
       "id": "npc_giovanni",
@@ -150,7 +199,14 @@
         "card_nidoking_1",
         "card_rhydon_1"
       ],
-      "portrait": "LEADER_Giovanni.png"
+      "portrait": "LEADER_Giovanni.png",
+      "deck": [
+        "card_rhydon_1",
+        "card_dugtrio_1",
+        "card_nidoking_1",
+        "card_nidoqueen_1",
+        "card_persian_1"
+      ]
     },
     {
       "id": "npc_lance",

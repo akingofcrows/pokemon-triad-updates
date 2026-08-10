@@ -19,13 +19,6 @@ class ContentUpdateManager {
   ContentUpdateManager._();
   static final ContentUpdateManager instance = ContentUpdateManager._();
 
-  /// Set by the session loader when optional bundles need downloading, and
-  /// consumed by Home (which has a post-navigation context to show the
-  /// non-blocking [OptionalContentSheet] from) — see
-  /// pokemon_triad_update_and_asset_delivery_system.md §10.
-  static List<BundleDiff>? pendingOptionalDiffs;
-  static String? pendingOptionalBaseUrl;
-
   late String _contentDir;
   LocalBundleIndex _index = LocalBundleIndex.empty();
   bool _initialized = false;
@@ -355,7 +348,7 @@ class ContentUpdateManager {
 }
 
 /// [ApiClient.baseUrlProvider] returns an origin already suffixed with
-/// `/api` (e.g. `https://api.playfablewood.com/api`), but the content-system
+/// `/api` (e.g. `https://100.65.103.71:3001/api`), but the content-system
 /// routes and the manifest's own bundle `url` fields are full paths that
 /// already start with `/api/...` too — so building requests as
 /// `$baseUrl/api/...` would double up. Strip the suffix first.

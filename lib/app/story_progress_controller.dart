@@ -21,6 +21,10 @@ class StoryProgressController extends ChangeNotifier {
   /// Server-synced progress: locationId -> nodeId -> progress data.
   Map<String, Map<String, _NodeProgress>> _progress = {};
 
+  /// Completion counts per location for rule types like catchCount, winBattles.
+  /// Key: locationId, Value: current count.
+  final Map<String, int> _completionCounts = {};
+
   /// Set of location IDs that are unlocked.
   Set<String> _unlockedLocations = {};
 
@@ -35,6 +39,25 @@ class StoryProgressController extends ChangeNotifier {
     await _loadRoutes();
     notifyListeners(); // Show locations immediately
     await _syncProgress(); // Then sync server state in background
+  }
+
+  /// Reset all progression — clears unlocks, progress, and returns to Pallet Town.
+  Future<void> resetProgression() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('unlockedLocations');
+    await prefs.remove(_prefsKey);
+    await prefs.remove('playerLocation');
+    _progress.clear();
+    _completionCounts.clear();
+    _unlockedLocations = {'pallet_town', 'route_1'};
+    // Reset every node's mutable state
+    for (final loc in _locations) {
+      for (final node in loc.nodes) {
+        node.isCompleted = false;
+        node.isUnlocked = node.isFirst;
+      }
+    }
+    notifyListeners();
   }
 
   Future<void> _loadRoutes() async {
@@ -90,7 +113,13 @@ class StoryProgressController extends ChangeNotifier {
       if (json == null) return;
       final data = jsonDecode(json) as Map<String, dynamic>;
       _progress = {};
-      for (final locEntry in data.entries) {
+
+      // Support both old format (flat) and new format (nodes + counts)
+      final nodesData = data.containsKey('nodes')
+          ? data['nodes'] as Map<String, dynamic>
+          : data; // old format: flat map
+
+      for (final locEntry in nodesData.entries) {
         _progress[locEntry.key] = {};
         for (final nodeEntry in (locEntry.value as Map<String, dynamic>).entries) {
           final v = nodeEntry.value as Map<String, dynamic>;
@@ -101,6 +130,18 @@ class StoryProgressController extends ChangeNotifier {
           );
         }
       }
+
+      // Restore completion counts (new format), cap at required amount
+      if (data.containsKey('counts')) {
+        final counts = data['counts'] as Map<String, dynamic>;
+        _completionCounts.clear();
+        for (final entry in counts.entries) {
+          final raw = (entry.value as num).toInt();
+          final loc = _locations.firstWhere((l) => l.id == entry.key, orElse: () => _locations.first);
+          final max = loc.completionRule.count;
+          _completionCounts[entry.key] = raw > max ? max : raw;
+        }
+      }
       // Restore unlocked locations from cached data
       for (final loc in _locations) {
         final locProgress = _progress[loc.id] ?? {};
@@ -109,7 +150,7 @@ class StoryProgressController extends ChangeNotifier {
             node.isCompleted = true;
           }
         }
-        if (loc.isFullyComplete) {
+        if (loc.isFullyComplete(_completionCounts[loc.id] ?? 0)) {
           for (final unlockId in loc.completionUnlocks) {
             _unlockedLocations.add(unlockId);
           }
@@ -121,7 +162,10 @@ class StoryProgressController extends ChangeNotifier {
   Future<void> _saveLocalProgress() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final data = <String, dynamic>{};
+      final data = <String, dynamic>{
+        'nodes': <String, dynamic>{},
+        'counts': _completionCounts.map((k, v) => MapEntry(k, v)),
+      };
       for (final locEntry in _progress.entries) {
         final nodes = <String, dynamic>{};
         for (final nodeEntry in locEntry.value.entries) {
@@ -131,7 +175,7 @@ class StoryProgressController extends ChangeNotifier {
             'timesCleared': nodeEntry.value.timesCleared,
           };
         }
-        data[locEntry.key] = nodes;
+        (data['nodes'] as Map<String, dynamic>)[locEntry.key] = nodes;
       }
       await prefs.setString(_prefsKey, jsonEncode(data));
     } catch (_) {}
@@ -139,6 +183,8 @@ class StoryProgressController extends ChangeNotifier {
 
   /// Apply server-synced progress onto the local location models.
   void _applyProgressToLocations() {
+    // Reset unlocks to base set, then rebuild from completed nodes
+    _unlockedLocations = {'pallet_town', 'route_1'};
     for (final loc in _locations) {
       final locProgress = _progress[loc.id] ?? {};
       for (final node in loc.nodes) {
@@ -157,16 +203,20 @@ class StoryProgressController extends ChangeNotifier {
           node.isUnlocked = prev.isCompleted || prev == node;
         }
       }
-
-      // If this location is fully complete, unlock its completionUnlocks
-      if (loc.isFullyComplete) {
+      // If location is fully complete, add its completion unlocks
+      if (loc.isFullyComplete(_completionCounts[loc.id] ?? 0)) {
         for (final unlockId in loc.completionUnlocks) {
           _unlockedLocations.add(unlockId);
         }
       }
     }
+    // Persist rebuilt unlocks to local storage
     _saveUnlockedLocations();
-    notifyListeners();
+  }
+
+  Future<void> _saveUnlockedLocations() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('unlockedLocations', _unlockedLocations.toList());
   }
 
   // ── Queries ───────────────────────────────────────────────────────────
@@ -176,10 +226,18 @@ class StoryProgressController extends ChangeNotifier {
     return _unlockedLocations.contains(locationId);
   }
 
+  /// Manually unlock a location (e.g. from quest completion).
+  void addUnlockedLocation(String locationId) {
+    if (_unlockedLocations.add(locationId)) {
+      _saveUnlockedLocations();
+      notifyListeners();
+    }
+  }
+
   /// Whether a location is fully completed.
   bool isLocationComplete(String locationId) {
     final loc = _getLocation(locationId);
-    return loc?.isFullyComplete ?? false;
+    return loc?.isFullyComplete(_completionCounts[loc.id] ?? 0) ?? false;
   }
 
   /// Get a specific location by ID.
@@ -199,9 +257,67 @@ class StoryProgressController extends ChangeNotifier {
   /// Completion percentage for a location (0.0 - 1.0).
   double completionFor(String locationId) {
     final loc = _getLocation(locationId);
-    if (loc == null || loc.nodes.isEmpty) return 0.0;
-    final done = loc.nodes.where((n) => n.isCompleted).length;
-    return done / loc.nodes.length;
+    if (loc == null) return 0.0;
+    return loc.completionFraction(_completionCounts[locationId] ?? 0);
+  }
+
+  /// Get the current completion count for a location (catches, wins, etc.), capped at required.
+  int getCompletionCount(String locationId) {
+    final raw = _completionCounts[locationId] ?? 0;
+    final loc = _getLocation(locationId);
+    final max = loc?.completionRule.count ?? 999;
+    return raw > max ? max : raw;
+  }
+
+  /// Get progress text for display.
+  String completionProgressText(String locationId) {
+    final loc = _getLocation(locationId);
+    if (loc == null) return '';
+    return loc.completionProgressText(getCompletionCount(locationId));
+  }
+
+  /// Record a Pokémon catch in the current location.
+  void recordCatch(String locationId) {
+    final loc = _getLocation(locationId);
+    if (loc == null) return;
+    if (loc.completionRule.type == CompletionRuleType.catchCount ||
+        loc.completionRule.type == CompletionRuleType.catchSpecies) {
+      final current = _completionCounts[locationId] ?? 0;
+      if (current < loc.completionRule.count) {
+        _completionCounts[locationId] = current + 1;
+        _saveLocalProgress();
+      }
+      notifyListeners();
+      // Check if location is now complete
+      if (loc.isFullyComplete(_completionCounts[locationId] ?? 0)) {
+        for (final unlockId in loc.completionUnlocks) {
+          _unlockedLocations.add(unlockId);
+        }
+        _saveUnlockedLocations();
+        notifyListeners();
+      }
+    }
+  }
+
+  /// Record a wild battle win in the current location.
+  void recordBattleWin(String locationId) {
+    final loc = _getLocation(locationId);
+    if (loc == null) return;
+    if (loc.completionRule.type == CompletionRuleType.winBattles) {
+      final current = _completionCounts[locationId] ?? 0;
+      if (current < loc.completionRule.count) {
+        _completionCounts[locationId] = current + 1;
+        _saveLocalProgress();
+      }
+      notifyListeners();
+      if (loc.isFullyComplete(_completionCounts[locationId] ?? 0)) {
+        for (final unlockId in loc.completionUnlocks) {
+          _unlockedLocations.add(unlockId);
+        }
+        _saveUnlockedLocations();
+        notifyListeners();
+      }
+    }
   }
 
   /// Nodes unlocked for replay at a completed location.
@@ -222,13 +338,6 @@ class StoryProgressController extends ChangeNotifier {
 
     final node = loc.nodes.firstWhere((n) => n.id == nodeId);
     final wasFirstClear = !node.isCompleted;
-
-    // Sync to server first — this is the source of truth
-    try {
-      await _api.completeStoryNode(locationId, nodeId);
-    } catch (e) {
-      print('[STORY] Server sync failed for $locationId/$nodeId: $e');
-    }
 
     // Update local state
     node.isCompleted = true;
@@ -264,7 +373,7 @@ class StoryProgressController extends ChangeNotifier {
     _saveLocalProgress();
 
     // Check if location is now fully complete → unlock next locations
-    if (loc.isFullyComplete) {
+    if (loc.isFullyComplete(_completionCounts[loc.id] ?? 0)) {
       for (final unlockId in loc.completionUnlocks) {
         _unlockedLocations.add(unlockId);
       }
@@ -275,17 +384,16 @@ class StoryProgressController extends ChangeNotifier {
     return wasFirstClear;
   }
 
-  /// Save unlocked locations to SharedPreferences.
-  Future<void> _saveUnlockedLocations() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('unlockedLocations', _unlockedLocations.toList());
-  }
-
-  /// Reset all local state (for logout).
-  void reset() {
+  /// Reset all local state (for logout or recovery).
+  Future<void> reset() async {
     _locations.clear();
     _progress.clear();
+    _completionCounts.clear();
     _unlockedLocations.clear();
+    // Clear persisted state too
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('unlockedLocations');
+    await prefs.remove(_prefsKey);
     notifyListeners();
   }
 }

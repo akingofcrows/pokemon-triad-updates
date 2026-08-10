@@ -51,6 +51,44 @@ class MatchState {
   /// Instance IDs of cards that have been placed this match.
   final Set<int> _placedInstances = {};
 
+  // ── Condition loss tracking (pokemon_triad_condition_system.md §5-12) ──
+
+  /// Total Condition lost this match per player card instance, from
+  /// participation + enemy flips + the defeat penalty. Not yet capped —
+  /// call [finalizeConditionLoss] once the match ends to apply the
+  /// per-battle-mode cap.
+  final Map<int, int> conditionLossByInstanceId = {};
+
+  /// How many times each player card instance has been flipped by the
+  /// opponent this match (first flip costs more than subsequent ones).
+  final Map<int, int> _enemyFlipCountByInstanceId = {};
+
+  void _addConditionLoss(int instanceId, int amount) {
+    conditionLossByInstanceId.update(instanceId, (v) => v + amount, ifAbsent: () => amount);
+  }
+
+  /// Record that [playerCard] was just flipped by the opponent: -4 for the
+  /// first flip, -2 for each additional flip of the same card.
+  void recordFlipped(TriadCard playerCard) {
+    final instId = playerCardInstanceIds[playerCard];
+    if (instId == null) return;
+    final flipCount = (_enemyFlipCountByInstanceId[instId] ?? 0) + 1;
+    _enemyFlipCountByInstanceId[instId] = flipCount;
+    _addConditionLoss(instId, flipCount == 1 ? 4 : 2);
+  }
+
+  /// Applies the battle-lost defeat penalty to every placed player card,
+  /// then clamps each instance's total Condition loss to [cap] (the
+  /// current battle mode's per-card cap). Call once at match end.
+  void finalizeConditionLoss({required bool playerLost, required int cap}) {
+    if (playerLost) {
+      for (final instId in _placedInstances) {
+        _addConditionLoss(instId, 2);
+      }
+    }
+    conditionLossByInstanceId.updateAll((_, loss) => loss > cap ? cap : loss);
+  }
+
   /// Maps each player card (TriadCard reference) to its instance ID.
   final Map<TriadCard, int> playerCardInstanceIds;
 
@@ -70,6 +108,7 @@ class MatchState {
     if (instId == null || _placedInstances.contains(instId)) return;
     _placedInstances.add(instId);
     _xpFor(instId, playerCard.id).placed = 1;
+    _addConditionLoss(instId, 2); // participation cost, GDD §6
     debugPrint('[XP-MATCH] recordPlacement: ${playerCard.name} instId=$instId');
   }
 

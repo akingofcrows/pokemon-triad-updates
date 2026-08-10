@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:flutter/services.dart' show rootBundle;
+
 /// A quest objective the player must complete.
 class QuestObjective {
   final String description;
@@ -52,6 +56,28 @@ class Quest {
   );
 }
 
+/// Holds quest-completion dialogue loaded from quests.json.
+class QuestCompletionDialogue {
+  final String speaker;
+  final String portrait;
+  final List<String> pages;
+  final String actionLabel;
+
+  const QuestCompletionDialogue({
+    required this.speaker,
+    required this.portrait,
+    required this.pages,
+    required this.actionLabel,
+  });
+
+  factory QuestCompletionDialogue.fromJson(Map<String, dynamic> json) => QuestCompletionDialogue(
+    speaker: json['speaker'] as String? ?? '',
+    portrait: json['portrait'] as String? ?? '',
+    pages: (json['pages'] as List).cast<String>(),
+    actionLabel: json['actionLabel'] as String? ?? 'OK',
+  );
+}
+
 /// Static quest definitions — the game's quest database.
 class QuestData {
   static Quest get newStart => Quest(
@@ -81,12 +107,56 @@ class QuestData {
   static Quest get oaksParcel => Quest(
     id: 'oaks_parcel',
     name: "Oak's Parcel",
-    rewardDescription: 'Pokédex upgrade + 300 Poké Dollars',
-    rewardMoney: 300,
+    rewardDescription: '10 Poké Balls + 200 Poké Dollars',
+    rewardMoney: 200,
     objectives: [
       QuestObjective(description: 'Travel to Viridian City'),
-      QuestObjective(description: 'Visit the PokéMart in Viridian City'),
+      QuestObjective(description: 'Pick up the parcel at Viridian PokéMart'),
       QuestObjective(description: 'Return the parcel to Professor Oak'),
     ],
   );
+
+  /// Cached quest definitions loaded from quests.json.
+  static Map<String, dynamic>? _questsJson;
+
+  /// Load quest definitions from assets/data/quests.json.
+  static Future<void> load() async {
+    if (_questsJson != null) return;
+    final raw = await rootBundle.loadString('assets/data/quests.json');
+    _questsJson = jsonDecode(raw) as Map<String, dynamic>;
+  }
+
+  /// Returns completion dialogue for a quest, or null if none defined.
+  static QuestCompletionDialogue? completionDialogue(String questId) {
+    final q = _findQuest(questId);
+    if (q == null) return null;
+    final cd = q['completionDialogue'];
+    if (cd == null) return null;
+    return QuestCompletionDialogue.fromJson(cd as Map<String, dynamic>);
+  }
+
+  /// Returns quest detail info: { name, objectives, rewardDescription, rewardMoney, rewardItems, icon? }.
+  static Map<String, dynamic>? questDetail(String questId) {
+    final q = _findQuest(questId);
+    if (q == null) return null;
+    return {
+      'name': q['name'] ?? '',
+      'objectives': (q['objectives'] as List?)?.cast<String>() ?? <String>[],
+      'rewardDescription': q['rewardDescription'] ?? '',
+      'rewardMoney': q['rewardMoney'] ?? 0,
+      'rewardItems': q['rewardItems'] ?? <Map<String, dynamic>>[],
+      if (q['icon'] != null) 'icon': q['icon'],
+    };
+  }
+
+  static Map<String, dynamic>? _findQuest(String questId) {
+    if (_questsJson == null) return null;
+    final list = _questsJson!['quests'] as List?;
+    if (list == null) return null;
+    for (final q in list) {
+      final qMap = q as Map<String, dynamic>;
+      if (qMap['id'] == questId) return qMap;
+    }
+    return null;
+  }
 }

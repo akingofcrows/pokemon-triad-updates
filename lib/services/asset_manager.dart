@@ -5,6 +5,12 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
+/// [ApiClient.baseUrlProvider] returns an origin already suffixed with
+/// `/api` (e.g. `https://100.65.103.71:3001/api`), but the asset-sync
+/// routes are full paths that already start with `/api/...` too — so
+/// building requests as `$baseUrl/api/...` would double up. Strip first.
+String _apiOrigin(String baseUrl) => baseUrl.endsWith('/api') ? baseUrl.substring(0, baseUrl.length - 4) : baseUrl;
+
 /// Manages downloading and caching game assets from the server.
 /// On first launch, downloads all assets. On subsequent launches,
 /// checks the server manifest and only downloads changed files.
@@ -62,9 +68,9 @@ class AssetManager {
   Future<bool> syncIfNeeded({required String baseUrl, void Function(double, String)? onProgress}) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/api/assets/manifest'),
+        Uri.parse('${_apiOrigin(baseUrl)}/api/assets/manifest'),
         headers: {'ngrok-skip-browser-warning': 'true'},
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode != 200) return false;
 
@@ -91,23 +97,32 @@ class AssetManager {
       onProgress?.call(0, 'Updating assets…');
 
       int downloaded = 0;
+      int consecutiveFails = 0;
       for (final file in toDownload) {
         _status = 'Downloading $file…';
         onProgress?.call(downloaded / toDownload.length, _status);
 
         try {
           final resp = await http.get(
-            Uri.parse('$baseUrl/api/assets/$file'),
+            Uri.parse('${_apiOrigin(baseUrl)}/api/assets/$file'),
             headers: {'ngrok-skip-browser-warning': 'true'},
-          ).timeout(const Duration(seconds: 15));
+          ).timeout(const Duration(seconds: 5));
 
           if (resp.statusCode == 200) {
             final localPath = '${_assetDir!}/$file';
             await Directory(localPath).parent.create(recursive: true);
             await File('${_assetDir!}/$file').writeAsBytes(resp.bodyBytes);
+            consecutiveFails = 0;
           }
         } catch (e) {
+          consecutiveFails++;
           debugPrint('AssetManager: failed to download $file: $e');
+          // Bail out if 3 consecutive files fail — server is unreachable
+          if (consecutiveFails >= 3) {
+            debugPrint('AssetManager: too many failures, aborting sync');
+            _downloading = false;
+            return false;
+          }
         }
 
         downloaded++;

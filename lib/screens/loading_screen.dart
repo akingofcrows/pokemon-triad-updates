@@ -22,7 +22,7 @@ class _LoadingScreenState extends State<LoadingScreen>
       vsync: this,
       duration: const Duration(milliseconds: 2200),
     )..repeat();
-    _ctrl.addListener(() => setState(() {}));
+    // Don't call setState on every tick — use AnimatedBuilder instead
   }
 
   @override
@@ -34,16 +34,19 @@ class _LoadingScreenState extends State<LoadingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D1A),
+      backgroundColor: const Color(0xFF2D2E35),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
-              width: 240,
-              height: 180,
-              child: CustomPaint(
-                painter: _DeckShufflePainter(_ctrl.value),
+            AnimatedBuilder(
+              animation: _ctrl,
+              builder: (_, __) => SizedBox(
+                width: 240,
+                height: 180,
+                child: CustomPaint(
+                  painter: _DeckShufflePainter(_ctrl.value),
+                ),
               ),
             ),
             const SizedBox(height: 20),

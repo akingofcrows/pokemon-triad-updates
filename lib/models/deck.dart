@@ -2,6 +2,22 @@ import 'triad_card.dart';
 
 const int kDeckSize = 5;
 
+/// Small corner-badge icon for a deck box, mirroring how [TriadCard]s show
+/// their affinity type icon. Returns null for box keys without a dedicated
+/// icon asset yet.
+String? deckBoxIconAsset(String? boxImage) {
+  switch (boxImage) {
+    case 'urban_deck':
+      return 'assets/images/Booster Pack/urbanicon.png';
+    case 'field_deck':
+      return 'assets/images/Booster Pack/fieldicon.png';
+    case 'safari_deck':
+      return 'assets/images/Booster Pack/safariicon.png';
+    default:
+      return null;
+  }
+}
+
 class Deck {
   const Deck({
     required this.id,

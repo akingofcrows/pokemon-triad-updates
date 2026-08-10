@@ -63,4 +63,33 @@ class BattleLogEntry {
       message: '$cardName gained +$xp XP!',
     );
   }
+
+  /// A simple message with no owner attribution (system messages, item use, etc.).
+  factory BattleLogEntry.simple(String message) {
+    return BattleLogEntry(
+      moverOwner: CardOwner.neutral,
+      moverName: '',
+      message: message,
+    );
+  }
+
+  /// Type effectiveness note when a card faces an enemy.
+  factory BattleLogEntry.typeMatchup({
+    required String attackerName,
+    required String attackerType,
+    required String defenderName,
+    required String defenderType,
+    required int bonus,
+  }) {
+    final label = bonus == -999
+        ? '$attackerName can\'t hit $defenderName — immune!'
+        : bonus > 0
+            ? '$attackerName is super effective vs $defenderName!'
+            : '$attackerName is weak vs $defenderName…';
+    return BattleLogEntry(
+      moverOwner: CardOwner.neutral,
+      moverName: '',
+      message: label,
+    );
+  }
 }

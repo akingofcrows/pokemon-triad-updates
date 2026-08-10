@@ -7,7 +7,7 @@ import '../models/deck.dart';
 import '../models/npc_trainer.dart';
 import '../services/card_repository.dart';
 import 'battle_screen.dart';
-import 'janken_screen.dart';
+import 'coin_flip_screen.dart';
 
 class BattleSetupScreen extends StatefulWidget {
   const BattleSetupScreen({super.key});
@@ -91,11 +91,10 @@ class _BattleSetupScreenState extends State<BattleSetupScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => JankenScreen(
+        builder: (_) => CoinFlipScreen(
           opponentName: npc.name,
           opponentPortrait: npc.portraitAsset,
-          rules: const ['Synergy', 'Winner picks first move'],
-          onComplete: ({required player, required opponent, required playerGoesFirst}) {
+          onComplete: ({required playerGoesFirst}) {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(

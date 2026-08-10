@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/deck.dart' show kDeckSize;
-
-import '../models/deck.dart' show kDeckSize;
+import 'home_style_panel.dart';
 
 /// Two-tone player/opponent header bar using header_color.png stripes.
 /// header_color.png: 226×396, 12 color stripes stacked vertically
@@ -78,68 +77,78 @@ class _BattleHeaderBarState extends State<BattleHeaderBar> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          height: _barHeight,
-          child: Stack(
-            children: [
-              Row(
+    return HomeStylePanel(
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      borderRadius: 12,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
+            child: SizedBox(
+              height: _barHeight,
+              child: Stack(
                 children: [
-                  Expanded(
-                    child: _headerStrip(
-                      widget.playerName, _playerColorIdx,
-                      Alignment.centerLeft,
-                      const EdgeInsets.only(left: 16),
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _headerStrip(
+                          widget.playerName, _playerColorIdx,
+                          Alignment.centerLeft,
+                          const EdgeInsets.only(left: 16),
+                        ),
+                      ),
+                      Expanded(
+                        child: _headerStrip(
+                          widget.opponentName, _opponentColorIdx,
+                          Alignment.centerRight,
+                          const EdgeInsets.only(right: 16),
+                        ),
+                      ),
+                    ],
                   ),
-                  Expanded(
-                    child: _headerStrip(
-                      widget.opponentName, _opponentColorIdx,
-                      Alignment.centerRight,
-                      const EdgeInsets.only(right: 16),
+                  Center(
+                    child: Image.asset(
+                      'assets/ui/hgss_vs1.png',
+                      width: 24,
+                      height: 24,
                     ),
                   ),
                 ],
               ),
-              Center(
-                child: Image.asset(
-                  'assets/ui/hgss_vs1.png',
-                  width: 24,
-                  height: 24,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-        Container(
-          width: double.infinity,
-          color: const Color(0xFF00001C),
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(
-            children: [
-              Expanded(
-                child: Center(
-                  child: Opacity(
-                    opacity: widget.isPlayerTurn ? 1.0 : 0.0,
-                    child: const _TurnArrow(),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            decoration: const BoxDecoration(
+              color: Color(0xFF282A30),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(11)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Center(
+                    child: Opacity(
+                      opacity: widget.isPlayerTurn ? 1.0 : 0.0,
+                      child: const _TurnArrow(),
+                    ),
                   ),
                 ),
-              ),
-              _ScorePill(playerScore: widget.playerScore, opponentScore: widget.opponentScore),
-              Expanded(
-                child: Center(
-                  child: Opacity(
-                    opacity: (!widget.isPlayerTurn) ? 1.0 : 0.0,
-                    child: const _TurnArrow(),
+                _ScorePill(playerScore: widget.playerScore, opponentScore: widget.opponentScore),
+                Expanded(
+                  child: Center(
+                    child: Opacity(
+                      opacity: (!widget.isPlayerTurn) ? 1.0 : 0.0,
+                      child: const _TurnArrow(),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -1,16 +1,21 @@
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:flame/cache.dart';
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart' show TextPainter, TextSpan, TextStyle, TextDirection;
 
 import '../models/battle_log_entry.dart';
 import '../models/board_position.dart';
 import '../models/card_growth.dart';
 import '../models/card_owner.dart';
+import '../models/condition.dart';
+import '../models/consumable_item.dart';
 import '../models/match_state.dart';
 import '../models/triad_card.dart';
+import '../services/audio_service.dart';
 import 'ai/ai_controller.dart';
 import 'battle_hud.dart';
 import 'board/battlefield_layout.dart';
@@ -19,6 +24,7 @@ import 'board/board_visuals.dart';
 import 'cards/card_back_component.dart';
 import 'cards/card_component.dart';
 import 'cards/card_visuals.dart';
+import 'cards/pokeball_throw_component.dart';
 import 'systems/capture_system.dart';
 import 'systems/turn_system.dart';
 
@@ -34,6 +40,11 @@ class TriadGame extends FlameGame {
     this.playerName = 'You',
     this.opponentName = 'Opponent',
     this.isWildBattle = false,
+    this.rules = RuleSet.basic,
+    this.onItemCaptured,
+    this.onItemConsumed,
+    this.trainerLevel = 1,
+    this.conditionCap,
   }) {
     images = Images(prefix: 'assets/');
   }
@@ -44,10 +55,24 @@ class TriadGame extends FlameGame {
   final String playerName;
   final String opponentName;
   final bool isWildBattle;
+  final RuleSet rules;
+  /// Called when a pokéball successfully captures a card mid-battle.
+  final void Function(TriadCard capturedCard)? onItemCaptured;
+  /// Called when a pokéball is actually used (consumed), regardless of outcome.
+  final void Function(String itemId)? onItemConsumed;
+  /// Trainer level for scaling capture odds.
+  final int trainerLevel;
+  /// Per-card Condition-loss cap for this match (GDD §12). Defaults to the
+  /// wild-battle cap for wild encounters and the (higher) trainer-trial cap
+  /// otherwise; pass explicitly for boss/dungeon fights.
+  final int? conditionCap;
+  int get _effectiveConditionCap =>
+      conditionCap ?? (isWildBattle ? kConditionLossCapNormal : kConditionLossCapTrainer);
 
   // --- board panel background ---
   Image? _bgBlack;
   Image? _cardBack;
+  Image? _pokeballImage;
 
   // --- board + hands ---
   late final BoardComponent board;
@@ -59,6 +84,15 @@ class TriadGame extends FlameGame {
   bool _inputLocked = false;
   bool _matchFinished = false;
 
+  // --- placement preview ---
+  BoardPosition? _previewPosition;
+
+  // --- targeting mode (pokéball) ---
+  ConsumableItem? _targetingBall;
+  /// Positions flipped by the player's most recent placement — only these
+  /// can be targeted with a pokéball.
+  final Set<int> _recentlyFlipped = {};
+
   bool _ready = false;
 
   // ---- life-cycle ----
@@ -66,7 +100,13 @@ class TriadGame extends FlameGame {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    await _preloadImages();
+    try {
+      await _preloadImages();
+    } catch (e) {
+      debugPrint('TriadGame: image preload failed: $e');
+      // Continue without preloaded images — individual components will
+      // show fallback visuals rather than crashing.
+    }
 
     // World-space components (board, hands, cards) are positioned assuming
     // (0,0) is the top-left of the screen. Flame's default camera anchors
@@ -74,10 +114,15 @@ class TriadGame extends FlameGame {
     // component by half the canvas size — pin it to top-left to match.
     camera.viewfinder.anchor = Anchor.topLeft;
 
-    _bgBlack = images.fromCache(flameImageKey(
-      isWildBattle ? kBgWildGrassAsset : kBgBlackAsset,
-    ));
+    try {
+      _bgBlack = images.fromCache(flameImageKey(
+        isWildBattle ? kBgWildGrassAsset : kBgBlackAsset,
+      ));
+    } catch (_) {
+      _bgBlack = null;
+    }
     _cardBack = images.fromCache(flameImageKey('ui/card_back.png'));
+    _pokeballImage = images.fromCache(flameImageKey('images/icons/items/item267.png'));
 
     _layout = BattlefieldLayout.compute(size);
 
@@ -135,6 +180,14 @@ class TriadGame extends FlameGame {
       paths.add(rarityFrameAsset(rarity));
     }
     paths.add(kSparkleAsset);
+    paths.add('images/icons/items/item267.png');
+    paths.add('ui/playerframe.png');
+    paths.add('ui/opponentframe.png');
+    // Preload trainer card backgrounds
+    paths.add(kTrainerBgAsset);
+    paths.add(kEliteBgAsset);
+    paths.add(kGymLeaderBgAsset);
+    paths.add(kOakBgAsset);
     for (final card in [...state.playerHand, ...state.opponentHand]) {
       paths.add(card.image);
       if (card.shiny) {
@@ -163,7 +216,7 @@ class TriadGame extends FlameGame {
         Paint(),
       );
     } else {
-      canvas.drawRect(Rect.fromLTWH(0, 0, w, h), Paint()..color = const Color(0xFF515151));
+      canvas.drawRect(Rect.fromLTWH(0, 0, w, h), Paint()..color = const Color(0xFF1B1B2E));
     }
 
     final handPad = _layout.handCardSize / 2;
@@ -279,15 +332,143 @@ class TriadGame extends FlameGame {
     _selected?.setSelected(false);
     _selected = card;
     card.setSelected(true);
+    _clearPreview();
     board.setHighlights(CaptureSystem.emptyPositions(state).toSet());
   }
 
+  // ── Targeting mode (pokéball use) ──
+
+  /// Enter targeting mode — only highlights cards the player just flipped.
+  /// Returns true if targeting started, false if no recently flipped cards.
+  bool enterTargetingMode(ConsumableItem ball) {
+    if (_targetingBall != null || _matchFinished) return true;
+    if (_recentlyFlipped.isEmpty) {
+      hud.addLog(BattleLogEntry.simple('No recently flipped cards to target!'));
+      _inputLocked = false;
+      return false;
+    }
+    _targetingBall = ball;
+    _inputLocked = true;
+    _selected = null;
+    for (final idx in _recentlyFlipped) {
+      final comp = _boardCards[idx];
+      if (comp != null) {
+        comp.setTargetable(true);
+        final pos = BoardPosition.fromIndex(idx);
+        comp.onTargeted = (_) => _useItemOnTarget(pos);
+      }
+    }
+    hud.addLog(BattleLogEntry.simple('Choose a target for ${ball.name}…'));
+    return true;
+  }
+
+  void _exitTargetingMode() {
+    _targetingBall = null;
+    _inputLocked = false;
+    _recentlyFlipped.clear();
+    for (final entry in _boardCards.entries) {
+      entry.value
+        ..setTargetable(false)
+        ..onTargeted = null;
+    }
+  }
+
+  void _useItemOnTarget(BoardPosition position) {
+    final ball = _targetingBall;
+    if (ball == null) return;
+    final cell = state.cellAt(position);
+    final targetCard = cell.card;
+    if (targetCard == null || !_recentlyFlipped.contains(position.index)) return;
+
+    _exitTargetingMode();
+    // Keep input locked during animation
+    _inputLocked = true;
+
+    // Ball is consumed regardless of outcome
+    onItemConsumed?.call(ball.id);
+
+    // Capture chance: (20% + 2%/trainerLv) × ball / (1 + 6%/pokemonLv)
+    final pokemonLevel = targetCard.baseLevel ?? 1;
+    final multiplier = ball.catchMultiplier;
+    final rng = Random();
+    final trainerBonus = (0.20 + trainerLevel * 0.02).clamp(0.0, 0.85);
+    final levelPenalty = 1.0 + pokemonLevel * 0.06;
+    final catchChance = (trainerBonus * multiplier / levelPenalty).clamp(0.0, 0.95);
+    final caught = multiplier >= 999.0 || rng.nextDouble() < catchChance;
+
+    // Play throw → bounce → absorb → shake → result animation
+    final targetWorldPos = board.worldCenterFor(position);
+    final targetComp = _boardCards[position.index];
+    late final PokeballThrowComponent anim;
+    anim = PokeballThrowComponent(
+      targetPosition: targetWorldPos,
+      ballImage: _pokeballImage!,
+      targetCard: targetComp!,
+      caught: caught,
+      onComplete: () {
+        anim.removeFromParent();
+        _inputLocked = false;
+        _recentlyFlipped.clear();
+        if (caught) {
+          // Card stays player-owned, marked as pokéball-captured (dark overlay, unflippable)
+          cell.card = targetCard.copyWith(owner: CardOwner.player, pokeballCaptured: true);
+          targetComp.pokeballCaptured = true;
+          targetComp.setCard(cell.card!);
+          AudioService().playSfx('sound/flip.ogg');
+          hud.addLog(BattleLogEntry.capture(
+            moverOwner: CardOwner.player,
+            moverName: playerName,
+            placedCardName: ball.name,
+            capturedCardNames: [targetCard.name],
+            capturedOwnerName: opponentName,
+          ));
+          onItemCaptured?.call(targetCard);
+        } else {
+          // Ball broke — revert card to opponent
+          cell.card = targetCard.copyWith(owner: CardOwner.opponent);
+          targetComp.setCard(cell.card!);
+          AudioService().playSfx('sound/bump.mp3');
+          hud.addLog(BattleLogEntry.simple('Oh no! ${targetCard.name} broke free from the ${ball.name}!'));
+        }
+        _updateScoreDisplay();
+      },
+    );
+    world.add(anim);
+  }
+
   void _onCellTapped(BoardPosition position) {
+    // Targeting mode active — try to use item
+    if (_targetingBall != null) {
+      _useItemOnTarget(position);
+      return;
+    }
     if (_inputLocked || state.turn != CardOwner.player) return;
     final selected = _selected;
     if (selected == null) return;
     if (!state.cellAt(position).isEmpty) return;
+
+    // First tap: show type effectiveness preview on the selected card
+    if (_previewPosition != position) {
+      _showPlacementPreview(selected, position);
+      return;
+    }
+
+    // Second tap on same cell: confirm placement
+    _clearPreview();
     _placePlayerCard(selected, position);
+  }
+
+  /// Highlights the cell where the player is about to place a card.
+  void _showPlacementPreview(CardComponent card, BoardPosition position) {
+    _previewPosition = position;
+    board.setHighlights({position});
+  }
+
+  /// Clears the placement preview.
+  void _clearPreview() {
+    if (_previewPosition == null) return;
+    _previewPosition = null;
+    board.setHighlights(CaptureSystem.emptyPositions(state).toSet());
   }
 
   void _onCardDropped(CardComponent card, Vector2 dropWorldPosition) {
@@ -316,9 +497,10 @@ class TriadGame extends FlameGame {
     _selected = null;
     _inputLocked = true;
 
-    final captured = CaptureSystem.applyPlacement(state, position, component.card);
+    final captured = CaptureSystem.applyPlacement(state, position, component.card, rules: rules);
     // Award placement XP for the card being placed
     state.recordPlacement(component.card);
+    AudioService().playSfx('sound/cardSlide.ogg');
     hud.addLog(BattleLogEntry.placement(
       moverOwner: CardOwner.player,
       moverName: playerName,
@@ -326,6 +508,8 @@ class TriadGame extends FlameGame {
       positionName: position.positionName,
     ));
     if (captured.isNotEmpty) {
+      // Play flip sound
+      AudioService().playSfx('sound/flip.ogg');
       final capturedNames = <String>[];
       var totalXp = 0;
       for (final pos in captured) {
@@ -355,7 +539,15 @@ class TriadGame extends FlameGame {
     _boardCards[position.index] = component;
 
     _applyCaptureVisuals(captured);
+    // Track cards flipped by this placement for pokéball targeting
+    if (captured.isNotEmpty) {
+      _recentlyFlipped.clear();
+      for (final pos in captured) {
+        _recentlyFlipped.add(pos.index);
+      }
+    }
     board.clearHighlights();
+    _previewPosition = null;
     _reflowPlayerHand();
     _updateScoreDisplay();
 
@@ -397,7 +589,7 @@ class TriadGame extends FlameGame {
   Future<void> _runOpponentTurn() async {
     _setPlayerInteractivity(false);
     _inputLocked = true;
-    await AiController.takeTurn(state, onPlaced: _placeOpponentCardVisual);
+    await AiController.takeTurn(state, onPlaced: _placeOpponentCardVisual, rules: rules);
     _inputLocked = false;
     if (state.isComplete) {
       _finishMatch();
@@ -412,6 +604,7 @@ class TriadGame extends FlameGame {
     TriadCard card,
     List<BoardPosition> captured,
   ) async {
+    AudioService().playSfx('sound/cardSlide.ogg');
     hud.addLog(BattleLogEntry.placement(
       moverOwner: CardOwner.opponent,
       moverName: opponentName,
@@ -419,6 +612,8 @@ class TriadGame extends FlameGame {
       positionName: position.positionName,
     ));
     if (captured.isNotEmpty) {
+      // Play flip sound for any card capture
+      AudioService().playSfx('sound/flip.ogg');
       final capturedNames = [for (final pos in captured) state.cellAt(pos).card!.name];
       hud.addLog(BattleLogEntry.capture(
         moverOwner: CardOwner.opponent,
@@ -484,6 +679,10 @@ class TriadGame extends FlameGame {
     final playerWon = playerScore > opponentScore;
     final isDraw = playerScore == opponentScore;
     state.finalizeMatch(playerWon: playerWon, isDraw: isDraw);
+    state.finalizeConditionLoss(
+      playerLost: !playerWon && !isDraw,
+      cap: _effectiveConditionCap,
+    );
     Future.delayed(const Duration(milliseconds: 500), () {
       onMatchComplete(state);
     });

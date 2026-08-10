@@ -87,6 +87,14 @@ class CardRepository {
   List<Deck> get starterDecks => _starterDecks;
   List<NpcTrainer> get npcs => _npcs;
 
+  NpcTrainer? npcById(String id) {
+    try {
+      return _npcs.firstWhere((n) => n.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
   TriadCard? cardById(String id) => _cardsById[id];
 
   /// Resolves a list of card ids to cards, in order, skipping unknown ids.

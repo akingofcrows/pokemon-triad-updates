@@ -15,7 +15,7 @@ class UpdateService {
   static final UpdateService instance = UpdateService._();
 
   static final _channel = const MethodChannel('com.xmusa.pokemon_triad/update');
-  static const _apiUrl = 'https://api.github.com/repos/akingofcrows/pokemon-triad-updates/releases/latest';
+  static const _apiUrl = 'https://api.github.com/repos/akingofcrows/pokemon-triad-updates/releases';
 
   double downloadProgress = 0;
   String status = '';
@@ -57,18 +57,40 @@ class UpdateService {
         return _cachedUpdate(currentVersion);
       }
 
-      final Map<String, dynamic> data;
+      final List<dynamic> releases;
       try {
-        data = jsonDecode(response.body) as Map<String, dynamic>;
+        releases = jsonDecode(response.body) as List<dynamic>;
       } catch (_) {
         lastError = 'Bad GitHub response';
         return _cachedUpdate(currentVersion);
       }
 
-      final tag = data['tag_name'] as String? ?? '';
-      final latestVersion = tag.startsWith('v') ? tag.substring(1) : tag;
-      final body = data['body'] as String? ?? '';
-      final assets = data['assets'] as List<dynamic>? ?? [];
+      if (releases.isEmpty) {
+        lastError = 'No releases found';
+        return _cachedUpdate(currentVersion);
+      }
+
+      // Find the release with the highest semantic version
+      Map<String, dynamic>? best;
+      String bestVersion = '';
+      for (final r in releases) {
+        final release = r as Map<String, dynamic>;
+        final tag = release['tag_name'] as String? ?? '';
+        final ver = tag.startsWith('v') ? tag.substring(1) : tag;
+        if (_compareVersions(ver, bestVersion) > 0) {
+          bestVersion = ver;
+          best = release;
+        }
+      }
+
+      if (best == null) {
+        lastError = 'No valid release found';
+        return _cachedUpdate(currentVersion);
+      }
+
+      final latestVersion = bestVersion;
+      final body = best['body'] as String? ?? '';
+      final assets = best['assets'] as List<dynamic>? ?? [];
       String apkUrl = '';
       for (final a in assets) {
         final name = (a as Map<String, dynamic>)['name'] as String? ?? '';
@@ -162,6 +184,9 @@ class UpdateService {
 
   /// Compares two semantic versions. Returns >0 if a > b.
   int _compareVersions(String a, String b) {
+    if (a.isEmpty && b.isEmpty) return 0;
+    if (a.isEmpty) return -1;
+    if (b.isEmpty) return 1;
     // Strip any pre-release suffix like "-alpha" before comparing
     final cleanA = a.split('-').first.split('.').map(int.parse).toList();
     final cleanB = b.split('-').first.split('.').map(int.parse).toList();

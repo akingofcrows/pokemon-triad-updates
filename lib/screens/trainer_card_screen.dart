@@ -116,7 +116,28 @@ class _TrainerCardScreenState extends State<TrainerCardScreen> with TickerProvid
   static String _bgFor(String? location) {
     const def = 'assets/locations/oakslab.png';
     if (location == null) return def;
-    return {'Pallet Town': 'assets/locations/oakslab.png', 'Route 1': 'assets/locations/route1.png', 'Viridian City': 'assets/locations/viridian.png', 'Route 2': 'assets/locations/route2.png', 'Viridian Forest': 'assets/locations/viridianforest.png'}[location] ?? def;
+    const named = <String, String>{
+      'Pallet Town': 'assets/locations/pallet.png',
+      'Route 1': 'assets/locations/route1.png',
+      'Viridian City': 'assets/locations/viridian.png',
+      'Route 2': 'assets/locations/route2.png',
+      'Viridian Forest': 'assets/locations/viridianforest.png',
+      'Pewter City': 'assets/locations/pewter.png',
+      'Cerulean City': 'assets/locations/cerulean.png',
+      'Vermilion City': 'assets/locations/vermillion.png',
+      'Lavender Town': 'assets/locations/lavender.png',
+      'Celadon City': 'assets/locations/celadon.png',
+      'Fuchsia City': 'assets/locations/fuschia.png',
+      'Saffron City': 'assets/locations/saffron.png',
+      'Cinnabar Island': 'assets/locations/cinnabar.png',
+      'Mt. Moon': 'assets/locations/mtmoon.png',
+    };
+    if (named.containsKey(location)) return named[location]!;
+    final routeMatch = RegExp(r'^Route (\d+)$').firstMatch(location);
+    if (routeMatch != null) {
+      return 'assets/locations/route${routeMatch.group(1)}.png';
+    }
+    return def;
   }
 
   Future<void> _logOut(BuildContext context) async {

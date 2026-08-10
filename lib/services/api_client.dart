@@ -48,12 +48,28 @@ class ApiClient {
     return headers;
   }
 
-  Future<dynamic> _send(Future<http.Response> Function() request) async {
+  Future<dynamic> _send(Future<http.Response> Function() request, {int retries = 3}) async {
     http.Response response;
-    try {
-      response = await request().timeout(const Duration(seconds: 8));
-    } catch (e) {
-      throw ApiNetworkException('Could not reach the server: $e');
+    int attempts = 0;
+    while (true) {
+      attempts++;
+      try {
+        response = await request().timeout(const Duration(seconds: 8));
+        break;
+      } catch (e) {
+        // Only retry on transient errors, not SSL / DNS / permanent failures
+        final msg = e.toString();
+        final isTransient = msg.contains('SocketException') ||
+            msg.contains('Connection refused') ||
+            msg.contains('Connection reset') ||
+            msg.contains('TimeoutException') ||
+            msg.contains('timed out');
+        if (!isTransient || attempts >= retries) {
+          throw ApiNetworkException('Could not reach the server after $attempts attempts: $e');
+        }
+        debugPrint('[api] connection lost (attempt $attempts/$retries), retrying...');
+        await Future.delayed(Duration(milliseconds: 500 * attempts));
+      }
     }
 
     dynamic body;
@@ -125,6 +141,18 @@ class ApiClient {
     );
   }
 
+  /// Sync the player's trainer XP to the server.
+  Future<void> updateTrainerXp(int xp) async {
+    final baseUrl = await baseUrlProvider();
+    await _send(
+      () async => http.put(
+        Uri.parse('$baseUrl/me/trainer-xp'),
+        headers: await _headers(),
+        body: jsonEncode({'trainerXp': xp}),
+      ),
+    );
+  }
+
   /// Get the player's story mode progress for all locations.
   Future<Map<String, dynamic>> getStoryProgress() async {
     final baseUrl = await baseUrlProvider();
@@ -180,11 +208,15 @@ class ApiClient {
   /// [captureXp] maps instanceId → total XP earned from captures.
   /// [bonusXp] maps instanceId → bonus XP (deprecated, now part of cardXp).
   /// [cardXp] is the new detailed per-source XP breakdown keyed by instanceId.
+  /// [conditionLoss] maps instanceId → total Condition lost this match
+  /// (participation + enemy flips + defeat penalty, already capped per
+  /// battle mode). See pokemon_triad_condition_system.md §5-12.
   Future<Map<String, dynamic>> postMatchResult(
     String outcome, {
     Map<int, int> captureXp = const {},
     Map<int, int> bonusXp = const {},
     Map<int, Map<String, dynamic>>? cardXp,
+    Map<int, int> conditionLoss = const {},
     List<Map<String, dynamic>> capturedCards = const [],
   }) async {
     final baseUrl = await baseUrlProvider();
@@ -203,6 +235,10 @@ class ApiClient {
         cardXpStr[e.key.toString()] = e.value;
       }
     }
+    final conditionLossStr = <String, int>{};
+    for (final e in conditionLoss.entries) {
+      conditionLossStr[e.key.toString()] = e.value;
+    }
     final body = <String, dynamic>{
       'outcome': outcome,
       'captureXp': captureXpStr,
@@ -210,6 +246,9 @@ class ApiClient {
     };
     if (cardXpStr.isNotEmpty) {
       body['cardXp'] = cardXpStr;
+    }
+    if (conditionLossStr.isNotEmpty) {
+      body['conditionLoss'] = conditionLossStr;
     }
     if (capturedCards.isNotEmpty) {
       body['capturedCards'] = capturedCards;
@@ -285,6 +324,13 @@ class ApiClient {
     );
   }
 
+  Future<void> putUnlockedDeckBoxes(List<String> boxKeys) async {
+    final baseUrl = await baseUrlProvider();
+    await _send(
+      () async => http.put(Uri.parse('$baseUrl/me/deck-boxes'), headers: await _headers(), body: jsonEncode({'boxes': boxKeys})),
+    );
+  }
+
   Future<void> deleteDeck(String deckId) async {
     final baseUrl = await baseUrlProvider();
     await _send(
@@ -334,6 +380,32 @@ class ApiClient {
         body: jsonEncode({'itemId': itemId}),
       ),
     );
+  }
+
+  /// Free full Condition restore for every owned card (GDD §15).
+  Future<void> restoreAllCondition({List<int>? instanceIds}) async {
+    final baseUrl = await baseUrlProvider();
+    await _send(
+      () async => http.post(
+        Uri.parse('$baseUrl/me/pokemon-center'),
+        headers: await _headers(),
+        body: instanceIds != null ? jsonEncode({'instanceIds': instanceIds}) : null,
+      ),
+    );
+  }
+
+  /// Consumes one [itemId] potion from inventory to restore Condition on
+  /// the owned card instance [instanceId]. Returns the new Condition value.
+  Future<int> usePotion(String itemId, int instanceId) async {
+    final baseUrl = await baseUrlProvider();
+    final result = await _send(
+      () async => http.post(
+        Uri.parse('$baseUrl/me/cards/use-potion'),
+        headers: await _headers(),
+        body: jsonEncode({'itemId': itemId, 'instanceId': instanceId}),
+      ),
+    );
+    return (result as Map<String, dynamic>)['condition'] as int;
   }
 
   Future<Map<String, dynamic>> getGifts() async {
