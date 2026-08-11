@@ -2081,8 +2081,9 @@ def admin_status():
 
 @app.route("/admin/restart")
 def admin_restart():
-    """Restart the Flask server process."""
+    """Git pull latest code then restart Flask."""
     try:
+        subprocess.run(["git", "pull"], cwd=os.getcwd(), timeout=30)
         subprocess.Popen([sys.executable] + sys.argv, cwd=os.getcwd())
         os._exit(0)
         return "Restarting..."
