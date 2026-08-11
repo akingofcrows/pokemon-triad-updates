@@ -11,3 +11,4 @@ revert_bulba.py
 # Build artifacts
 app-release.apk
 asset_sync.zip
+content/bundles/*.zip
