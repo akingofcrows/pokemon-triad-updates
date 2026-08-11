@@ -1,5 +1,5 @@
 {
-    "version":  "1.0.43",
-    "apk_url":  "https://github.com/akingofcrows/pokemon-triad-updates/releases/download/v1.0.43/app-release.apk",
-    "changelog":  "Fixed reverse holo shimmer to only show on the Pok�mon sprite"
+    "version":  "1.0.93",
+    "apk_url":  "https://github.com/akingofcrows/pokemon-triad-updates/releases/download/v1.0.93/app-release.apk",
+    "changelog":  "Results screen redesign: trainer XP bar, animated card detail panel, condition bars, trainer sprites, compact victory header, XP text fixes"
 }

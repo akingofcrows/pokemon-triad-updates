@@ -45,30 +45,102 @@
           "encounterTable": [
             {
               "cardId": "card_pidgey_1",
-              "weight": 40,
-              "rarity": "common"
+              "weight": 45,
+              "rarity": "common",
+              "timeOfDay": "morning",
+              "minLevel": 2,
+              "maxLevel": 4
             },
             {
               "cardId": "card_rattata_1",
-              "weight": 35,
-              "rarity": "common"
+              "weight": 30,
+              "rarity": "common",
+              "timeOfDay": "morning",
+              "minLevel": 2,
+              "maxLevel": 2
             },
             {
-              "cardId": "card_spearow_1",
-              "weight": 15,
-              "rarity": "common"
+              "cardId": "card_sentret_1",
+              "weight": 20,
+              "rarity": "common",
+              "timeOfDay": "morning",
+              "minLevel": 3,
+              "maxLevel": 3
             },
             {
-              "cardId": "card_oddish_1",
-              "weight": 10,
-              "rarity": "common"
+              "cardId": "card_furret_1",
+              "weight": 5,
+              "rarity": "uncommon",
+              "timeOfDay": "morning",
+              "minLevel": 6,
+              "maxLevel": 6
+            },
+            {
+              "cardId": "card_pidgey_1",
+              "weight": 45,
+              "rarity": "common",
+              "timeOfDay": "day",
+              "minLevel": 2,
+              "maxLevel": 4
+            },
+            {
+              "cardId": "card_rattata_1",
+              "weight": 30,
+              "rarity": "common",
+              "timeOfDay": "day",
+              "minLevel": 2,
+              "maxLevel": 2
+            },
+            {
+              "cardId": "card_sentret_1",
+              "weight": 20,
+              "rarity": "common",
+              "timeOfDay": "day",
+              "minLevel": 3,
+              "maxLevel": 3
+            },
+            {
+              "cardId": "card_furret_1",
+              "weight": 5,
+              "rarity": "uncommon",
+              "timeOfDay": "day",
+              "minLevel": 6,
+              "maxLevel": 6
+            },
+            {
+              "cardId": "card_rattata_1",
+              "weight": 50,
+              "rarity": "common",
+              "timeOfDay": "night",
+              "minLevel": 2,
+              "maxLevel": 3
+            },
+            {
+              "cardId": "card_rattata_1",
+              "weight": 5,
+              "rarity": "uncommon",
+              "timeOfDay": "night",
+              "minLevel": 6,
+              "maxLevel": 6
+            },
+            {
+              "cardId": "card_hoothoot_1",
+              "weight": 45,
+              "rarity": "common",
+              "timeOfDay": "night",
+              "minLevel": 2,
+              "maxLevel": 4
             }
           ]
         }
       ],
       "completionUnlocks": [
         "viridian_city"
-      ]
+      ],
+      "completionRule": {
+        "type": "win_battles",
+        "count": 2
+      }
     },
     {
       "id": "viridian_city",
@@ -149,52 +221,48 @@
     },
     {
       "id": "route_2",
-      "name": "Route 2",
+      "name": "Route 2 (South)",
       "region": "kanto",
       "wildLevelRange": {
         "min": 3,
-        "max": 5
+        "max": 10
       },
       "nodes": [
         {
           "id": "r2_wild",
           "type": "wild",
           "encounterTable": [
-            {
-              "cardId": "card_pidgey_1",
-              "weight": 25,
-              "rarity": "common"
-            },
-            {
-              "cardId": "card_rattata_1",
-              "weight": 20,
-              "rarity": "common"
-            },
-            {
-              "cardId": "card_caterpie_1",
-              "weight": 15,
-              "rarity": "common"
-            },
-            {
-              "cardId": "card_weedle_1",
-              "weight": 15,
-              "rarity": "common"
-            },
-            {
-              "cardId": "card_pidgeotto_1",
-              "weight": 10,
-              "rarity": "uncommon"
-            },
-            {
-              "cardId": "card_pikachu_1",
-              "weight": 10,
-              "rarity": "uncommon"
-            },
-            {
-              "cardId": "card_metapod_1",
-              "weight": 5,
-              "rarity": "common"
-            }
+            { "cardId": "card_caterpie_1", "weight": 31, "rarity": "common", "timeOfDay": "morning", "minLevel": 3, "maxLevel": 4 },
+            { "cardId": "card_metapod_1", "weight": 20, "rarity": "common", "timeOfDay": "morning", "minLevel": 5, "maxLevel": 5 },
+            { "cardId": "card_butterfree_1", "weight": 10, "rarity": "uncommon", "timeOfDay": "morning", "minLevel": 7, "maxLevel": 8 },
+            { "cardId": "card_weedle_1", "weight": 11, "rarity": "common", "timeOfDay": "morning", "minLevel": 3, "maxLevel": 4 },
+            { "cardId": "card_beedrill_1", "weight": 10, "rarity": "uncommon", "timeOfDay": "morning", "minLevel": 7, "maxLevel": 7 },
+            { "cardId": "card_pidgey_1", "weight": 30, "rarity": "common", "timeOfDay": "morning", "minLevel": 3, "maxLevel": 3 },
+            { "cardId": "card_pidgey_1", "weight": 20, "rarity": "common", "timeOfDay": "morning", "minLevel": 3, "maxLevel": 3 },
+            { "cardId": "card_pidgeotto_1", "weight": 5, "rarity": "uncommon", "timeOfDay": "morning", "minLevel": 7, "maxLevel": 7 },
+            { "cardId": "card_ledyba_1", "weight": 30, "rarity": "common", "timeOfDay": "morning", "minLevel": 3, "maxLevel": 3 },
+            { "cardId": "card_ledian_1", "weight": 9, "rarity": "uncommon", "timeOfDay": "morning", "minLevel": 7, "maxLevel": 10 },
+            { "cardId": "card_spinarak_1", "weight": 4, "rarity": "common", "timeOfDay": "morning", "minLevel": 10, "maxLevel": 10 },
+            { "cardId": "card_kakuna_1", "weight": 20, "rarity": "common", "timeOfDay": "morning", "minLevel": 5, "maxLevel": 5 },
+            { "cardId": "card_caterpie_1", "weight": 31, "rarity": "common", "timeOfDay": "day", "minLevel": 3, "maxLevel": 4 },
+            { "cardId": "card_metapod_1", "weight": 20, "rarity": "common", "timeOfDay": "day", "minLevel": 5, "maxLevel": 5 },
+            { "cardId": "card_weedle_1", "weight": 31, "rarity": "common", "timeOfDay": "day", "minLevel": 3, "maxLevel": 4 },
+            { "cardId": "card_kakuna_1", "weight": 2, "rarity": "common", "timeOfDay": "day", "minLevel": 5, "maxLevel": 5 },
+            { "cardId": "card_pidgey_1", "weight": 40, "rarity": "common", "timeOfDay": "day", "minLevel": 7, "maxLevel": 8 },
+            { "cardId": "card_pidgey_1", "weight": 40, "rarity": "common", "timeOfDay": "day", "minLevel": 7, "maxLevel": 7 },
+            { "cardId": "card_pidgeotto_1", "weight": 9, "rarity": "uncommon", "timeOfDay": "day", "minLevel": 10, "maxLevel": 10 },
+            { "cardId": "card_pidgeotto_1", "weight": 5, "rarity": "uncommon", "timeOfDay": "day", "minLevel": 7, "maxLevel": 7 },
+            { "cardId": "card_ledyba_1", "weight": 4, "rarity": "common", "timeOfDay": "day", "minLevel": 10, "maxLevel": 10 },
+            { "cardId": "card_weedle_1", "weight": 11, "rarity": "common", "timeOfDay": "night", "minLevel": 4, "maxLevel": 5 },
+            { "cardId": "card_kakuna_1", "weight": 10, "rarity": "common", "timeOfDay": "night", "minLevel": 3, "maxLevel": 3 },
+            { "cardId": "card_kakuna_1", "weight": 1, "rarity": "common", "timeOfDay": "night", "minLevel": 7, "maxLevel": 7 },
+            { "cardId": "card_beedrill_1", "weight": 4, "rarity": "uncommon", "timeOfDay": "night", "minLevel": 10, "maxLevel": 10 },
+            { "cardId": "card_hoothoot_1", "weight": 50, "rarity": "common", "timeOfDay": "night", "minLevel": 3, "maxLevel": 5 },
+            { "cardId": "card_hoothoot_1", "weight": 60, "rarity": "common", "timeOfDay": "night", "minLevel": 3, "maxLevel": 5 },
+            { "cardId": "card_noctowl_1", "weight": 14, "rarity": "uncommon", "timeOfDay": "night", "minLevel": 10, "maxLevel": 10 },
+            { "cardId": "card_noctowl_1", "weight": 14, "rarity": "uncommon", "timeOfDay": "night", "minLevel": 7, "maxLevel": 7 },
+            { "cardId": "card_spinarak_1", "weight": 31, "rarity": "common", "timeOfDay": "night", "minLevel": 3, "maxLevel": 4 },
+            { "cardId": "card_ariados_1", "weight": 5, "rarity": "uncommon", "timeOfDay": "night", "minLevel": 7, "maxLevel": 7 }
           ]
         }
       ],
@@ -211,6 +279,7 @@
         "min": 4,
         "max": 7
       },
+      "shinyRate": 8,
       "nodes": [
         {
           "id": "vf_wild",
@@ -260,6 +329,67 @@
               "cardId": "card_scyther_1",
               "weight": 2,
               "rarity": "rare"
+            }
+          ]
+        },
+        {
+          "id": "vf_item",
+          "type": "item",
+          "itemId": "antidote",
+          "itemQuantity": 1
+        }
+      ],
+      "completionUnlocks": [
+        "route_2_north"
+      ]
+    },
+    {
+      "id": "route_2_north",
+      "name": "Route 2 (North)",
+      "region": "kanto",
+      "wildLevelRange": {
+        "min": 5,
+        "max": 8
+      },
+      "nodes": [
+        {
+          "id": "r2n_wild",
+          "type": "wild",
+          "encounterTable": [
+            {
+              "cardId": "card_pidgey_1",
+              "weight": 20,
+              "rarity": "common"
+            },
+            {
+              "cardId": "card_rattata_1",
+              "weight": 20,
+              "rarity": "common"
+            },
+            {
+              "cardId": "card_spearow_1",
+              "weight": 15,
+              "rarity": "common"
+            },
+            {
+              "cardId": "card_nidoranf_1",
+              "weight": 15,
+              "rarity": "common"
+            },
+            {
+              "cardId": "card_nidoranm_1",
+              "weight": 15,
+              "rarity": "common"
+            },
+            {
+              "cardId": "card_jigglypuff_1",
+              "weight": 10,
+              "rarity": "uncommon"
+            },
+            {
+              "cardId": "card_pidgeotto_1",
+              "weight": 5,
+              "rarity": "uncommon"
             }
           ]
         }
@@ -339,6 +469,11 @@
               "rarity": "uncommon"
             }
           ]
+        },
+        {
+          "id": "r3_trainer",
+          "type": "npc_trainer",
+          "npcId": "npc_youngster_joey"
         }
       ],
       "completionUnlocks": [
@@ -404,6 +539,15 @@
               "weight": 1,
               "rarity": "uncommon"
             }
+          ]
+        },
+        {
+          "id": "mtm_puzzle",
+          "type": "puzzle",
+          "dialogLines": [
+            "A Team Rocket grunt blocks your path!",
+            "They're searching for rare fossils deep in this cave.",
+            "You spot a weak spot in the rock wall behind them..."
           ]
         }
       ],
@@ -476,7 +620,8 @@
       ],
       "completionUnlocks": [
         "route_24",
-        "route_5"
+        "route_5",
+        "route_9"
       ]
     },
     {
@@ -658,7 +803,27 @@
           ]
         }
       ],
-      "completionUnlocks": []
+      "completionUnlocks": [
+        "underground_path_1"
+      ]
+    },
+    {
+      "id": "underground_path_1",
+      "name": "Underground Path",
+      "region": "kanto",
+      "wildLevelRange": {
+        "min": 0,
+        "max": 0
+      },
+      "nodes": [
+        {
+          "id": "up1_passage",
+          "type": "story"
+        }
+      ],
+      "completionUnlocks": [
+        "route_6"
+      ]
     },
     {
       "id": "route_6",
@@ -754,8 +919,29 @@
         }
       ],
       "completionUnlocks": [
-        "route_11"
+        "route_11",
+        "ss_anne"
       ]
+    },
+    {
+      "id": "ss_anne",
+      "name": "S.S. Anne",
+      "region": "kanto",
+      "wildLevelRange": {
+        "min": 0,
+        "max": 0
+      },
+      "nodes": [
+        {
+          "id": "ssanne_deck",
+          "type": "story"
+        },
+        {
+          "id": "ssanne_captain",
+          "type": "story"
+        }
+      ],
+      "completionUnlocks": []
     },
     {
       "id": "route_11",
@@ -818,13 +1004,43 @@
           ]
         }
       ],
+      "completionUnlocks": [
+        "digletts_cave"
+      ]
+    },
+    {
+      "id": "digletts_cave",
+      "name": "Diglett's Cave",
+      "region": "kanto",
+      "wildLevelRange": {
+        "min": 15,
+        "max": 22
+      },
+      "nodes": [
+        {
+          "id": "diglett_wild",
+          "type": "wild",
+          "encounterTable": [
+            {
+              "cardId": "card_diglett_1",
+              "weight": 70,
+              "rarity": "common"
+            },
+            {
+              "cardId": "card_dugtrio_1",
+              "weight": 30,
+              "rarity": "uncommon"
+            }
+          ]
+        }
+      ],
       "completionUnlocks": []
     },
     {
       "id": "route_9",
       "name": "Route 9",
       "region": "kanto",
-      "unlockRequirement": "trainerLevel:15",
+      "unlockRequirement": "badge:cascade_badge",
       "wildLevelRange": {
         "min": 16,
         "max": 20
@@ -946,7 +1162,7 @@
       "id": "power_plant",
       "name": "Power Plant",
       "region": "kanto",
-      "unlockRequirement": "trainerLevel:30",
+      "entryRequirement": "badge:soul_badge",
       "wildLevelRange": {
         "min": 32,
         "max": 40
@@ -1010,7 +1226,7 @@
       "id": "rock_tunnel",
       "name": "Rock Tunnel",
       "region": "kanto",
-      "unlockRequirement": "trainerLevel:18",
+      "unlockRequirement": "any:cascade_badge|trainerLevel:18",
       "wildLevelRange": {
         "min": 18,
         "max": 24
@@ -1215,6 +1431,24 @@
         }
       ],
       "completionUnlocks": [
+        "underground_path_2"
+      ]
+    },
+    {
+      "id": "underground_path_2",
+      "name": "Underground Path",
+      "region": "kanto",
+      "wildLevelRange": {
+        "min": 0,
+        "max": 0
+      },
+      "nodes": [
+        {
+          "id": "up2_passage",
+          "type": "story"
+        }
+      ],
+      "completionUnlocks": [
         "route_7"
       ]
     },
@@ -1302,8 +1536,35 @@
         }
       ],
       "completionUnlocks": [
-        "route_16"
+        "route_16",
+        "saffron_city"
       ]
+    },
+    {
+      "id": "saffron_city",
+      "name": "Saffron City",
+      "region": "kanto",
+      "unlockRequirement": "any:marsh_badge|trainerLevel:30",
+      "wildLevelRange": {
+        "min": 0,
+        "max": 0
+      },
+      "nodes": [
+        {
+          "id": "saffron_center",
+          "type": "story"
+        },
+        {
+          "id": "saffron_mart",
+          "type": "story"
+        },
+        {
+          "id": "saffron_gym",
+          "type": "trainer",
+          "npcId": "sabrina"
+        }
+      ],
+      "completionUnlocks": []
     },
     {
       "id": "route_16",
@@ -1467,7 +1728,8 @@
         }
       ],
       "completionUnlocks": [
-        "fuchsia_city"
+        "fuchsia_city",
+        "route_19"
       ]
     },
     {
@@ -1478,6 +1740,7 @@
         "min": 28,
         "max": 36
       },
+      "shinyRate": 4,
       "nodes": [
         {
           "id": "sz_wild",
@@ -1785,41 +2048,10 @@
       "completionUnlocks": []
     },
     {
-      "id": "saffron_city",
-      "name": "Saffron City",
-      "region": "kanto",
-      "unlockRequirement": "trainerLevel:30",
-      "wildLevelRange": {
-        "min": 0,
-        "max": 0
-      },
-      "nodes": [
-        {
-          "id": "saffron_center",
-          "type": "story"
-        },
-        {
-          "id": "saffron_mart",
-          "type": "story"
-        },
-        {
-          "id": "saffron_gym",
-          "type": "trainer",
-          "npcId": "sabrina"
-        }
-      ],
-      "completionUnlocks": [
-        "route_5",
-        "route_6",
-        "route_7",
-        "route_8"
-      ]
-    },
-    {
       "id": "route_19",
       "name": "Route 19",
       "region": "kanto",
-      "unlockRequirement": "trainerLevel:35",
+      "unlockRequirement": "badge:soul_badge",
       "wildLevelRange": {
         "min": 38,
         "max": 44
@@ -1940,7 +2172,7 @@
       "id": "seafoam_islands",
       "name": "Seafoam Islands",
       "region": "kanto",
-      "unlockRequirement": "trainerLevel:40",
+      "entryRequirement": "badge:soul_badge",
       "wildLevelRange": {
         "min": 42,
         "max": 50
@@ -2029,7 +2261,7 @@
       "id": "pokemon_mansion",
       "name": "Pok\u00e9mon Mansion",
       "region": "kanto",
-      "unlockRequirement": "trainerLevel:45",
+      "entryRequirement": "badge:volcano_badge",
       "wildLevelRange": {
         "min": 44,
         "max": 54
@@ -2145,13 +2377,15 @@
           ]
         }
       ],
-      "completionUnlocks": []
+      "completionUnlocks": [
+        "route_23"
+      ]
     },
     {
       "id": "route_23",
       "name": "Route 23",
       "region": "kanto",
-      "unlockRequirement": "trainerLevel:50",
+      "unlockRequirement": "any:earth_badge|trainerLevel:50",
       "wildLevelRange": {
         "min": 48,
         "max": 56
@@ -2192,7 +2426,7 @@
               "rarity": "rare"
             },
             {
-              "cardId": "card_primape_1",
+              "cardId": "card_primeape_1",
               "weight": 8,
               "rarity": "uncommon"
             },

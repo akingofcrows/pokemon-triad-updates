@@ -4,7 +4,7 @@
     "name": "Poké Ball",
     "description": "A standard ball used to catch wild Pokémon.",
     "type": "pokeball",
-    "imageAsset": "assets/images/items/pokeball.png",
+    "imageAsset": "assets/images/icons/items/item267.png",
     "catchMultiplier": 1.0,
     "sellPrice": 50
   },
@@ -13,7 +13,7 @@
     "name": "Great Ball",
     "description": "A better ball with improved catch rate.",
     "type": "pokeball",
-    "imageAsset": "assets/images/items/great_ball.png",
+    "imageAsset": "assets/images/icons/items/item268.png",
     "catchMultiplier": 1.5,
     "sellPrice": 150
   },
@@ -22,7 +22,7 @@
     "name": "Ultra Ball",
     "description": "A premium ball with very high catch rate.",
     "type": "pokeball",
-    "imageAsset": "assets/images/items/ultra_ball.png",
+    "imageAsset": "assets/images/icons/items/item269.png",
     "catchMultiplier": 2.5,
     "sellPrice": 400
   },
@@ -31,8 +31,80 @@
     "name": "Master Ball",
     "description": "The ultimate ball — guaranteed catch!",
     "type": "pokeball",
-    "imageAsset": "assets/images/items/master_ball.png",
+    "imageAsset": "assets/images/icons/items/item270.png",
     "catchMultiplier": 999.0,
     "sellPrice": 5000
+  },
+  {
+    "id": "boulder_badge",
+    "name": "Boulder Badge",
+    "description": "Earned by defeating Brock at Pewter City Gym.",
+    "type": "badge",
+    "imageAsset": "assets/ui/icon_badges.png",
+    "spriteIndex": 0,
+    "sellPrice": 0
+  },
+  {
+    "id": "cascade_badge",
+    "name": "Cascade Badge",
+    "description": "Earned by defeating Misty at Cerulean City Gym.",
+    "type": "badge",
+    "imageAsset": "assets/ui/icon_badges.png",
+    "spriteIndex": 1,
+    "sellPrice": 0
+  },
+  {
+    "id": "thunder_badge",
+    "name": "Thunder Badge",
+    "description": "Earned by defeating Lt. Surge at Vermilion City Gym.",
+    "type": "badge",
+    "imageAsset": "assets/ui/icon_badges.png",
+    "spriteIndex": 2,
+    "sellPrice": 0
+  },
+  {
+    "id": "rainbow_badge",
+    "name": "Rainbow Badge",
+    "description": "Earned by defeating Erika at Celadon City Gym.",
+    "type": "badge",
+    "imageAsset": "assets/ui/icon_badges.png",
+    "spriteIndex": 3,
+    "sellPrice": 0
+  },
+  {
+    "id": "soul_badge",
+    "name": "Soul Badge",
+    "description": "Earned by defeating Koga at Fuchsia City Gym.",
+    "type": "badge",
+    "imageAsset": "assets/ui/icon_badges.png",
+    "spriteIndex": 4,
+    "sellPrice": 0
+  },
+  {
+    "id": "marsh_badge",
+    "name": "Marsh Badge",
+    "description": "Earned by defeating Sabrina at Saffron City Gym.",
+    "type": "badge",
+    "imageAsset": "assets/ui/icon_badges.png",
+    "spriteIndex": 5,
+    "sellPrice": 0
+  },
+  {
+    "id": "volcano_badge",
+    "name": "Volcano Badge",
+    "description": "Earned by defeating Blaine at Cinnabar Island Gym.",
+    "type": "badge",
+    "imageAsset": "assets/ui/icon_badges.png",
+    "spriteIndex": 6,
+    "sellPrice": 0
+  },
+  {
+    "id": "earth_badge",
+    "name": "Earth Badge",
+    "description": "Earned by defeating Giovanni at Viridian City Gym.",
+    "type": "badge",
+    "imageAsset": "assets/ui/icon_badges.png",
+    "spriteIndex": 7,
+    "sellPrice": 0
   }
 ]

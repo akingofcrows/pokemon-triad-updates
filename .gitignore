@@ -7,3 +7,7 @@ fix_and_restart.py
 fix_evolve_mess.py
 fix_level.py
 revert_bulba.py
+
+# Build artifacts
+app-release.apk
+asset_sync.zip

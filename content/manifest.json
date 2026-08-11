@@ -1,18 +1,18 @@
 {
     "minimumAppVersion":  "1.0.70",
     "changeNotes":  [
-                        "Update service now checks all releases by semver; added Town Map and items/ asset paths"
+                        "Deck builder overhaul: Active Deck containers with diagonal gradients, box-specific gradient colors, sort/filter system, unlockable deck boxes, edit screen redesign, sticky cancel/save buttons"
                     ],
-    "contentVersion":  17,
+    "contentVersion":  24,
     "manifestVersion":  1,
     "bundles":  [
                     {
                         "id":  "game_data",
-                        "version":  2,
-                        "sha256":  "e6061a5808327760c04a491e993dec52f20e3840c38df0414ab6e094fede98fa",
-                        "sizeBytes":  26686,
+                        "version":  4,
+                        "sha256":  "84edac1536c377a65dc191aebf4d39af17812d594279f0be879956db22254a8a",
+                        "sizeBytes":  26698,
                         "required":  true,
-                        "url":  "/api/content/bundles/game_data_v2.zip"
+                        "url":  "/api/content/bundles/game_data_v4.zip"
                     },
                     {
                         "id":  "pokemon_art",
@@ -32,19 +32,19 @@
                     },
                     {
                         "id":  "trainer_art",
-                        "version":  4,
-                        "sha256":  "1e3295df8553dc00e83307e020b12a4f22150ac6e7c5faf00870aa314fb62aaa",
+                        "version":  6,
+                        "sha256":  "44370a17a872031c58108e0ebee962b0c3eacca76be7140867c3786f0e7058de",
                         "sizeBytes":  642699,
                         "required":  false,
-                        "url":  "/api/content/bundles/trainer_art_v4.zip"
+                        "url":  "/api/content/bundles/trainer_art_v6.zip"
                     },
                     {
                         "id":  "ui_art",
-                        "version":  2,
-                        "sha256":  "2601596dd2847320df8579430e79f081e92582a9a8d6da39ed6ecbfacec1acc1",
-                        "sizeBytes":  7951662,
+                        "version":  4,
+                        "sha256":  "70ed72bf9d770b182269cf65b3cfb51131ae17f3e06704f7873bdf2b7a4daef9",
+                        "sizeBytes":  8090201,
                         "required":  false,
-                        "url":  "/api/content/bundles/ui_art_v2.zip"
+                        "url":  "/api/content/bundles/ui_art_v4.zip"
                     },
                     {
                         "id":  "locations_settlements_art",
@@ -72,11 +72,11 @@
                     },
                     {
                         "id":  "booster_pack_art",
-                        "version":  1,
-                        "sha256":  "1df08fd228be4473c2225f067a4f127fdb873991cb6b609595f3ecfa3d89e5d3",
-                        "sizeBytes":  250860,
+                        "version":  2,
+                        "sha256":  "811f75011c1cac5ecd4323bdbb311c6c38e3ddc36def4732257a335efe144b7f",
+                        "sizeBytes":  214257,
                         "required":  false,
-                        "url":  "/api/content/bundles/booster_pack_art_v1.zip"
+                        "url":  "/api/content/bundles/booster_pack_art_v2.zip"
                     },
                     {
                         "id":  "icons_art",

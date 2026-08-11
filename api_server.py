@@ -82,6 +82,8 @@ def init_db():
             bonus_west INT DEFAULT 0,
             is_shiny TINYINT DEFAULT 0,
             source VARCHAR(64) DEFAULT NULL,
+            condition_value INT DEFAULT 100,
+            is_reverse_holo TINYINT DEFAULT 0,
             FOREIGN KEY (user_id) REFERENCES triad_users(id)
         )
     """)
@@ -98,6 +100,8 @@ def init_db():
         ("bonus_south", "INT DEFAULT 0"),
         ("bonus_east", "INT DEFAULT 0"),
         ("bonus_west", "INT DEFAULT 0"),
+        ("condition_value", "INT DEFAULT 100"),
+        ("is_reverse_holo", "TINYINT DEFAULT 0"),
     ]:
         try:
             cur.execute(f"ALTER TABLE triad_cards ADD COLUMN {col} {coldef}")
@@ -690,7 +694,13 @@ def post_match():
     capture_xp = data.get("captureXp") or {}
     bonus_xp = data.get("bonusXp") or {}
     card_xp = data.get("cardXp") or {}
+    condition_loss = data.get("conditionLoss") or {}
     outcome = data.get("outcome", "")
+
+    # Defensive server-side cap: even if the client miscalculates, one card
+    # can never lose more Condition than the toughest battle mode allows.
+    # See pokemon_triad_condition_system.md §12.
+    CONDITION_LOSS_CAP = 20
 
     db = get_db()
     cur = db.cursor(dictionary=True)
@@ -733,6 +743,8 @@ def post_match():
         total = breakdown.get("totalXp", 0) if isinstance(breakdown, dict) else 0
         all_xp[inst_id] = all_xp.get(inst_id, 0) + total
 
+    print(f"[XP-SERVER] match-result: captureXp={capture_xp}, bonusXp={bonus_xp}, cardXp keys={list(card_xp.keys())}, all_xp={all_xp}", flush=True)
+
     for instance_id, added_xp in all_xp.items():
         # Update the specific instance by ID
         cur.execute(
@@ -744,8 +756,10 @@ def post_match():
         if row:
             card_id = row["card_id"]
             old_level = row["level"]
+            old_xp = row["xp"]
             new_xp = row["xp"] + added_xp
             new_level, leftover = _level_for_xp(new_xp)
+            print(f"[XP-SERVER] instance={instance_id} cardId={card_id}: oldXp={old_xp} lv={old_level} + added={added_xp} → newXp={new_xp} lv={new_level}", flush=True)
             stat_bumped = None
             if new_level > old_level:
                 # Level up: 25% chance of a random stat bump
@@ -784,6 +798,23 @@ def post_match():
     if field:
         cur.execute(f"UPDATE triad_characters SET {field} = {field} + 1 WHERE user_id = %s", (user["id"],))
 
+    # Apply Condition loss (GDD §5-12): {instanceId: amount}, computed
+    # client-side from participation/enemy-flip/defeat events and already
+    # capped per battle mode. Re-clamped here as a defensive backstop.
+    for inst_id_str, loss in condition_loss.items():
+        try:
+            inst_id = int(inst_id_str)
+            loss = max(0, min(int(loss), CONDITION_LOSS_CAP))
+        except (TypeError, ValueError):
+            continue
+        if loss <= 0:
+            continue
+        cur.execute(
+            "UPDATE triad_cards SET condition_value = GREATEST(0, condition_value - %s) "
+            "WHERE id = %s AND user_id = %s",
+            (loss, inst_id, user["id"]),
+        )
+
     # Create card instances for captured shiny wild cards
     captured_cards = data.get("capturedCards") or []
     if captured_cards:
@@ -795,14 +826,21 @@ def post_match():
         xp_start = 0
         if level > 1 and level <= len(XP_CURVE):
             xp_start = XP_CURVE[level - 1]
+        # Captured Pokémon retain their current encounter Condition (GDD §18).
+        capture_condition = c.get("condition", 100)
+        try:
+            capture_condition = max(0, min(100, int(capture_condition)))
+        except (TypeError, ValueError):
+            capture_condition = 100
         cur.execute(
             """INSERT INTO triad_cards (user_id, card_id, xp, level,
-               bonus_north, bonus_south, bonus_east, bonus_west, is_shiny, source)
-               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+               bonus_north, bonus_south, bonus_east, bonus_west, is_shiny, source,
+               condition_value)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
             (user["id"], card_id, xp_start, level,
              c.get("bonusNorth", 0), c.get("bonusSouth", 0),
              c.get("bonusEast", 0), c.get("bonusWest", 0),
-             1 if c.get("shiny") else 0, 'wild capture'),
+             1 if c.get("shiny") else 0, 'wild capture', capture_condition),
         )
         new_inst_id = cur.lastrowid
         growth.append({
@@ -963,7 +1001,8 @@ def get_cards():
         SELECT id AS instanceId, card_id AS cardId, xp, level,
                bonus_north AS bonusNorth, bonus_south AS bonusSouth,
                bonus_east AS bonusEast, bonus_west AS bonusWest,
-               is_shiny AS shiny, source
+               is_shiny AS shiny, source, condition_value AS `condition`,
+               is_reverse_holo AS reverseHolo
         FROM triad_cards WHERE user_id = %s
     """, (user["id"],))
     cards = cur.fetchall()
@@ -1123,11 +1162,20 @@ def evolve():
     cur.execute("SELECT id, card_ids_json FROM triad_decks WHERE user_id = %s", (user["id"],))
     for deck_row in cur.fetchall():
         try:
-            card_ids = json.loads(deck_row["card_ids_json"])
-            if isinstance(card_ids, dict):
-                card_ids = card_ids.get("cardIds", [])
+            parsed = json.loads(deck_row["card_ids_json"])
+            card_ids = parsed.get("cardIds", []) if isinstance(parsed, dict) else parsed
             if row["card_id"] in card_ids:
-                updated = [to_id if cid == row["card_id"] else cid for cid in card_ids]
+                updated_ids = [to_id if cid == row["card_id"] else cid for cid in card_ids]
+                # Preserve the dict format's instanceIds/boxImage — instance IDs
+                # still point at the same (now-evolved) row, so they stay valid.
+                # Overwriting with a bare list here previously wiped instanceIds,
+                # causing deck slots to fall back to "best instance by card ID",
+                # which could resolve to a different (e.g. shiny) duplicate.
+                if isinstance(parsed, dict):
+                    parsed["cardIds"] = updated_ids
+                    updated = parsed
+                else:
+                    updated = updated_ids
                 cur.execute(
                     "UPDATE triad_decks SET card_ids_json = %s WHERE id = %s",
                     (json.dumps(updated), deck_row["id"]),
@@ -1332,6 +1380,97 @@ def consume_inventory_item():
     cur.close()
     db.close()
     return jsonify({"ok": True})
+
+
+# Restore amounts for recovery items (GDD §16). "full_restore" is a
+# sentinel handled separately below since it sets Condition to 100 outright
+# rather than adding a fixed amount.
+POTION_RESTORE_AMOUNTS = {
+    "potion": 20,
+    "super_potion": 40,
+    "hyper_potion": 70,
+    "full_restore": 100,
+}
+
+
+@app.route("/api/me/pokemon-center", methods=["POST"])
+def pokemon_center_restore():
+    """Restore Condition for selected cards, or all cards if none specified."""
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json(silent=True) or {}
+    instance_ids = data.get("instanceIds")
+
+    db = get_db()
+    cur = db.cursor()
+    if instance_ids and isinstance(instance_ids, list) and len(instance_ids) > 0:
+        placeholders = ",".join(["%s"] * len(instance_ids))
+        cur.execute(
+            f"UPDATE triad_cards SET condition_value = 100 WHERE user_id = %s AND id IN ({placeholders})",
+            [user["id"]] + instance_ids,
+        )
+    else:
+        cur.execute("UPDATE triad_cards SET condition_value = 100 WHERE user_id = %s", (user["id"],))
+    db.commit()
+    cur.close()
+    db.close()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/me/cards/use-potion", methods=["POST"])
+def use_potion():
+    """Consume one potion from inventory to restore Condition on one owned card instance."""
+    user = _require_auth()
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+    item_id = data.get("itemId") or ""
+    instance_id = data.get("instanceId")
+    amount = POTION_RESTORE_AMOUNTS.get(item_id)
+    if amount is None or not instance_id:
+        return jsonify({"error": "A valid potion itemId and instanceId are required"}), 400
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+    cur.execute(
+        "SELECT quantity FROM triad_inventory WHERE user_id = %s AND item_id = %s",
+        (user["id"], item_id),
+    )
+    row = cur.fetchone()
+    if not row or row["quantity"] <= 0:
+        cur.close()
+        db.close()
+        return jsonify({"error": "You don't have that item"}), 400
+
+    cur.execute(
+        "SELECT condition_value FROM triad_cards WHERE id = %s AND user_id = %s",
+        (instance_id, user["id"]),
+    )
+    card_row = cur.fetchone()
+    if not card_row:
+        cur.close()
+        db.close()
+        return jsonify({"error": "Card not found"}), 404
+
+    new_condition = 100 if item_id == "full_restore" else min(100, card_row["condition_value"] + amount)
+
+    cur.close()
+    cur = db.cursor()
+    cur.execute(
+        "UPDATE triad_inventory SET quantity = quantity - 1 WHERE user_id = %s AND item_id = %s",
+        (user["id"], item_id),
+    )
+    cur.execute(
+        "UPDATE triad_cards SET condition_value = %s WHERE id = %s AND user_id = %s",
+        (new_condition, instance_id, user["id"]),
+    )
+    db.commit()
+    cur.close()
+    db.close()
+    return jsonify({"ok": True, "condition": new_condition})
 
 
 # Two kinds of entries here: (1) evolved forms with no edge in
@@ -1631,6 +1770,37 @@ def admin_grant_gift():
     cur.close()
     db.close()
     return jsonify({"ok": True, "username": username})
+
+
+@app.route("/api/admin/set-money", methods=["POST"])
+def admin_set_money():
+    """Set a user's money directly. Requires X-Admin-Key header."""
+    if not _require_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json()
+    username = (data.get("username") or "").strip()
+    amount = int(data.get("amount", 0))
+
+    if not username:
+        return jsonify({"error": "username required"}), 400
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+    cur.execute("SELECT id FROM triad_users WHERE username = %s", (username,))
+    row = cur.fetchone()
+    if not row:
+        cur.close()
+        db.close()
+        return jsonify({"error": "User not found"}), 404
+
+    cur.execute(
+        "UPDATE triad_characters SET money = %s WHERE user_id = %s",
+        (amount, row["id"]),
+    )
+    db.commit()
+    cur.close()
+    db.close()
+    return jsonify({"ok": True, "username": username, "money": amount})
 
 
 @app.route("/api/decks", methods=["GET"])
