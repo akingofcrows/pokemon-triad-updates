@@ -1,0 +1,166 @@
+{
+  "quests": [
+    {
+      "id": "new_start",
+      "name": "New Start",
+      "rewardMoney": 100,
+      "rewardItems": [],
+      "rewardDescription": "100 Poké Dollars",
+      "objectives": [
+        "Check your PC",
+        "Go downstairs",
+        "Talk to Mom"
+      ]
+    },
+    {
+      "id": "moms_errand",
+      "name": "Mom's Errand",
+      "rewardMoney": 200,
+      "rewardItems": [],
+      "rewardDescription": "Pokédex + 200 Poké Dollars",
+      "objectives": [
+        "Leave the house",
+        "Visit Professor Oak at his lab",
+        "Receive your starter deck"
+      ]
+    },
+    {
+      "id": "oaks_parcel",
+      "name": "Oak's Parcel",
+      "icon": "assets/images/icons/items/item527.png",
+      "rewardMoney": 200,
+      "rewardItems": [
+        {"id": "pokeball", "quantity": 10},
+        {"id": "card_pidgey_1", "quantity": 1, "level": 2, "bonuses": {"north": 1, "south": 0, "east": 1, "west": 0}}
+      ],
+      "rewardDescription": "10 Poké Balls + 200 Poké Dollars",
+      "objectives": [
+        "Travel to Viridian City",
+        "Pick up the parcel at Viridian PokéMart",
+        "Return the parcel to Professor Oak"
+      ],
+      "completionDialogue": {
+        "speaker": "Professor Oak",
+        "portrait": "professor_oak.png",
+        "pages": [
+          "Thank you so much for\ndelivering this parcel!",
+          "I've been waiting weeks for these\nresearch supplies. You're a lifesaver!",
+          "As promised — here's your reward.\n10 Poké Balls and 200 Poké Dollars!",
+          "Keep up the great work, trainer.\nThere's a whole world out there\nwaiting for you!"
+        ],
+        "actionLabel": "Thank you!"
+      }
+    }
+  ,
+    {
+      "id": "stock_up",
+      "name": "Stock Up",
+      "icon": "assets/images/icons/items/item217.png",
+      "rewardMoney": 0,
+      "rewardItems": [
+        {"id": "potion", "quantity": 1}
+      ],
+      "rewardDescription": "1 Potion",
+      "objectives": [
+        "Buy an item from Viridian City PokéMart"
+      ],
+      "completionDialogue": {
+        "speaker": "Store Clerk",
+        "portrait": "SHOPKEEPER.png",
+        "pages": [
+          "Smart move stocking up early!\nYou never know what's out there.",
+          "Here — take this Potion on\nthe house. Come back anytime!"
+        ],
+        "actionLabel": "Thanks!"
+      }
+    },
+    {
+      "id": "rest_up",
+      "name": "Rest Up",
+      "icon": "assets/images/icons/items/item267.png",
+      "rewardMoney": 150,
+      "rewardItems": [],
+      "rewardDescription": "150 Poké Dollars",
+      "objectives": [
+        "Heal your Pokémon at Viridian City Pokémon Center"
+      ],
+      "completionDialogue": {
+        "speaker": "Nurse Joy",
+        "portrait": "JOY.png",
+        "pages": [
+          "We hope to see you again!\nYour Pokémon are always welcome here.",
+          "Here's a little something for\nmaking use of our services!"
+        ],
+        "actionLabel": "Thank you!"
+      }
+    },
+    {
+      "id": "route_22_road",
+      "name": "Road to Route 22",
+      "icon": "assets/ui/grass.png",
+      "rewardMoney": 400,
+      "rewardItems": [
+        {"id": "pokeball", "quantity": 3}
+      ],
+      "rewardDescription": "400 Poké Dollars + 3 Poké Balls",
+      "objectives": [
+        "Defeat a wild Pokémon on Route 22",
+        "Defeat another wild Pokémon on Route 22",
+        "Defeat one more wild Pokémon on Route 22"
+      ],
+      "completionDialogue": {
+        "speaker": "Youngster",
+        "portrait": "YOUNGSTER.png",
+        "pages": [
+          "Whoa, you cleared out Route 22!\nYou're tougher than you look!",
+          "Here — take these Poké Balls!\nYou're gonna need 'em!"
+        ],
+        "actionLabel": "Sweet!"
+      }
+    },
+    {
+      "id": "nidoran_hunter",
+      "name": "Nidoran Hunter",
+      "icon": "assets/ui/icon_own.png",
+      "rewardMoney": 500,
+      "rewardItems": [
+        {"id": "antidote", "quantity": 1}
+      ],
+      "rewardDescription": "500 Poké Dollars + 1 Antidote",
+      "objectives": [
+        "Catch a Nidoran ♂ or Nidoran ♀ on Route 22"
+      ],
+      "completionDialogue": {
+        "speaker": "Bug Catcher",
+        "portrait": "BUGCATCHER.png",
+        "pages": [
+          "You caught a Nidoran?!\nThose are super rare around here!",
+          "That Pokémon's Poison Point\nability is no joke — take this\nAntidote, you'll need it!"
+        ],
+        "actionLabel": "Thanks!"
+      }
+    },
+    {
+      "id": "old_mans_apology",
+      "name": "Old Man's Apology",
+      "icon": "assets/images/icons/items/item218.png",
+      "rewardMoney": 300,
+      "rewardItems": [
+        {"id": "super_potion", "quantity": 1}
+      ],
+      "rewardDescription": "300 Poké Dollars + 1 Super Potion",
+      "objectives": [
+        "Speak to the Old Man near Route 2"
+      ],
+      "completionDialogue": {
+        "speaker": "Old Man",
+        "portrait": "GAMBLER.png",
+        "pages": [
+          "Hey, kid! Sorry about blocking\nthe road earlier — my coffee\nhadn't kicked in yet!",
+          "Here, take this Super Potion.\nIt's way better than the\nregular stuff. Good luck out there!"
+        ],
+        "actionLabel": "Thank you!"
+      }
+    }
+  ]
+}

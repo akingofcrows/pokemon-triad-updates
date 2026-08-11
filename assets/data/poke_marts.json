@@ -1,0 +1,167 @@
+{
+  "Viridian City": {
+    "boosters": [
+      { "name": "Kanto Collection", "image": "kanto.png", "price": 1200, "qtyMin": 2, "qtyMax": 4 }
+    ],
+    "singlesPool": ["card_pidgey_1", "card_rattata_1", "card_caterpie_1", "card_spearow_1", "card_sentret_1"],
+    "singlesShownMin": 2,
+    "singlesShownMax": 4,
+    "singlesPerCardQtyMin": 1,
+    "singlesPerCardQtyMax": 3,
+    "ballPrices": {
+      "pokeball": 200
+    },
+    "ballQtyMin": { "pokeball": 3 },
+    "ballQtyMax": { "pokeball": 6 },
+    "consumables": {
+      "potion": 300,
+      "antidote": 100,
+      "paralyze_heal": 200
+    }
+  },
+  "Pewter City": {
+    "boosters": [
+      { "name": "Kanto Collection", "image": "kanto.png", "price": 300, "qtyMin": 2, "qtyMax": 4 },
+      { "name": "Field Trip", "image": "field.png", "price": 250, "qtyMin": 1, "qtyMax": 3 },
+      { "name": "Urban Pack", "image": "urban.png", "price": 350, "qtyMin": 1, "qtyMax": 2 }
+    ],
+    "singlesPool": [
+      "card_geodude_1", "card_sandshrew_1", "card_machop_1", "card_onix_1", "card_zubat_1"
+    ],
+    "singlesShownMin": 2,
+    "singlesShownMax": 4,
+    "singlesPerCardQtyMin": 0,
+    "singlesPerCardQtyMax": 2,
+    "ballPrices": {
+      "pokeball": 180,
+      "great_ball": 550
+    },
+    "ballQtyMin": { "pokeball": 4, "great_ball": 2 },
+    "ballQtyMax": { "pokeball": 8, "great_ball": 4 }
+  },
+  "Cerulean City": {
+    "boosters": [
+      { "name": "Kanto Collection", "image": "kanto.png", "price": 300, "qtyMin": 2, "qtyMax": 4 },
+      { "name": "Safari Pack", "image": "safari.png", "price": 400, "qtyMin": 1, "qtyMax": 3 },
+      { "name": "Field Trip", "image": "field.png", "price": 250, "qtyMin": 1, "qtyMax": 3 }
+    ],
+    "singlesPool": [
+      "card_staryu_1", "card_goldeen_1", "card_magikarp_1", "card_poliwag_1", "card_tentacool_1"
+    ],
+    "singlesShownMin": 2,
+    "singlesShownMax": 5,
+    "singlesPerCardQtyMin": 0,
+    "singlesPerCardQtyMax": 3,
+    "ballPrices": {
+      "pokeball": 200,
+      "great_ball": 600,
+      "ultra_ball": 1200
+    },
+    "ballQtyMin": { "pokeball": 4, "great_ball": 2, "ultra_ball": 1 },
+    "ballQtyMax": { "pokeball": 7, "great_ball": 4, "ultra_ball": 2 }
+  },
+  "Lavender Town": {
+    "boosters": [
+      { "name": "Kanto Collection", "image": "kanto.png", "price": 300, "qtyMin": 1, "qtyMax": 3 },
+      { "name": "Safari Pack", "image": "safari.png", "price": 400, "qtyMin": 1, "qtyMax": 2 }
+    ],
+    "singlesPool": [
+      "card_gastly_1", "card_haunter_1", "card_zubat_1", "card_cubone_1", "card_drowzee_1"
+    ],
+    "singlesShownMin": 2,
+    "singlesShownMax": 4,
+    "singlesPerCardQtyMin": 0,
+    "singlesPerCardQtyMax": 2,
+    "ballPrices": {
+      "pokeball": 200,
+      "great_ball": 600,
+      "ultra_ball": 1200
+    },
+    "ballQtyMin": { "pokeball": 3, "great_ball": 2, "ultra_ball": 1 },
+    "ballQtyMax": { "pokeball": 6, "great_ball": 4, "ultra_ball": 2 }
+  },
+  "Celadon City": {
+    "boosters": [
+      { "name": "Kanto Collection", "image": "kanto.png", "price": 280, "qtyMin": 3, "qtyMax": 5 },
+      { "name": "Field Trip", "image": "field.png", "price": 220, "qtyMin": 2, "qtyMax": 4 },
+      { "name": "Urban Pack", "image": "urban.png", "price": 320, "qtyMin": 1, "qtyMax": 3 },
+      { "name": "Safari Pack", "image": "safari.png", "price": 380, "qtyMin": 1, "qtyMax": 3 }
+    ],
+    "singlesPool": [
+      "card_oddish_1", "card_bellsprout_1", "card_eevee_1", "card_meowth_1", "card_growlithe_1", "card_vulpix_1"
+    ],
+    "singlesShownMin": 3,
+    "singlesShownMax": 5,
+    "singlesPerCardQtyMin": 0,
+    "singlesPerCardQtyMax": 3,
+    "ballPrices": {
+      "pokeball": 180,
+      "great_ball": 550,
+      "ultra_ball": 1100
+    },
+    "ballQtyMin": { "pokeball": 5, "great_ball": 3, "ultra_ball": 1 },
+    "ballQtyMax": { "pokeball": 10, "great_ball": 6, "ultra_ball": 3 }
+  },
+  "Fuchsia City": {
+    "boosters": [
+      { "name": "Safari Pack", "image": "safari.png", "price": 350, "qtyMin": 2, "qtyMax": 4 },
+      { "name": "Kanto Collection", "image": "kanto.png", "price": 300, "qtyMin": 1, "qtyMax": 3 }
+    ],
+    "singlesPool": [
+      "card_koffing_1", "card_grimer_1", "card_venonat_1", "card_nidoran_m_1", "card_nidoran_f_1"
+    ],
+    "singlesShownMin": 2,
+    "singlesShownMax": 4,
+    "singlesPerCardQtyMin": 0,
+    "singlesPerCardQtyMax": 2,
+    "ballPrices": {
+      "pokeball": 200,
+      "great_ball": 600,
+      "ultra_ball": 1200
+    },
+    "ballQtyMin": { "pokeball": 4, "great_ball": 2, "ultra_ball": 1 },
+    "ballQtyMax": { "pokeball": 7, "great_ball": 4, "ultra_ball": 2 }
+  },
+  "Saffron City": {
+    "boosters": [
+      { "name": "Urban Pack", "image": "urban.png", "price": 300, "qtyMin": 2, "qtyMax": 4 },
+      { "name": "Kanto Collection", "image": "kanto.png", "price": 280, "qtyMin": 2, "qtyMax": 5 },
+      { "name": "Safari Pack", "image": "safari.png", "price": 380, "qtyMin": 1, "qtyMax": 3 }
+    ],
+    "singlesPool": [
+      "card_abra_1", "card_mr_mime_1", "card_jynx_1", "card_machop_1", "card_hitmonlee_1", "card_hitmonchan_1"
+    ],
+    "singlesShownMin": 3,
+    "singlesShownMax": 5,
+    "singlesPerCardQtyMin": 0,
+    "singlesPerCardQtyMax": 3,
+    "ballPrices": {
+      "pokeball": 180,
+      "great_ball": 550,
+      "ultra_ball": 1100
+    },
+    "ballQtyMin": { "pokeball": 5, "great_ball": 3, "ultra_ball": 1 },
+    "ballQtyMax": { "pokeball": 9, "great_ball": 5, "ultra_ball": 3 }
+  },
+  "Cinnabar Island": {
+    "boosters": [
+      { "name": "Kanto Collection", "image": "kanto.png", "price": 300, "qtyMin": 1, "qtyMax": 3 },
+      { "name": "Safari Pack", "image": "safari.png", "price": 400, "qtyMin": 1, "qtyMax": 3 },
+      { "name": "Urban Pack", "image": "urban.png", "price": 350, "qtyMin": 1, "qtyMax": 2 }
+    ],
+    "singlesPool": [
+      "card_growlithe_1", "card_ponyta_1", "card_magmar_1", "card_kabuto_1", "card_omanyte_1"
+    ],
+    "singlesShownMin": 2,
+    "singlesShownMax": 4,
+    "singlesPerCardQtyMin": 0,
+    "singlesPerCardQtyMax": 2,
+    "ballPrices": {
+      "pokeball": 200,
+      "great_ball": 600,
+      "ultra_ball": 1200
+    },
+    "ballQtyMin": { "pokeball": 4, "great_ball": 2, "ultra_ball": 1 },
+    "ballQtyMax": { "pokeball": 7, "great_ball": 4, "ultra_ball": 2 }
+  }
+}

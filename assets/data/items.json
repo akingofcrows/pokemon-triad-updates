@@ -13,7 +13,7 @@
     "name": "Great Ball",
     "description": "A better ball with improved catch rate.",
     "type": "pokeball",
-    "imageAsset": "assets/images/icons/items/item268.png",
+    "imageAsset": "assets/images/icons/items/item266.png",
     "catchMultiplier": 1.5,
     "sellPrice": 150
   },
@@ -22,9 +22,45 @@
     "name": "Ultra Ball",
     "description": "A premium ball with very high catch rate.",
     "type": "pokeball",
-    "imageAsset": "assets/images/icons/items/item269.png",
+    "imageAsset": "assets/images/icons/items/item265.png",
     "catchMultiplier": 2.5,
     "sellPrice": 400
+  },
+  {
+    "id": "safari_ball",
+    "name": "Safari Ball",
+    "description": "A special ball used in the Safari Zone.",
+    "type": "pokeball",
+    "imageAsset": "assets/images/icons/items/item268.png",
+    "catchMultiplier": 1.5,
+    "sellPrice": 0
+  },
+  {
+    "id": "net_ball",
+    "name": "Net Ball",
+    "description": "Better catch rate for Water and Bug types.",
+    "type": "pokeball",
+    "imageAsset": "assets/images/icons/items/item270.png",
+    "catchMultiplier": 3.0,
+    "sellPrice": 300
+  },
+  {
+    "id": "premiere_ball",
+    "name": "Premiere Ball",
+    "description": "A rare commemorative ball.",
+    "type": "pokeball",
+    "imageAsset": "assets/images/icons/items/item276.png",
+    "catchMultiplier": 1.0,
+    "sellPrice": 100
+  },
+  {
+    "id": "love_ball",
+    "name": "Love Ball",
+    "description": "Better catch rate if opposite gender.",
+    "type": "pokeball",
+    "imageAsset": "assets/images/icons/items/item285.png",
+    "catchMultiplier": 2.0,
+    "sellPrice": 300
   },
   {
     "id": "master_ball",
@@ -34,6 +70,169 @@
     "imageAsset": "assets/images/icons/items/item270.png",
     "catchMultiplier": 999.0,
     "sellPrice": 5000
+  },
+  {
+    "id": "potion",
+    "name": "Potion",
+    "description": "Restores 20 Condition to one Pokémon card.",
+    "type": "potion",
+    "imageAsset": "assets/images/icons/items/item217.png",
+    "restoreAmount": 20,
+    "sellPrice": 20
+  },
+  {
+    "id": "super_potion",
+    "name": "Super Potion",
+    "description": "Restores 40 Condition to one Pokémon card.",
+    "type": "potion",
+    "imageAsset": "assets/images/icons/items/item218.png",
+    "restoreAmount": 40,
+    "sellPrice": 60
+  },
+  {
+    "id": "hyper_potion",
+    "name": "Hyper Potion",
+    "description": "Restores 70 Condition to one Pokémon card.",
+    "type": "potion",
+    "imageAsset": "assets/images/icons/items/item227.png",
+    "restoreAmount": 70,
+    "sellPrice": 150
+  },
+  {
+    "id": "max_potion",
+    "name": "Max Potion",
+    "description": "Fully restores a Pokémon card's Condition.",
+    "type": "potion",
+    "imageAsset": "assets/images/icons/items/item220.png",
+    "restoreAmount": 100,
+    "sellPrice": 250
+  },
+  {
+    "id": "full_restore",
+    "name": "Full Restore",
+    "description": "Restores a Pokémon card to Mint Condition and heals status.",
+    "type": "potion",
+    "imageAsset": "assets/images/icons/items/item221.png",
+    "restoreAmount": 100,
+    "sellPrice": 300
+  },
+  {
+    "id": "antidote",
+    "name": "Antidote",
+    "description": "Heals a poisoned Pokémon card.",
+    "type": "potion",
+    "imageAsset": "assets/images/icons/items/item224.png",
+    "restoreAmount": 0,
+    "sellPrice": 10
+  },
+  {
+    "id": "burn_heal",
+    "name": "Burn Heal",
+    "description": "Heals a burned Pokémon card.",
+    "type": "potion",
+    "imageAsset": "assets/images/icons/items/item225.png",
+    "restoreAmount": 0,
+    "sellPrice": 10
+  },
+  {
+    "id": "ice_heal",
+    "name": "Ice Heal",
+    "description": "Heals a frozen Pokémon card.",
+    "type": "potion",
+    "imageAsset": "assets/images/icons/items/item227.png",
+    "restoreAmount": 0,
+    "sellPrice": 10
+  },
+  {
+    "id": "awakening",
+    "name": "Awakening",
+    "description": "Wakes a sleeping Pokémon card.",
+    "type": "potion",
+    "imageAsset": "assets/images/icons/items/item223.png",
+    "restoreAmount": 0,
+    "sellPrice": 10
+  },
+  {
+    "id": "paralyze_heal",
+    "name": "Paralyz Heal",
+    "description": "Heals a paralyzed Pokémon card.",
+    "type": "potion",
+    "imageAsset": "assets/images/icons/items/item226.png",
+    "restoreAmount": 0,
+    "sellPrice": 10
+  },
+  {
+    "id": "full_heal",
+    "name": "Full Heal",
+    "description": "Heals all status conditions on a Pokémon card.",
+    "type": "potion",
+    "imageAsset": "assets/images/icons/items/item228.png",
+    "restoreAmount": 0,
+    "sellPrice": 40
+  },
+  {
+    "id": "red_apricorn",
+    "name": "Red Apricorn",
+    "description": "A red Apricorn. Can be crafted into a Level Ball.",
+    "type": "quest",
+    "imageAsset": "assets/images/icons/items/item021.png",
+    "sellPrice": 0
+  },
+  {
+    "id": "yellow_apricorn",
+    "name": "Yellow Apricorn",
+    "description": "A yellow Apricorn. Can be crafted into a Moon Ball.",
+    "type": "quest",
+    "imageAsset": "assets/images/icons/items/item022.png",
+    "sellPrice": 0
+  },
+  {
+    "id": "pink_apricorn",
+    "name": "Pink Apricorn",
+    "description": "A pink Apricorn. Can be crafted into a Love Ball.",
+    "type": "quest",
+    "imageAsset": "assets/images/icons/items/item025.png",
+    "sellPrice": 0
+  },
+  {
+    "id": "white_apricorn",
+    "name": "White Apricorn",
+    "description": "A white Apricorn. Can be crafted into a Fast Ball.",
+    "type": "quest",
+    "imageAsset": "assets/images/icons/items/item026.png",
+    "sellPrice": 0
+  },
+  {
+    "id": "black_apricorn",
+    "name": "Black Apricorn",
+    "description": "A black Apricorn. Can be crafted into a Heavy Ball.",
+    "type": "quest",
+    "imageAsset": "assets/images/icons/items/item027.png",
+    "sellPrice": 0
+  },
+  {
+    "id": "old_rod",
+    "name": "Old Rod",
+    "description": "A basic fishing rod. Cast a line to find common Pokémon.",
+    "type": "quest",
+    "imageAsset": "assets/images/icons/items/item504.png",
+    "sellPrice": 0
+  },
+  {
+    "id": "good_rod",
+    "name": "Good Rod",
+    "description": "A decent fishing rod. Finds better Pokémon than the Old Rod.",
+    "type": "quest",
+    "imageAsset": "assets/images/icons/items/item505.png",
+    "sellPrice": 0
+  },
+  {
+    "id": "super_rod",
+    "name": "Super Rod",
+    "description": "The best fishing rod. Reels in powerful Pokémon.",
+    "type": "quest",
+    "imageAsset": "assets/images/icons/items/item506.png",
+    "sellPrice": 0
   },
   {
     "id": "boulder_badge",
@@ -105,6 +304,14 @@
     "type": "badge",
     "imageAsset": "assets/ui/icon_badges.png",
     "spriteIndex": 7,
+    "sellPrice": 0
+  },
+  {
+    "id": "oaks_parcel",
+    "name": "Oak's Parcel",
+    "description": "A special delivery for Professor Oak from the Viridian City Poké Mart.",
+    "type": "quest",
+    "imageAsset": "assets/images/icons/items/item527.png",
     "sellPrice": 0
   }
 ]

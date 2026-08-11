@@ -1,18 +1,18 @@
 {
     "minimumAppVersion":  "1.0.70",
     "changeNotes":  [
-                        "Deck builder overhaul: Active Deck containers with diagonal gradients, box-specific gradient colors, sort/filter system, unlockable deck boxes, edit screen redesign, sticky cancel/save buttons"
+                        "v1.0.96: Trainer sprites, Umbreon debug, hybrid deploy"
                     ],
-    "contentVersion":  24,
+    "contentVersion":  32,
     "manifestVersion":  1,
     "bundles":  [
                     {
                         "id":  "game_data",
-                        "version":  4,
-                        "sha256":  "84edac1536c377a65dc191aebf4d39af17812d594279f0be879956db22254a8a",
-                        "sizeBytes":  26698,
+                        "version":  5,
+                        "sha256":  "f25db1a7422fffba58661a2024a733162dc12e120c8091658b86138423dd49dd",
+                        "sizeBytes":  33031,
                         "required":  true,
-                        "url":  "/api/content/bundles/game_data_v4.zip"
+                        "url":  "/api/content/bundles/game_data_v5.zip"
                     },
                     {
                         "id":  "pokemon_art",
@@ -24,43 +24,43 @@
                     },
                     {
                         "id":  "pokemon_shiny_art",
-                        "version":  2,
-                        "sha256":  "02d3daf98e1fce836fd0fbb6595393374ae6201947afc8db18eb775aa7e055f0",
+                        "version":  3,
+                        "sha256":  "ea6e7da057169b7e804d7801ee7f96862bf51d45d514e7c6e8f2b73041b8c643",
                         "sizeBytes":  599448,
                         "required":  false,
-                        "url":  "/api/content/bundles/pokemon_shiny_art_v2.zip"
+                        "url":  "/api/content/bundles/pokemon_shiny_art_v3.zip"
                     },
                     {
                         "id":  "trainer_art",
-                        "version":  6,
-                        "sha256":  "44370a17a872031c58108e0ebee962b0c3eacca76be7140867c3786f0e7058de",
-                        "sizeBytes":  642699,
+                        "version":  7,
+                        "sha256":  "2ea256119c277ec5b724a6bbbf05153afc21748721c0de0201d995c85daef3db",
+                        "sizeBytes":  790973,
                         "required":  false,
-                        "url":  "/api/content/bundles/trainer_art_v6.zip"
+                        "url":  "/api/content/bundles/trainer_art_v7.zip"
                     },
                     {
                         "id":  "ui_art",
-                        "version":  4,
-                        "sha256":  "70ed72bf9d770b182269cf65b3cfb51131ae17f3e06704f7873bdf2b7a4daef9",
-                        "sizeBytes":  8090201,
+                        "version":  5,
+                        "sha256":  "459baeb707a18a1fdc26142447f714ee4e8c2e9b64f20fbb23b6d582c75882b0",
+                        "sizeBytes":  8495457,
                         "required":  false,
-                        "url":  "/api/content/bundles/ui_art_v4.zip"
+                        "url":  "/api/content/bundles/ui_art_v5.zip"
                     },
                     {
                         "id":  "locations_settlements_art",
-                        "version":  1,
-                        "sha256":  "18f3fb93fea30c68fab2c37fefa22d2e6cdf859a5ae6afae686f47be19abd1fa",
-                        "sizeBytes":  70312345,
+                        "version":  2,
+                        "sha256":  "86e785bde99b49141d936d81c51451b5865b74f53d28f5f86f59900bfd2880a6",
+                        "sizeBytes":  124629154,
                         "required":  false,
-                        "url":  "/api/content/bundles/locations_settlements_art_v1.zip"
+                        "url":  "/api/content/bundles/locations_settlements_art_v2.zip"
                     },
                     {
                         "id":  "locations_routes_art",
-                        "version":  1,
-                        "sha256":  "e6eeafef1582f61eb2bb27502ed2d47e2fddac78f4c7bdce5cb2f6aa2dac1180",
-                        "sizeBytes":  27654046,
+                        "version":  2,
+                        "sha256":  "f44dd1ec24864b5bc2c9f28d15f69c2a59009c89f3307ebd2c766e4fc4a3f910",
+                        "sizeBytes":  55084254,
                         "required":  false,
-                        "url":  "/api/content/bundles/locations_routes_art_v1.zip"
+                        "url":  "/api/content/bundles/locations_routes_art_v2.zip"
                     },
                     {
                         "id":  "sprites_art",
@@ -72,19 +72,19 @@
                     },
                     {
                         "id":  "booster_pack_art",
-                        "version":  2,
-                        "sha256":  "811f75011c1cac5ecd4323bdbb311c6c38e3ddc36def4732257a335efe144b7f",
-                        "sizeBytes":  214257,
+                        "version":  3,
+                        "sha256":  "cf2380cf6c6924dfb33492f22079910345d7729c5bb26fe954467b950fc431c5",
+                        "sizeBytes":  1108640,
                         "required":  false,
-                        "url":  "/api/content/bundles/booster_pack_art_v2.zip"
+                        "url":  "/api/content/bundles/booster_pack_art_v3.zip"
                     },
                     {
                         "id":  "icons_art",
-                        "version":  1,
-                        "sha256":  "ac8cdc7da8c4959420a091fbbd52cd682b2d0287bf6f949e70a834c65576f955",
-                        "sizeBytes":  2899376,
+                        "version":  2,
+                        "sha256":  "2ff999f2315265355857d7619bc39a7983b72805ae27022b1e45371a84ca88e7",
+                        "sizeBytes":  2900048,
                         "required":  false,
-                        "url":  "/api/content/bundles/icons_art_v1.zip"
+                        "url":  "/api/content/bundles/icons_art_v2.zip"
                     }
                 ]
 }

@@ -1,0 +1,104 @@
+{
+  "nurse_joy": {
+    "portrait": "JOY.png",
+    "speaker": "Nurse Joy",
+    "speakerColor": "#E91E63",
+    "pokemon_center_greeting": {
+      "healthy": {
+        "dialogue": "Welcome to the Pokémon Center!\nAll your Pokémon look perfectly healthy.\nCome back anytime!",
+        "actionLabel": "Thank you!"
+      },
+      "damaged": {
+        "dialogue": [
+          "Welcome to the Pokémon Center!",
+          "I see some of your Triad cards\nare looking a bit worn out.",
+          "Select up to 6 and I'll restore\nthem to full health right away!"
+        ],
+        "actionLabel": "You got it!"
+      }
+    }
+  },
+
+  "professor_oak": {
+    "portrait": "professor_oak.png",
+    "speaker": "Professor Oak",
+    "speakerColor": null,
+    "oaks_parcel": {
+      "intro": {
+        "dialogue": [
+          "Ah, there you are!\nI've been meaning to ask you something.",
+          "I ordered a special parcel from\nthe Poké Mart in Viridian City.",
+          "It's been weeks and it still\nhasn't arrived. Most peculiar.",
+          "Could you check on it for me?\nI'd go myself, but my research\nhas me absolutely swamped!\n\n *He hands you a slip of paper*"
+        ],
+        "actionLabel": "Read it...",
+        "actionColor": "#4CAF50"
+      },
+      "progress_incomplete": {
+        "dialogue": [
+          "Any luck with that parcel?",
+          "The Poké Mart in Viridian City\nshould have it waiting for you.\nKeep at it, trainer!"
+        ],
+        "actionLabel": "OK",
+        "actionColor": "#4CAF50"
+      },
+      "progress_complete": {
+        "dialogue": [
+          "You found it! I knew I could\ncount on you.",
+          "Hand it over and let's see\nwhat we're working with!"
+        ],
+        "actionLabel": "Got it!",
+        "actionColor": "#4CAF50"
+      },
+      "reward_received": {
+        "dialogue": [
+          "I hope these will go to good use.",
+          "To make a complete guide on all\nthe Pokémon in the world…\nThat was my dream!",
+          "But, I'm too old! I can't do it!\nSo, I want you to fulfill my\ndream for me!",
+          "Get moving! This is a great\nundertaking in Pokémon history!"
+        ],
+        "actionLabel": "I won't let you down!",
+        "actionColor": "#4CAF50"
+      }
+    }
+  },
+
+  "pokemart_clerk": {
+    "portrait": "SHOPKEEPER.png",
+    "speaker": "Store Clerk David",
+    "speakerColor": null,
+    "oaks_parcel_delivery": {
+      "dialogue": [
+        "Welcome to the Poké Mart!\nHow can I help you today?",
+        "\"Oh, you're from Pallet Town?\"\n\nThe shopkeeper's eyes light up\nwith recognition.",
+        "He reaches under the counter and\npulls out a dusty package.",
+        "\"This came for Professor Oak ages\nago! Would you mind delivering it?\nIt's been taking up space for weeks!\""
+      ],
+      "actionLabel": "Take Parcel",
+      "actionColor": "#4CAF50"
+    }
+  },
+
+  "story_scenes": {
+    "viridian_center": {
+      "title": "🏥 POKÉMON CENTER",
+      "content": "A warm, welcoming place to rest and heal your Pokémon.\n\nNurse Joy smiles as you enter.\n\n\"Would you like me to heal your Pokémon?\"",
+      "button": "Heal my team"
+    },
+    "viridian_route2": {
+      "title": "🛣️ ROUTE 2",
+      "content": "The path north leads toward Viridian Forest and Pewter City.\n\nBest to finish your business in town before heading out.",
+      "button": "Not yet"
+    },
+    "item_found_generic": {
+      "title": "📦 Item Found!",
+      "content": "You found a Poké Ball along the path!\n\nIt might come in handy for catching wild Pokémon.",
+      "button": "Take it"
+    },
+    "catch_challenge": {
+      "title": "Catch Challenge",
+      "content": "A rare {cardName} has been spotted here! Catch it to complete this challenge.",
+      "button": "Hunt it"
+    }
+  }
+}
