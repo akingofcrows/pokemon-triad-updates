@@ -1967,6 +1967,46 @@ def serve_content_bundle(filename):
     """Serve a versioned content bundle zip."""
     return send_from_directory(os.path.join(CONTENT_DIR, "bundles"), filename)
 
+
+# ── Admin upload (HTTP-based deploy, replaces scp) ──────────────────────
+ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "triad-deploy-2026")
+
+@app.route("/api/admin/upload", methods=["POST"])
+def admin_upload():
+    """Accept file uploads from deploy script. Requires admin token."""
+    token = request.headers.get("X-Admin-Token") or request.form.get("token", "")
+    if token != ADMIN_TOKEN:
+        return jsonify({"error": "unauthorized"}), 403
+
+    target = request.form.get("target", "")
+    file = request.files.get("file")
+    if not file or not target:
+        return jsonify({"error": "missing file or target"}), 400
+
+    filename = file.filename or "uploaded"
+    server_dir = os.path.dirname(os.path.abspath(__file__))
+
+    target_map = {
+        "apk": server_dir,
+        "asset_sync": server_dir,
+        "assets_manifest": os.path.join(server_dir, "assets"),
+        "content_manifest": os.path.join(server_dir, "content"),
+        "content_bundle": os.path.join(server_dir, "content", "bundles"),
+    }
+
+    dest_dir = target_map.get(target)
+    if not dest_dir:
+        return jsonify({"error": f"unknown target: {target}"}), 400
+
+    os.makedirs(dest_dir, exist_ok=True)
+    dest_path = os.path.join(dest_dir, filename)
+    file.save(dest_path)
+    size_mb = os.path.getsize(dest_path) / (1024 * 1024)
+
+    print(f"[UPLOAD] {target}/{filename} saved ({size_mb:.1f} MB)", flush=True)
+    return jsonify({"ok": True, "target": target, "file": filename, "size_mb": round(size_mb, 1)})
+
+
 # ── Admin Dashboard ─────────────────────────────────────────────────────
 
 @app.route("/admin")
